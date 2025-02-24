@@ -1,4 +1,4 @@
-appId: com.electron.app
+appId: com.miagg.dualpresenter
 productName: dualpresenter
 directories:
   buildResources: build
