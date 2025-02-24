@@ -1,0 +1,6 @@
+{
+  "excel_path": {
+    "type": "string",
+    "default": ""
+  }
+}
