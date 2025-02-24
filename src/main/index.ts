@@ -7,6 +7,7 @@ import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import { dialog } from 'electron/main'
 
+let mainWindow
 let excelPath: string | undefined
 let data: Data = {
   cards: [],
@@ -30,12 +31,21 @@ function loadData(): void {
   }
 
   data = parseExcel(excelPath)
-  console.log(data)
+  console.log(data) //TODO: Remove
+  sendData()
+}
+
+function sendData(): void {
+  if (mainWindow) {
+    mainWindow.webContents.on('did-finish-load', () => {
+      mainWindow.webContents.send('dataUpdated', data)
+    })
+  }
 }
 
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
     minWidth: 1024,
@@ -84,6 +94,7 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
+  sendData()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
