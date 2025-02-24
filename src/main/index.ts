@@ -1,26 +1,48 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import config from './config'
 import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
+import { dialog } from 'electron/main'
 
+let excelPath: string | undefined
 let data: Data = {
   cards: [],
   names: []
 }
 
+function loadData(): void {
+  excelPath = config.get('excel_path')
+  while (!excelPath) {
+    // Show open file dialog to select excel file
+    excelPath = dialog.showOpenDialogSync({
+      title: 'Select Excel File',
+      properties: ['openFile'],
+      filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
+    })?.[0]
+    if (!excelPath) {
+      dialog.showErrorBox('Error', 'Please select an excel file')
+    } else {
+      config.set('excel_path', excelPath)
+    }
+  }
+
+  data = parseExcel(excelPath)
+  console.log(data)
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
-    show: false,
-    autoHideMenuBar: true,
+    width: 1024,
+    height: 768,
+    minWidth: 1024,
+    minHeight: 768,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
   })
@@ -47,9 +69,7 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // TODO: Load Data
-  data = parseExcel('/Users/wolfkain/Projects/360/Apps/dualpresenter/assets/hellenic.xlsx')
-  console.log(data)
+  loadData()
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.miagg')
 
