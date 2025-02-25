@@ -1,5 +1,5 @@
 appId: com.miagg.dualpresenter
-productName: dualpresenter
+productName: DualPresenter
 directories:
   buildResources: build
 files:
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: dualpresenter
+  executableName: DualPresenter
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
