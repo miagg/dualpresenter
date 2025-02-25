@@ -4,7 +4,7 @@ import { reactive } from 'vue'
 const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
 let cards = reactive([])
 let names = reactive([])
-window.electron.ipcRenderer.on('dataUpdated', (event, message) => {
+window.electron.ipcRenderer.on('data-updated', (event, message) => {
   Object.assign(cards, message.cards)
   Object.assign(names, message.names)
 })

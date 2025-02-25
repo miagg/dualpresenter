@@ -25,6 +25,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.0.8",
+    "chokidar": "^4.0.3",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.3.9",
     "node-xlsx": "^0.24.0",

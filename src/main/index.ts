@@ -6,6 +6,7 @@ import config from './config'
 import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import { dialog } from 'electron/main'
+import fileWatcher from 'chokidar'
 
 let mainWindow
 let excelPath: string | undefined
@@ -15,31 +16,55 @@ let data: Data = {
 }
 
 function loadData(): void {
-  excelPath = config.get('excel_path')
+  excelPath = excelPath || config.get('excel_path')
+
   while (!excelPath) {
+    // Show dialog to select excel file or exit application
+    const response = dialog.showMessageBoxSync({
+      type: 'info',
+      title: 'Open Project',
+      message: 'Please select an excel file or exit the application',
+      buttons: ['Select excel file', 'Exit'],
+      defaultId: 0,
+      cancelId: 1
+    })
+    if (response === 1) {
+      app.quit()
+      return
+    }
     // Show open file dialog to select excel file
     excelPath = dialog.showOpenDialogSync({
       title: 'Select Excel File',
       properties: ['openFile'],
       filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
     })?.[0]
-    if (!excelPath) {
-      dialog.showErrorBox('Error', 'Please select an excel file')
-    } else {
+    if (excelPath) {
       config.set('excel_path', excelPath)
     }
   }
 
   data = parseExcel(excelPath)
+  // Handle empty or invalid excel file ✋
+  if (data.cards.length === 0 && data.names.length === 0) {
+    excelPath = ''
+    config.set('excel_path', '')
+    loadData()
+    return
+  }
+
   console.log(data) //TODO: Remove
   sendData()
 }
 
 function sendData(): void {
   if (mainWindow) {
-    mainWindow.webContents.on('did-finish-load', () => {
-      mainWindow.webContents.send('dataUpdated', data)
-    })
+    if (mainWindow.webContents.isLoading()) {
+      mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('data-updated', data)
+      })
+    } else {
+      mainWindow.webContents.send('data-updated', data)
+    }
   }
 }
 
@@ -79,7 +104,14 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Load data from excel file and watch for changes
   loadData()
+  if (excelPath) {
+    fileWatcher.watch(excelPath).on('change', () => {
+      loadData()
+    })
+  }
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.miagg')
 
