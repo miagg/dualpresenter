@@ -1,7 +1,9 @@
 import { Card } from '../models/Card'
-import { Name } from '../models/Name'
+import { Config } from '../interfaces/Config'
+import { State } from '../interfaces/State'
 
 export interface Data {
   cards: Card[]
-  names: Name[]
+  config: Config
+  state: State
 }

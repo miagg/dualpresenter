@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { ref } from 'vue'
+import Card from './components/Card.vue'
 
-const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-let cards = reactive([])
-let names = reactive([])
+const loadData = (): void => window.electron.ipcRenderer.send('get-data')
+
+const cards = ref([])
+
 window.electron.ipcRenderer.on('data-updated', (event, message) => {
-  Object.assign(cards, message.cards)
-  Object.assign(names, message.names)
+  cards.value = message.cards
 })
+loadData()
 </script>
 
 <template>
-  <div class="text-2xl">{{ names[0]?.name }}</div>
-  <button class="bg-gray-200 text-black p-2" @click="ipcHandle()">Ping</button>
+  <Card v-if="cards.length" :card="cards[1]" />
 </template>

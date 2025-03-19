@@ -1,6 +1,62 @@
 {
-  "excel_path": {
-    "type": "string",
-    "default": ""
+  "config": {
+    "type": "object",
+    "properties": {
+      "colors": {
+        "type": "object",
+        "properties": {
+          "primaryBackground": {
+            "type": "string",
+            "default": "#061D9F"
+          },
+          "primaryText": {
+            "type": "string",
+            "default": "#FFFFFF"
+          },
+          "secondaryBackground": {
+            "type": "string",
+            "default": "#FFFFFF"
+          },
+          "secondaryText": {
+            "type": "string",
+            "default": "#061D9F"
+          }
+        },
+        "default": {}
+      },
+      "assets": {
+        "type": "object",
+        "properties": {
+          "background": {
+            "type": "string",
+            "default": ""
+          },
+          "backgroundNames": {
+            "type": "string",
+            "default": ""
+          },
+          "logo": {
+            "type": "string",
+            "default": ""
+          },
+          "logoInverted": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "default": {}
+      }
+    },
+    "default": {}
+  },
+  "state": {
+    "type": "object",
+    "properties": {
+      "excelPath": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "default": {}
   }
 }

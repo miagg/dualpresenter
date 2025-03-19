@@ -9,16 +9,13 @@ import { dialog } from 'electron/main'
 import fileWatcher from 'chokidar'
 
 let mainWindow
-let excelPath: string | undefined
-let data: Data = {
+const data: Data = {
   cards: [],
-  names: []
+  config: config.get('config'),
+  state: config.get('state')
 }
-
 function loadData(): void {
-  excelPath = excelPath || config.get('excel_path')
-
-  while (!excelPath) {
+  while (!data.state.excelPath) {
     // Show dialog to select excel file or exit application
     const response = dialog.showMessageBoxSync({
       type: 'info',
@@ -33,21 +30,21 @@ function loadData(): void {
       return
     }
     // Show open file dialog to select excel file
-    excelPath = dialog.showOpenDialogSync({
+    data.state.excelPath = dialog.showOpenDialogSync({
       title: 'Select Excel File',
       properties: ['openFile'],
       filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
     })?.[0]
-    if (excelPath) {
-      config.set('excel_path', excelPath)
+    if (data.state.excelPath) {
+      config.set('state.excelPath', data.state.excelPath)
     }
   }
 
-  data = parseExcel(excelPath)
+  data.cards = parseExcel(data.state.excelPath)
   // Handle empty or invalid excel file ✋
-  if (data.cards.length === 0 && data.names.length === 0) {
-    excelPath = ''
-    config.set('excel_path', '')
+  if (data.cards.length === 0) {
+    data.state.excelPath = ''
+    config.set('state.excelPath', '')
     loadData()
     return
   }
@@ -105,11 +102,8 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Load data from excel file and watch for changes
-  loadData()
-  if (excelPath) {
-    fileWatcher.watch(excelPath).on('change', () => {
-      loadData()
-    })
+  if (data.state.excelPath) {
+    fileWatcher.watch(data.state.excelPath).on('change', loadData)
   }
 
   // Set app user model id for windows
@@ -124,6 +118,7 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.on('get-data', loadData)
 
   createWindow()
   sendData()
