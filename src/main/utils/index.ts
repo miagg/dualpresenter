@@ -2,7 +2,12 @@ import { Card } from '../models/Card'
 import { Name } from '../models/Name'
 import xlsx from 'node-xlsx'
 
-const parseExcel = function (excelPath: string): Card[] {
+interface ParsedData {
+  cards: Card[]
+  names: Name[]
+}
+
+const parseExcel = function (excelPath: string): ParsedData {
   try {
     const xls = xlsx.parse(excelPath)
     const cards = xls[0].data.slice(1).map((card: string[], index) => {
@@ -11,10 +16,10 @@ const parseExcel = function (excelPath: string): Card[] {
     const names = xls[1].data.slice(1).map((name: string[], index) => {
       return Name.fromArray([(index + 1).toString(), ...name])
     })
-    return cards
+    return { cards, names }
   } catch (error) {
     console.error(error)
-    return []
+    return { cards: [], names: [] }
   }
 }
 

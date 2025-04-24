@@ -1,0 +1,60 @@
+/* Font declarations */
+
+/* TheWaveSans-Bold */
+@font-face {
+    font-family: 'TheWaveSans-Bold';
+    src: url('../../../../resources/fonts/TheWaveSans-Bold.woff2') format('woff2'),
+        url('../../../../resources/fonts/TheWaveSans-Bold.woff') format('woff'),
+        url('../../../../resources/fonts/TheWaveSans-Bold.ttf') format('truetype'),
+        url('../../../../resources/fonts/TheWaveSans-Bold.eot') format('embedded-opentype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* CFDin-Bold */
+@font-face {
+    font-family: 'CFDin-Bold';
+    src: url('../../../../resources/fonts/CFDin-Bold.woff2') format('woff2'),
+        url('../../../../resources/fonts/CFDin-Bold.woff') format('woff'),
+        url('../../../../resources/fonts/CFDin-Bold.ttf') format('truetype'),
+        url('../../../../resources/fonts/CFDin-Bold.eot') format('embedded-opentype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Effra-Heavy */
+@font-face {
+    font-family: 'Effra-Heavy';
+    src: url('../../../../resources/fonts/Effra-Heavy.woff2') format('woff2'),
+        url('../../../../resources/fonts/Effra-Heavy.woff') format('woff'),
+        url('../../../../resources/fonts/Effra-Heavy.ttf') format('truetype'),
+        url('../../../../resources/fonts/Effra-Heavy.eot') format('embedded-opentype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* FreeScript */
+@font-face {
+    font-family: 'FreeScript';
+    src: url('../../../../resources/fonts/FreeScript.woff2') format('woff2'),
+        url('../../../../resources/fonts/FreeScript.woff') format('woff'),
+        url('../../../../resources/fonts/FreeScript.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ZonaPro-Black */
+@font-face {
+    font-family: 'ZonaPro-Black';
+    src: url('../../../../resources/fonts/ZonaPro-Black.woff2') format('woff2'),
+        url('../../../../resources/fonts/ZonaPro-Black.woff') format('woff'),
+        url('../../../../resources/fonts/ZonaPro-Black.ttf') format('truetype'),
+        url('../../../../resources/fonts/ZonaPro-Black.eot') format('embedded-opentype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}

@@ -45,6 +45,20 @@
           }
         },
         "default": {}
+      },
+      "fonts": {
+        "type": "object",
+        "properties": {
+          "slidesFont": {
+            "type": "string",
+            "default": "TheWaveSans-Bold"
+          }
+        },
+        "default": {}
+      },
+      "slideOffset": {
+        "type": "number",
+        "default": 0
       }
     },
     "default": {}
@@ -55,6 +69,22 @@
       "excelPath": {
         "type": "string",
         "default": ""
+      },
+      "currentSlideIndex": {
+        "type": "number",
+        "default": 0
+      },
+      "mainScreen": {
+        "type": ["string", "null"],
+        "default": null
+      },
+      "sideScreen": {
+        "type": ["string", "null"],
+        "default": null
+      },
+      "freezeMonitors": {
+        "type": "boolean",
+        "default": false
       }
     },
     "default": {}
