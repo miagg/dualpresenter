@@ -26,7 +26,7 @@ const data: Data = {
 
 // Initialize state if needed
 if (data.state.currentSlideIndex === undefined) data.state.currentSlideIndex = 0
-if (data.config.slideOffset === undefined) data.config.slideOffset = 0
+if (data.config.namesPrecedence === undefined) data.config.namesPrecedence = 0
 if (data.state.freezeMonitors === undefined) data.state.freezeMonitors = false
 
 // Debounce function to prevent multiple rapid reloads
@@ -220,8 +220,8 @@ function updateMainDisplayWindow(): void {
   // Create or update main display window
   const url =
     is.dev && process.env['ELECTRON_RENDERER_URL']
-      ? `${process.env['ELECTRON_RENDERER_URL']}/#/display`
-      : `file://${join(__dirname, '../renderer/index.html')}#/display`
+      ? `${process.env['ELECTRON_RENDERER_URL']}/#/mainscreen`
+      : `file://${join(__dirname, '../renderer/index.html')}#/mainscreen`
 
   if (!mainDisplayWindow || mainDisplayWindow.isDestroyed()) {
     // Create new window for main display
@@ -287,8 +287,8 @@ function updateSideDisplayWindow(): void {
   // Create or update side display window
   const url =
     is.dev && process.env['ELECTRON_RENDERER_URL']
-      ? `${process.env['ELECTRON_RENDERER_URL']}/#/display`
-      : `file://${join(__dirname, '../renderer/index.html')}#/display`
+      ? `${process.env['ELECTRON_RENDERER_URL']}/#/sidescreen`
+      : `file://${join(__dirname, '../renderer/index.html')}#/sidescreen`
 
   if (!sideDisplayWindow || sideDisplayWindow.isDestroyed()) {
     sideDisplayWindow = new BrowserWindow({
@@ -311,16 +311,9 @@ function updateSideDisplayWindow(): void {
         // Ensure fullscreen is set after content is loaded
         sideDisplayWindow.setFullScreen(true)
 
-        // Calculate offset slide index, handling both positive and negative offsets
-        const offsetIndex = calculateOffsetIndex(
-          data.state.currentSlideIndex,
-          data.config.slideOffset,
-          data.cards.length
-        )
-
         sideDisplayWindow.webContents.send('display-data', {
           type: 'side',
-          currentSlideIndex: offsetIndex,
+          currentSlideIndex: data.state.currentSlideIndex,
           cards: data.cards,
           names: data.names,
           config: data.config
@@ -336,36 +329,13 @@ function updateSideDisplayWindow(): void {
       sideDisplayWindow.setFullScreen(true)
     }
 
-    // Calculate offset slide index, handling both positive and negative offsets
-    const offsetIndex = calculateOffsetIndex(
-      data.state.currentSlideIndex,
-      data.config.slideOffset,
-      data.cards.length
-    )
-
     sideDisplayWindow.webContents.send('display-data', {
       type: 'side',
-      currentSlideIndex: offsetIndex,
+      currentSlideIndex: data.state.currentSlideIndex,
       cards: data.cards,
       names: data.names,
       config: data.config
     })
-  }
-}
-
-// Helper function to calculate offset index with boundary checking
-function calculateOffsetIndex(currentIndex: number, offset: number, totalSlides: number): number {
-  // For positive offset (side screen shows slides behind main screen)
-  if (offset > 0) {
-    return Math.max(0, currentIndex - offset)
-  }
-  // For negative offset (side screen shows slides ahead of main screen)
-  else if (offset < 0) {
-    return Math.min(totalSlides - 1, currentIndex - offset)
-  }
-  // For zero offset (side screen shows same slide as main screen)
-  else {
-    return currentIndex
   }
 }
 

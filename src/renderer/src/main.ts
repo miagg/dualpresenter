@@ -11,7 +11,8 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', name: 'home', component: App },
-    { path: '/display', name: 'display', component: Display },
+    { path: '/mainscreen', name: 'mainscreen', component: Display },
+    { path: '/sidescreen', name: 'sidescreen', component: Display },
     { path: '/settings', name: 'settings', component: Settings }
   ]
 })

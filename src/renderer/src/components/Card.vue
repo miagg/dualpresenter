@@ -147,7 +147,6 @@ const textColor = computed(() => {
 // Determine background image source - returns a URL or asset path
 const backgroundImageSrc = computed(() => {
   if (props.config?.assets?.background) {
-    console.log('Background image:', props.config.assets.background)
     return props.config.assets.background
   }
   return defaultBg

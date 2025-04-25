@@ -14,5 +14,5 @@ export interface Config {
   fonts: {
     slidesFont: string
   }
-  slideOffset: number
+  namesPrecedence: number
 }

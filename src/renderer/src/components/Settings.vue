@@ -246,20 +246,19 @@
       <div class="mt-6">
         <h3 class="text-xl font-semibold mb-4">Side Screen</h3>
         <div class="flex items-center">
-          <label class="block text-sm font-medium mr-3 text-gray-300">Side Screen Offset:</label>
+          <label class="block text-sm font-medium mr-3 text-gray-300">Precedence Slides:</label>
           <input
-            v-model.number="settings.slideOffset"
+            v-model.number="settings.namesPrecedence"
             type="number"
-            min="-20"
+            min="0"
             max="20"
             class="w-16 p-2 border rounded bg-gray-700 text-gray-200 border-gray-600"
             @change="settingsChanged"
           />
-          <span class="ml-2 text-sm text-gray-400">slides</span>
         </div>
         <p class="mt-2 text-sm text-gray-400">
-          This determines the slide offset between screens. Negative values show slides ahead of the
-          main screen, positive values show slides behind.
+          This determines how many slides ahead you want the names to appear in the side screen. For
+          example a value of 2 means the names will appear two slides ahead of the current slide.
         </p>
       </div>
     </div>
@@ -295,7 +294,7 @@ const props = defineProps({
       fonts: {
         slidesFont: 'TheWaveSans-Bold'
       },
-      slideOffset: 0
+      namesPrecedence: 0
     })
   }
 })
@@ -317,7 +316,7 @@ const settings = reactive<Config>({
   fonts: {
     slidesFont: 'TheWaveSans-Bold'
   },
-  slideOffset: 0
+  namesPrecedence: 0
 })
 
 // Store image previews as data URLs
@@ -349,7 +348,7 @@ onMounted(() => {
       settings.assets.logoInverted = config.assets.logoInverted || ''
 
       settings.fonts.slidesFont = config.fonts?.slidesFont || 'TheWaveSans-Bold'
-      settings.slideOffset = config.slideOffset || 0
+      settings.namesPrecedence = config.namesPrecedence || 0
 
       // Load image previews after settings are updated
       loadImagePreviews()
@@ -375,7 +374,7 @@ const initializeSettings = (): void => {
   settings.assets.logoInverted = props.config.assets.logoInverted || ''
 
   settings.fonts.slidesFont = props.config.fonts?.slidesFont || 'TheWaveSans-Bold'
-  settings.slideOffset = props.config.slideOffset || 0
+  settings.namesPrecedence = props.config.namesPrecedence || 0
 }
 
 // Load image previews using the IPC API
@@ -498,7 +497,7 @@ const settingsChanged = (): void => {
     fonts: {
       slidesFont: settings.fonts.slidesFont
     },
-    slideOffset: settings.slideOffset
+    namesPrecedence: settings.namesPrecedence
   }
 
   // Force an immediate save with the copy

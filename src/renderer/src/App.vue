@@ -99,24 +99,12 @@
 
           <h2 class="text-lg font-bold mb-2 text-gray-200">Side Screen</h2>
           <div class="card-preview">
-            <Card
-              v-if="cards.length > 0 && state.currentSlideIndex + 1 < cards.length"
-              :card="cards[state.currentSlideIndex + 1]"
-              :names="names"
-              :config="config"
-              :isPreview="true"
-            />
-            <div
-              v-else
-              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400"
-            >
-              No next slide
-            </div>
+            <Card :card="sideScreenCard" :names="names" :config="config" :isPreview="true" />
           </div>
 
           <!-- Display Selection -->
           <div class="display-selection mt-6">
-            <h2 class="text-lg font-bold mb-3 text-gray-200">Display Screens</h2>
+            <h2 class="text-lg font-bold mb-3 text-gray-200">Output</h2>
 
             <div class="mb-4">
               <label class="block text-sm font-medium mb-1 text-gray-300">Main Screen</label>
@@ -242,15 +230,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
 import Card from './components/Card.vue'
-import Settings from './components/Settings.vue'
-import type { Card as CardType } from './interfaces/Card'
+import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
+import { CardType } from './interfaces/Card'
 
 // Global state
-const cards = ref<CardType[]>([])
+const cards = ref<CardInterface[]>([])
 const names = ref<Name[]>([])
 const config = ref<Config>({
   colors: {
@@ -268,7 +256,7 @@ const config = ref<Config>({
   fonts: {
     slidesFont: 'TheWaveSans-Bold'
   },
-  slideOffset: 0
+  namesPrecedence: 0
 })
 const state = reactive({
   currentSlideIndex: 0,
@@ -301,6 +289,22 @@ onMounted(() => {
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('data-updated')
   window.removeEventListener('keydown', handleKeyDown)
+})
+
+const sideScreenCard = computed(() => {
+  const namesPrecedence = config.value.namesPrecedence
+  const namesCard = cards.value.find((card) => {
+    return (
+      card.type === CardType.Names &&
+      state.currentSlideIndex + namesPrecedence >= card.id - 1 &&
+      (namesPrecedence > 0 ? state.currentSlideIndex < card.id - 1 : true)
+    )
+  })
+  if (namesCard) {
+    return namesCard
+  } else {
+    return { type: CardType.Blank }
+  }
 })
 
 // Watch monitor selection changes
