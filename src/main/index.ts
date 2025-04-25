@@ -446,10 +446,18 @@ function registerGlobalShortcuts(): void {
 }
 
 function createWindow(): void {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
+  // Load saved window state from config
+  const savedWindowState = data.state.windowBounds || {
     width: 1024,
-    height: 768,
+    height: 768
+  }
+
+  // Create the browser window with saved dimensions
+  mainWindow = new BrowserWindow({
+    width: savedWindowState.width,
+    height: savedWindowState.height,
+    x: savedWindowState.x,
+    y: savedWindowState.y,
     minWidth: 1024,
     minHeight: 768,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -457,6 +465,27 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
+  })
+
+  // Check if window should be maximized
+  if (data.state.isMaximized) {
+    mainWindow.maximize()
+  }
+
+  // Save window position and size when changed
+  mainWindow.on('resize', saveWindowState)
+  mainWindow.on('move', saveWindowState)
+
+  // Save maximize/unmaximize state
+  mainWindow.on('maximize', () => {
+    data.state.isMaximized = true
+    config.set('state.isMaximized', true)
+  })
+
+  mainWindow.on('unmaximize', () => {
+    data.state.isMaximized = false
+    config.set('state.isMaximized', false)
+    saveWindowState()
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -475,6 +504,17 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+// Function to save window state (position and size)
+function saveWindowState(): void {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMaximized()) {
+    return
+  }
+
+  const bounds = mainWindow.getBounds()
+  data.state.windowBounds = bounds
+  config.set('state.windowBounds', bounds)
 }
 
 // This method will be called when Electron has finished

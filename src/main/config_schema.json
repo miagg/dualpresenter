@@ -85,6 +85,30 @@
       "freezeMonitors": {
         "type": "boolean",
         "default": false
+      },
+      "windowBounds": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number",
+            "default": 1024
+          },
+          "height": {
+            "type": "number",
+            "default": 768
+          }
+        },
+        "default": {}
+      },
+      "isMaximized": {
+        "type": "boolean",
+        "default": false
       }
     },
     "default": {}
