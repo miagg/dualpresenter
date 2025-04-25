@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, watchEffect } from 'vue'
 import type { PropType } from 'vue'
 import { CardType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
@@ -88,6 +88,12 @@ import defaultBg from '../../../../resources/bg.png'
 import defaultBg2 from '../../../../resources/bg2.png'
 import defaultLogo from '../../../../resources/logo.png'
 import defaultLogoWhite from '../../../../resources/logo_white.png'
+
+// Reactive refs to store loaded image data URLs
+const backgroundImageDataUrl = ref<string | null>(null)
+const namesBackgroundImageDataUrl = ref<string | null>(null)
+const logoImageDataUrl = ref<string | null>(null)
+const logoInvertedImageDataUrl = ref<string | null>(null)
 
 const props = defineProps({
   card: {
@@ -144,22 +150,6 @@ const textColor = computed(() => {
   }
 })
 
-// Determine background image source - returns a URL or asset path
-const backgroundImageSrc = computed(() => {
-  if (props.config?.assets?.background) {
-    return props.config.assets.background
-  }
-  return defaultBg
-})
-
-// Specific background for Names cards - returns a URL or asset path
-const namesBackgroundImageSrc = computed(() => {
-  if (props.config?.assets?.backgroundNames) {
-    return props.config.assets.backgroundNames
-  }
-  return defaultBg2
-})
-
 // Helper function to determine if a color is dark
 const isColorDark = (color: string): boolean => {
   // Handle hex colors
@@ -177,26 +167,24 @@ const isColorDark = (color: string): boolean => {
   return false
 }
 
-// Determine which logo to use based on background darkness
-const logoSrc = computed(() => {
-  // For Names card, use secondary colors to determine darkness
-  if (props.card.type === CardType.Names) {
-    // Check if we have a dark background color or image
-    if (isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')) {
-      // Use inverted logo for dark backgrounds
-      return props.config?.assets?.logoInverted || props.config?.assets?.logo || defaultLogoWhite
-    }
-  } else {
-    // For other card types, use primary colors to determine darkness
-    if (isColorDark(props.config?.colors?.primaryBackground || '#061D9F')) {
-      // Use inverted logo for dark backgrounds
-      return props.config?.assets?.logoInverted || props.config?.assets?.logo || defaultLogoWhite
-    }
+// Function to load image from file path and convert to data URL
+const loadImageAsDataUrl = async (filePath: string): Promise<string | null> => {
+  if (!filePath) return null
+
+  // If it's already a data URL or a bundled resource (starts with /)
+  if (filePath.startsWith('data:') || filePath.startsWith('/@fs')) {
+    return filePath
   }
 
-  // Default to regular logo
-  return props.config?.assets?.logo || defaultLogo
-})
+  try {
+    // Use the Electron API to load the image from file path
+    const dataUrl = await window.api.loadImageAsDataUrl(filePath)
+    return dataUrl
+  } catch (error) {
+    console.error('Error loading image:', error, filePath)
+    return null
+  }
+}
 
 // Apply selected font to slides
 const slideStyles = computed(() => {
@@ -207,6 +195,101 @@ const slideStyles = computed(() => {
     fontFamily: fontName,
     // Apply with !important to override any other styles
     fontFamilyImportant: `${fontName} !important`
+  }
+})
+
+// Computed properties for images that use the data URLs
+const backgroundImageSrc = computed(() => {
+  return backgroundImageDataUrl.value || defaultBg
+})
+
+const namesBackgroundImageSrc = computed(() => {
+  return namesBackgroundImageDataUrl.value || defaultBg2
+})
+
+const logoSrc = computed(() => {
+  // For Names card, use secondary colors to determine darkness
+  if (props.card.type === CardType.Names) {
+    // Check if we have a dark background color
+    if (isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')) {
+      // Use inverted logo for dark backgrounds
+      return logoInvertedImageDataUrl.value || logoImageDataUrl.value || defaultLogoWhite
+    }
+  } else {
+    // For other card types, use primary colors to determine darkness
+    if (isColorDark(props.config?.colors?.primaryBackground || '#061D9F')) {
+      // Use inverted logo for dark backgrounds
+      return logoInvertedImageDataUrl.value || logoImageDataUrl.value || defaultLogoWhite
+    }
+  }
+
+  // Default to regular logo
+  return logoImageDataUrl.value || defaultLogo
+})
+
+// Use watchEffect to react to changes in config
+watchEffect(async () => {
+  // For background image
+  if (props.config?.assets?.background) {
+    backgroundImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.background)
+  } else {
+    backgroundImageDataUrl.value = null
+  }
+
+  // For names background image
+  if (props.config?.assets?.backgroundNames) {
+    namesBackgroundImageDataUrl.value = await loadImageAsDataUrl(
+      props.config.assets.backgroundNames
+    )
+  } else {
+    namesBackgroundImageDataUrl.value = null
+  }
+
+  // For logo
+  if (props.config?.assets?.logo) {
+    logoImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logo)
+  } else {
+    logoImageDataUrl.value = null
+  }
+
+  // For inverted logo
+  if (props.config?.assets?.logoInverted) {
+    logoInvertedImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logoInverted)
+  } else {
+    logoInvertedImageDataUrl.value = null
+  }
+})
+
+// Also load images on mount to ensure they're loaded immediately
+onMounted(async () => {
+  // For background image
+  if (props.config?.assets?.background) {
+    backgroundImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.background)
+  } else {
+    backgroundImageDataUrl.value = null
+  }
+
+  // For names background image
+  if (props.config?.assets?.backgroundNames) {
+    namesBackgroundImageDataUrl.value = await loadImageAsDataUrl(
+      props.config.assets.backgroundNames
+    )
+  } else {
+    namesBackgroundImageDataUrl.value = null
+  }
+
+  // For logo
+  if (props.config?.assets?.logo) {
+    logoImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logo)
+  } else {
+    logoImageDataUrl.value = null
+  }
+
+  // For inverted logo
+  if (props.config?.assets?.logoInverted) {
+    logoInvertedImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logoInverted)
+  } else {
+    logoInvertedImageDataUrl.value = null
   }
 })
 </script>

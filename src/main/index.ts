@@ -7,6 +7,7 @@ import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import fileWatcher from 'chokidar'
 import fs from 'fs'
+import path from 'path'
 
 let mainWindow: BrowserWindow | null = null
 let mainDisplayWindow: BrowserWindow | null = null
@@ -658,24 +659,37 @@ app.whenReady().then(() => {
   ipcMain.handle('get-image-data', async (_, filePath) => {
     try {
       if (!filePath || typeof filePath !== 'string') {
+        console.error('Invalid file path:', filePath)
         return null
       }
 
+      // Normalize path - ensure it's an absolute path
+      let resolvedPath = filePath
+      if (!path.isAbsolute(filePath)) {
+        // If it's a relative path, resolve it relative to the app directory
+        resolvedPath = path.resolve(app.getAppPath(), filePath)
+      }
+
       // Check if file exists
-      if (!fs.existsSync(filePath)) {
-        console.error(`File does not exist: ${filePath}`)
+      if (!fs.existsSync(resolvedPath)) {
+        console.error(`File does not exist: ${resolvedPath}`)
         return null
       }
 
       // Read the file
-      const data = fs.readFileSync(filePath)
+      const data = fs.readFileSync(resolvedPath)
 
       // Determine mime type based on extension
       let mimeType = 'image/png' // Default
-      if (filePath.toLowerCase().endsWith('.jpg') || filePath.toLowerCase().endsWith('.jpeg')) {
+      if (
+        resolvedPath.toLowerCase().endsWith('.jpg') ||
+        resolvedPath.toLowerCase().endsWith('.jpeg')
+      ) {
         mimeType = 'image/jpeg'
-      } else if (filePath.toLowerCase().endsWith('.gif')) {
+      } else if (resolvedPath.toLowerCase().endsWith('.gif')) {
         mimeType = 'image/gif'
+      } else if (resolvedPath.toLowerCase().endsWith('.svg')) {
+        mimeType = 'image/svg+xml'
       }
 
       // Convert to data URL
