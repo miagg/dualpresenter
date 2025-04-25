@@ -126,7 +126,9 @@
               >
                 <option :value="null">None</option>
                 <option
-                  v-for="monitor in monitors.filter((m) => !m.isPrimary)"
+                  v-for="monitor in monitors.filter(
+                    (m) => !m.isPrimary && m.id.toString() !== sideScreen
+                  )"
                   :key="monitor.id"
                   :value="monitor.id.toString()"
                 >

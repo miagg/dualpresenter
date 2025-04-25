@@ -73,27 +73,8 @@ function updateMonitorList(): void {
     isPrimary: screen.getPrimaryDisplay().id === monitor.id
   }))
 
-  // Auto-assign monitors if not already assigned
-  if (!data.state.mainScreen && data.monitors.length > 1) {
-    // Find a non-primary display for the main screen
-    const nonPrimaryDisplay = data.monitors.find((m) => !m.isPrimary)
-    if (nonPrimaryDisplay) {
-      data.state.mainScreen = nonPrimaryDisplay.id.toString()
-
-      // Set another non-primary display as side screen if available
-      if (data.monitors.length > 2) {
-        const sideMonitor = data.monitors.find(
-          (m) => !m.isPrimary && m.id.toString() !== data.state.mainScreen
-        )
-        data.state.sideScreen = sideMonitor?.id.toString() || null
-      }
-
-      // Save to config
-      config.set('state.mainScreen', data.state.mainScreen)
-      config.set('state.sideScreen', data.state.sideScreen)
-    }
-  }
-
+  // No auto-assignment of monitors anymore
+  // Just send the updated monitor list to the renderer
   sendData()
 }
 
@@ -274,6 +255,11 @@ function updateMainDisplayWindow(): void {
     // Reposition if needed
     mainDisplayWindow.setBounds(targetMonitor.bounds)
 
+    // Ensure fullscreen is maintained
+    if (!mainDisplayWindow.isFullScreen()) {
+      mainDisplayWindow.setFullScreen(true)
+    }
+
     // Update content
     mainDisplayWindow.webContents.send('display-data', {
       type: 'main',
@@ -321,7 +307,10 @@ function updateSideDisplayWindow(): void {
     sideDisplayWindow.loadURL(url)
 
     sideDisplayWindow.webContents.on('did-finish-load', () => {
-      if (sideDisplayWindow) {
+      if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+        // Ensure fullscreen is set after content is loaded
+        sideDisplayWindow.setFullScreen(true)
+
         // Calculate offset slide index, handling both positive and negative offsets
         const offsetIndex = calculateOffsetIndex(
           data.state.currentSlideIndex,
@@ -341,6 +330,11 @@ function updateSideDisplayWindow(): void {
   } else {
     // Reposition if needed
     sideDisplayWindow.setBounds(targetMonitor.bounds)
+
+    // Ensure fullscreen is maintained
+    if (!sideDisplayWindow.isFullScreen()) {
+      sideDisplayWindow.setFullScreen(true)
+    }
 
     // Calculate offset slide index, handling both positive and negative offsets
     const offsetIndex = calculateOffsetIndex(
