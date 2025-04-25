@@ -17,10 +17,10 @@
         v-if="backgroundImageSrc"
         :src="backgroundImageSrc"
         alt="Background"
-        class="absolute inset-0 object-cover w-full h-full -z-10"
+        class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="max-h-1/4 max-w-1/2" />
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="max-h-1/4 max-w-1/2 z-10" />
     </div>
 
     <!-- Title Card -->
@@ -33,12 +33,12 @@
         v-if="backgroundImageSrc"
         :src="backgroundImageSrc"
         alt="Background"
-        class="absolute inset-0 object-cover w-full h-full -z-10"
+        class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-4 left-4 max-h-16" />
-      <h1 v-if="card.title" class="text-5xl font-bold text-center mb-4">{{ card.title }}</h1>
-      <h2 v-if="card.subtitle" class="text-3xl font-light text-center">{{ card.subtitle }}</h2>
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-4 left-4 max-h-16 z-10" />
+      <h1 v-if="card.title" class="text-5xl font-bold text-center mb-4 z-10">{{ card.title }}</h1>
+      <h2 v-if="card.subtitle" class="text-3xl font-light text-center z-10">{{ card.subtitle }}</h2>
     </div>
 
     <!-- Names Card -->
@@ -48,21 +48,21 @@
         v-if="namesBackgroundImageSrc"
         :src="namesBackgroundImageSrc"
         alt="Background"
-        class="absolute inset-0 object-cover w-full h-full -z-10"
+        class="absolute inset-0 object-cover w-full h-full"
       />
       <img
         v-else-if="backgroundImageSrc"
         :src="backgroundImageSrc"
         alt="Background"
-        class="absolute inset-0 object-cover w-full h-full -z-10"
+        class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-4 left-4 max-h-16" />
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-4 left-4 max-h-16 z-10" />
 
-      <h1 v-if="card.title" class="text-4xl font-bold mb-2">{{ card.title }}</h1>
-      <h2 v-if="card.subtitle" class="text-2xl font-light mb-6">{{ card.subtitle }}</h2>
+      <h1 v-if="card.title" class="text-4xl font-bold mb-2 z-10">{{ card.title }}</h1>
+      <h2 v-if="card.subtitle" class="text-2xl font-light mb-6 z-10">{{ card.subtitle }}</h2>
 
-      <div class="flex-grow overflow-auto">
+      <div class="flex-grow overflow-auto z-10">
         <div v-if="filteredNames.length > 0" class="grid grid-cols-2 gap-4">
           <div v-for="name in filteredNames" :key="name.id" class="text-xl">
             {{ name.name }}
@@ -182,20 +182,13 @@ const logoSrc = computed(() => {
   // For Names card, use secondary colors to determine darkness
   if (props.card.type === CardType.Names) {
     // Check if we have a dark background color or image
-    if (
-      props.config?.assets?.backgroundNames ||
-      props.config?.assets?.background ||
-      isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')
-    ) {
+    if (isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')) {
       // Use inverted logo for dark backgrounds
       return props.config?.assets?.logoInverted || props.config?.assets?.logo || defaultLogoWhite
     }
   } else {
     // For other card types, use primary colors to determine darkness
-    if (
-      props.config?.assets?.background ||
-      isColorDark(props.config?.colors?.primaryBackground || '#061D9F')
-    ) {
+    if (isColorDark(props.config?.colors?.primaryBackground || '#061D9F')) {
       // Use inverted logo for dark backgrounds
       return props.config?.assets?.logoInverted || props.config?.assets?.logo || defaultLogoWhite
     }
