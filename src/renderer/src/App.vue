@@ -37,7 +37,11 @@
           Refresh
         </button>
 
-        <button @click="toggleFreeze" class="btn" :class="{ 'bg-red-600': state.freezeMonitors }">
+        <button
+          @click="toggleFreeze"
+          class="btn"
+          :class="{ '!bg-red-500 animate-pulse': state.freezeMonitors }"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5 mr-1"

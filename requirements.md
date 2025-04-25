@@ -1,6 +1,6 @@
 # App Description
 
-This app will project slides on an external monitor based on an excel file. Each excel row will represent a slide that can be either a title card or a names card. The main app gui will display the current slide and the next slide and then the rest slides in list mode. You can navigate between slides using the mouse or arrow keys from keyboard.
+This app will project slides on an external monitor based on an excel file. Each excel row will represent a slide that can be either a title card or a names card. The main app gui will display the current slide and the side screen slide and then the rest slides in list mode. You can navigate between slides using the mouse or arrow keys from keyboard.
 
 # Technology Stack
 
@@ -16,13 +16,12 @@ This app will project slides on an external monitor based on an excel file. Each
 ## Display slides on an external monitor (main screen)
 
 - Slides will be vue components using vh and vw units so that they can be displayed on any screen size including thumbnails
-
-- Automatically detect external monitors and assign them as main and side screens unless already assigned (retrieve from last state)
+- Automatically detect external monitors and assign them as main and side screens unless already assigned (retrieve from last state). Do not allow selecting the same monitor for both main and side screens.
 - Display slides in full screen on main screen
 
 ## Display slides on second external monitor when available (side screen)
 
-- Slides should be offset by a user customizable value (e.g. -2 slides)
+- Only names slides will be displayed on the side screen using an slides offset defined in the settings. (For example if the user has set an offset of -2, the the side screen will display the name slides two slides earlier than the main screen and not on the same slide)
 
 ## Read slides from an excel file
 
