@@ -84,12 +84,11 @@
         <div class="sidebar-content overflow-y-auto h-full">
           <h2 class="text-lg font-bold mb-2 text-gray-200">Main Screen</h2>
           <div class="card-preview mb-4">
-            <Card
+            <SlidePreview
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
               :card="cards[state.currentSlideIndex]"
               :names="names"
               :config="config"
-              :isPreview="true"
             />
             <div
               v-else
@@ -101,7 +100,7 @@
 
           <h2 class="text-lg font-bold mb-2 text-gray-200">Side Screen</h2>
           <div class="card-preview">
-            <Card :card="sideScreenCard" :names="names" :config="config" :isPreview="true" />
+            <SlidePreview :card="sideScreenCard" :names="names" :config="config" />
           </div>
 
           <!-- Display Selection -->
@@ -168,7 +167,7 @@
             @click="goToSlide(index)"
           >
             <div class="slide-thumbnail w-40 mr-4">
-              <Card :card="card" :names="names" :config="config" :isPreview="true" />
+              <SlidePreview :card="card" :names="names" :config="config" />
             </div>
 
             <div class="slide-info flex-grow">
@@ -233,7 +232,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
-import Card from './components/Card.vue'
+import SlidePreview from './components/SlidePreview.vue'
 import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
@@ -267,6 +266,7 @@ const state = reactive({
 const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
+const regeneratingPreviews = ref(false)
 
 // Handle data updates from main process
 onMounted(() => {
@@ -281,6 +281,20 @@ onMounted(() => {
     sideScreen.value = data.state.sideScreen
   })
 
+  // Listen for regenerate-previews events
+  window.electron.ipcRenderer.on('regenerate-previews', () => {
+    regeneratingPreviews.value = true
+    // This flag will be passed to SlidePreview components to force regeneration
+    setTimeout(() => {
+      regeneratingPreviews.value = false
+    }, 5000) // Reset after 5 seconds to avoid unnecessary regenerations
+  })
+
+  // Listen for clear-previews command from the application menu
+  window.electron.ipcRenderer.on('clear-previews', () => {
+    clearPreviews()
+  })
+
   // Load initial data
   window.electron.ipcRenderer.send('get-data')
 
@@ -290,6 +304,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('data-updated')
+  window.electron.ipcRenderer.removeAllListeners('regenerate-previews')
   window.removeEventListener('keydown', handleKeyDown)
 })
 
@@ -371,6 +386,27 @@ const updateConfig = (newConfig: Config) => {
 
   // Send to main process to persist and update displays
   window.electron.ipcRenderer.send('update-config', configCopy)
+}
+
+const clearPreviews = async () => {
+  try {
+    // Import the utility function
+    const { clearAllSlidePreviewImages } = await import('./utils/fileUtils')
+
+    // Call the function to clear previews (this will show confirmation dialog)
+    const deletedCount = await clearAllSlidePreviewImages()
+
+    // Notify user of the result
+    if (deletedCount > 0) {
+      // Trigger regeneration of previews for current visible slides
+      regeneratingPreviews.value = true
+      setTimeout(() => {
+        regeneratingPreviews.value = false
+      }, 500)
+    }
+  } catch (error) {
+    console.error('Error clearing preview images:', error)
+  }
 }
 </script>
 

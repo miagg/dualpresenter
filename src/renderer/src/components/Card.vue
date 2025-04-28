@@ -6,6 +6,7 @@
       backgroundColor: backgroundColor,
       color: textColor
     }"
+    ref="cardElement"
   >
     <!-- Blank Card -->
     <div
@@ -84,11 +85,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watchEffect } from 'vue'
+import { computed, ref, onMounted, watchEffect, nextTick } from 'vue'
 import type { PropType } from 'vue'
 import { CardType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
+import { generateSlideHash, generateSlidePreview, slidePreviewExists } from '../utils/fileUtils'
 
 // Import default assets
 import defaultBg from '../../../../resources/bg.png'
@@ -96,11 +98,20 @@ import defaultBg2 from '../../../../resources/bg2.png'
 import defaultLogo from '../../../../resources/logo.png'
 import defaultLogoWhite from '../../../../resources/logo_white.png'
 
+// Reference to the card DOM element
+const cardElement = ref<HTMLElement | null>(null)
+
 // Reactive refs to store loaded image data URLs
 const backgroundImageDataUrl = ref<string | null>(null)
 const namesBackgroundImageDataUrl = ref<string | null>(null)
 const logoImageDataUrl = ref<string | null>(null)
 const logoInvertedImageDataUrl = ref<string | null>(null)
+
+// Add ref for preview image URL
+const previewImageUrl = ref<string | null>(null)
+
+// Define emits for when a preview is generated
+const emit = defineEmits(['preview-generated'])
 
 const props = defineProps({
   card: {
@@ -116,6 +127,10 @@ const props = defineProps({
     default: null
   },
   isPreview: {
+    type: Boolean,
+    default: false
+  },
+  generatePreview: {
     type: Boolean,
     default: false
   }
@@ -234,6 +249,70 @@ const logoSrc = computed(() => {
   return logoImageDataUrl.value || defaultLogo
 })
 
+// Generate a hash for the current slide
+const generateHash = (): string => {
+  if (!props.card || !props.config) return ''
+  return generateSlideHash(props.card, props.names, props.config)
+}
+
+// Generate a preview image for the current slide
+const generatePreviewImage = async (): Promise<string | null> => {
+  if (!cardElement.value) return null
+
+  try {
+    // Make sure the card is properly rendered and has content
+    await nextTick()
+
+    // Force card to be rendered with proper dimensions
+    cardElement.value.style.width = '1920px'
+    cardElement.value.style.height = '1080px'
+    cardElement.value.style.position = 'fixed'
+    cardElement.value.style.top = '0'
+    cardElement.value.style.left = '0'
+    cardElement.value.style.visibility = 'visible'
+    cardElement.value.style.zIndex = '-9999'
+
+    // Force a repaint
+    const hash = generateHash()
+
+    // Ensure all images are loaded
+    const images = cardElement.value.querySelectorAll('img')
+    if (images.length > 0) {
+      await Promise.all(
+        Array.from(images).map((img) =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+                img.onload = resolve
+                img.onerror = resolve // Continue even if image fails to load
+              })
+        )
+      )
+    }
+
+    // Wait a bit to ensure rendering is complete
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Generate the preview
+    const path = await generateSlidePreview(cardElement.value, hash)
+
+    // Reset styles
+    cardElement.value.style.position = ''
+    cardElement.value.style.top = ''
+    cardElement.value.style.left = ''
+    cardElement.value.style.zIndex = ''
+    cardElement.value.style.visibility = ''
+    cardElement.value.style.width = ''
+    cardElement.value.style.height = ''
+
+    emit('preview-generated', { hash, path })
+    return path
+  } catch (error) {
+    console.error('Error generating preview image:', error)
+    return null
+  }
+}
+
 // Use watchEffect to react to changes in config
 watchEffect(async () => {
   // For background image
@@ -298,5 +377,19 @@ onMounted(async () => {
   } else {
     logoInvertedImageDataUrl.value = null
   }
+
+  // Generate preview if requested
+  if (props.generatePreview) {
+    // Wait for the next render cycle to ensure all content is properly loaded and rendered
+    nextTick(async () => {
+      await generatePreviewImage()
+    })
+  }
+})
+
+// Expose the generatePreviewImage method
+defineExpose({
+  generatePreviewImage,
+  generateHash
 })
 </script>

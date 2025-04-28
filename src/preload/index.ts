@@ -5,6 +5,21 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   loadImageAsDataUrl: (filePath: string) => {
     return ipcRenderer.invoke('get-image-data', filePath)
+  },
+  saveSlidePreview: (dataUrl: string, hash: string) => {
+    return ipcRenderer.invoke('save-slide-preview', dataUrl, hash)
+  },
+  checkSlidePreview: (hash: string) => {
+    return ipcRenderer.invoke('check-slide-preview', hash)
+  },
+  getSlidePreviewPath: (hash: string) => {
+    return ipcRenderer.invoke('get-slide-preview-path', hash)
+  },
+  clearAllSlidePreviewImages: () => {
+    return ipcRenderer.invoke('clear-all-slide-previews')
+  },
+  showConfirmDialog: (title: string, message: string, buttons: string[]) => {
+    return ipcRenderer.invoke('show-confirm-dialog', title, message, buttons)
   }
 }
 

@@ -1,4 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain, screen, dialog, globalShortcut } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  dialog,
+  globalShortcut,
+  Menu,
+  MenuItem
+} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -17,6 +27,14 @@ let watcher: fileWatcher.FSWatcher | null = null
 let lastModifiedTime: Date | null = null
 let fileCheckInterval: NodeJS.Timeout | null = null
 let debounceTimer: NodeJS.Timeout | null = null
+
+// Directory for slide previews
+const previewsDir = path.join(app.getPath('userData'), 'slide-previews')
+
+// Create previews directory if it doesn't exist
+if (!fs.existsSync(previewsDir)) {
+  fs.mkdirSync(previewsDir, { recursive: true })
+}
 
 const data: Data = {
   cards: [],
@@ -154,6 +172,11 @@ function loadData(): void {
   if (data.state.currentSlideIndex >= data.cards.length) {
     data.state.currentSlideIndex = 0
     config.set('state.currentSlideIndex', 0)
+  }
+
+  // After loading data, notify renderer to regenerate all slide previews
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('regenerate-previews')
   }
 
   sendData()
@@ -390,6 +413,179 @@ function createSettingsWindow(): void {
   })
 }
 
+// Create application menu with Actions menu
+function createApplicationMenu(): void {
+  // Get the default menu from Electron
+  const defaultMenu = Menu.getApplicationMenu()
+  const menuItems = defaultMenu ? Array.from(defaultMenu.items) : []
+
+  // Find existing menus or create new ones
+  let fileMenu = menuItems.find((item) => item.role === 'filemenu' || item.label === 'File')
+  let editMenu = menuItems.find((item) => item.role === 'editmenu' || item.label === 'Edit')
+  let viewMenu = menuItems.find((item) => item.role === 'viewmenu' || item.label === 'View')
+
+  // Create our custom Actions menu
+  const actionsMenu: Electron.MenuItemConstructorOptions = {
+    label: 'Actions',
+    submenu: [
+      {
+        label: 'Delete All Previews',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('clear-previews')
+          }
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Freeze Output',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('toggle-freeze')
+          }
+        }
+      }
+    ]
+  }
+
+  // Create our custom Navigation menu
+  const navigationMenu: Electron.MenuItemConstructorOptions = {
+    label: 'Navigation',
+    submenu: [
+      {
+        label: 'Previous Slide',
+        accelerator: 'Left',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('prev-slide')
+          }
+        }
+      },
+      {
+        label: 'Next Slide',
+        accelerator: 'Right',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('next-slide')
+          }
+        }
+      }
+    ]
+  }
+
+  // Add our custom items to the File menu if it exists,
+  // or create a new File menu with our custom items
+  if (fileMenu) {
+    // Get the submenu of the file menu
+    const fileSubmenu = fileMenu.submenu as Menu
+    if (fileSubmenu) {
+      // Insert our custom items at the beginning of the file menu
+      fileSubmenu.insert(
+        0,
+        new MenuItem({
+          label: 'Open Excel File...',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('open-excel')
+            }
+          }
+        })
+      )
+
+      fileSubmenu.insert(
+        1,
+        new MenuItem({
+          label: 'Refresh Data',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('refresh-data')
+            }
+          }
+        })
+      )
+
+      fileSubmenu.insert(2, new MenuItem({ type: 'separator' }))
+
+      fileSubmenu.insert(
+        3,
+        new MenuItem({
+          label: 'Settings',
+          accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
+          click: () => {
+            createSettingsWindow()
+          }
+        })
+      )
+
+      fileSubmenu.insert(4, new MenuItem({ type: 'separator' }))
+    }
+  } else {
+    // Create a new File menu
+    fileMenu = {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Excel File...',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('open-excel')
+            }
+          }
+        },
+        {
+          label: 'Refresh Data',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('refresh-data')
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Settings',
+          accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
+          click: () => {
+            createSettingsWindow()
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }
+    menuItems.unshift(fileMenu as Electron.MenuItem)
+  }
+
+  // Insert our custom menus after the Edit menu
+  let insertIndex = menuItems.findIndex((item) => item.role === 'editmenu' || item.label === 'Edit')
+  if (insertIndex === -1) {
+    insertIndex = fileMenu ? 1 : 0
+  } else {
+    insertIndex++
+  }
+
+  // Create new menu instances for our custom menus
+  const actionsMenuItem = new MenuItem(actionsMenu)
+  const navigationMenuItem = new MenuItem(navigationMenu)
+
+  // Insert our custom menus at the appropriate position
+  menuItems.splice(insertIndex, 0, actionsMenuItem, navigationMenuItem)
+
+  // Build the new menu
+  const menu = Menu.buildFromTemplate(
+    menuItems.map((item) => {
+      // Convert MenuItems back to MenuItemConstructorOptions
+      return item
+    })
+  )
+
+  // Set as application menu
+  Menu.setApplicationMenu(menu)
+}
+
 // Register global shortcuts for slide navigation
 function registerGlobalShortcuts(): void {
   // Unregister any existing shortcuts first to avoid duplicates
@@ -622,6 +818,11 @@ app.whenReady().then(() => {
     sendData()
     updateDisplayWindows()
 
+    // Trigger regeneration of all slide previews when config changes
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('regenerate-previews')
+    }
+
     // Update settings window if it's open
     if (settingsWindow && !settingsWindow.isDestroyed()) {
       settingsWindow.webContents.send('settings-data', data.config)
@@ -701,8 +902,88 @@ app.whenReady().then(() => {
     }
   })
 
+  // Add handlers for slide preview operations
+  ipcMain.handle('save-slide-preview', async (_, dataUrl: string, hash: string) => {
+    try {
+      // Parse the data URL to get the base64 data
+      const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
+      if (!matches || matches.length !== 3) {
+        throw new Error('Invalid data URL format')
+      }
+
+      const imageData = Buffer.from(matches[2], 'base64')
+      const filePath = path.join(previewsDir, `slide_preview_${hash}.png`)
+
+      // Write the file
+      fs.writeFileSync(filePath, imageData)
+
+      return filePath
+    } catch (error) {
+      console.error('Error saving slide preview:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('check-slide-preview', async (_, hash: string) => {
+    const filePath = path.join(previewsDir, `slide_preview_${hash}.png`)
+    return fs.existsSync(filePath)
+  })
+
+  ipcMain.handle('get-slide-preview-path', async (_, hash: string) => {
+    return path.join(previewsDir, `slide_preview_${hash}.png`)
+  })
+
+  // New handler for showing confirmation dialog
+  ipcMain.handle(
+    'show-confirm-dialog',
+    async (_, title: string, message: string, buttons: string[]) => {
+      const { response } = await dialog.showMessageBox({
+        type: 'question',
+        title,
+        message,
+        buttons,
+        defaultId: 0,
+        cancelId: 0
+      })
+
+      // Return true if the non-cancel button was clicked (typically index 1 for "Delete All")
+      return response === 1
+    }
+  )
+
+  // New handler for clearing all slide preview images
+  ipcMain.handle('clear-all-slide-previews', async () => {
+    try {
+      // Get all files in the previews directory
+      const files = fs.readdirSync(previewsDir)
+
+      // Filter for PNG files that match the slide preview pattern
+      const previewFiles = files.filter(
+        (file) => file.startsWith('slide_preview_') && file.endsWith('.png')
+      )
+
+      // Keep track of how many files we delete
+      let deletedCount = 0
+
+      // Delete each file
+      for (const file of previewFiles) {
+        const filePath = path.join(previewsDir, file)
+        fs.unlinkSync(filePath)
+        deletedCount++
+      }
+
+      return deletedCount
+    } catch (error) {
+      console.error('Error clearing slide preview images:', error)
+      throw error
+    }
+  })
+
   // Register global shortcuts when app is ready
   registerGlobalShortcuts()
+
+  // Create application menu
+  createApplicationMenu()
 
   createWindow()
   loadData()
