@@ -21,9 +21,6 @@ export function generateSlideHash(card: Card, names: Name[], config: Config): st
     group: card.group,
     from: card.from,
     until: card.until,
-    // Include relevant parts of config
-    colors: config.colors,
-    fonts: config.fonts,
     // For names cards, include the filtered names
     names: card.group
       ? names.filter(
@@ -123,16 +120,21 @@ export function getSlidePreviewPath(hash: string): string {
 
 /**
  * Clears all slide preview images after confirmation
+ * @param skipConfirmation If true, skips the confirmation dialog
  * @returns Promise that resolves to number of files deleted
  */
-export async function clearAllSlidePreviewImages(): Promise<number> {
+export async function clearAllSlidePreviewImages(skipConfirmation = false): Promise<number> {
   try {
-    // Show confirmation dialog
-    const confirmed = await window.api.showConfirmDialog(
-      'Clear Slide Previews',
-      'Are you sure you want to delete all slide preview images? This cannot be undone.',
-      ['Cancel', 'Delete All']
-    )
+    // Show confirmation dialog unless skipped
+    let confirmed = skipConfirmation
+
+    if (!skipConfirmation) {
+      confirmed = await window.api.showConfirmDialog(
+        'Clear Slide Previews',
+        'Are you sure you want to delete all slide preview images? This cannot be undone.',
+        ['Cancel', 'Delete All']
+      )
+    }
 
     if (!confirmed) {
       return 0

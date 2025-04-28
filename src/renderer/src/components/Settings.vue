@@ -481,7 +481,7 @@ watch(
   { deep: true, immediate: true }
 )
 
-const settingsChanged = (): void => {
+const settingsChanged = async (): Promise<void> => {
   // Create a complete deep copy to ensure we're working with a new object
   const settingsCopy = {
     colors: {
@@ -500,6 +500,17 @@ const settingsChanged = (): void => {
       slidesFont: settings.fonts.slidesFont
     },
     namesPrecedence: settings.namesPrecedence
+  }
+
+  // Clear all slide previews without confirmation dialog
+  try {
+    // Import the utility function
+    const { clearAllSlidePreviewImages } = await import('../utils/fileUtils')
+
+    // Clear all previews immediately without confirmation dialog
+    await clearAllSlidePreviewImages(true)
+  } catch (error) {
+    console.error('Error clearing preview images:', error)
   }
 
   // Force an immediate save with the copy
