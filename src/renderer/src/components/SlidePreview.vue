@@ -122,7 +122,6 @@ const generatePreview = async () => {
   if (!cardRef.value) return
 
   try {
-    console.log('Generating preview for card:', props.card)
     await nextTick() // Ensure component is fully rendered
     await cardRef.value.generatePreviewImage()
     needsGeneration.value = false
