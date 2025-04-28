@@ -1,5 +1,7 @@
 <template>
-  <div class="settings-panel bg-gray-800 w-full h-full overflow-hidden p-6 text-gray-200">
+  <div
+    class="settings-panel bg-gray-800 w-full h-full overflow-hidden p-6 text-gray-200 select-none"
+  >
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold">Settings</h2>
       <button

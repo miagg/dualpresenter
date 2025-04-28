@@ -36,8 +36,15 @@
         class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-4 left-4 max-h-16 z-10" />
-      <h1 v-if="card.title" class="text-5xl font-bold text-center mb-4 z-10">{{ card.title }}</h1>
+      <img
+        v-if="logoSrc"
+        :src="logoSrc"
+        alt="Logo"
+        class="absolute top-[4%] left-[3%] w-[15%] z-10"
+      />
+      <h1 v-if="card.title" class="text-5xl font-bold text-center mb-4 z-10">
+        {{ card.title }}
+      </h1>
       <h2 v-if="card.subtitle" class="text-3xl font-light text-center z-10">{{ card.subtitle }}</h2>
     </div>
 
@@ -293,15 +300,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.max-h-1\/4 {
-  max-height: 25%;
-}
-.max-w-1\/2 {
-  max-width: 50%;
-}
-.-z-10 {
-  z-index: -10;
-}
-</style>

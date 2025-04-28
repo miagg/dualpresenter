@@ -78,7 +78,9 @@
     <!-- Main Content Area -->
     <div class="main-content flex-grow flex">
       <!-- Left Sidebar - Current and Next Slide -->
-      <div class="sidebar-left w-1/4 bg-gray-800 p-4 border-r border-gray-700 flex flex-col">
+      <div
+        class="sidebar-left shrink-0 w-1/3 max-w-[500px] bg-gray-800 p-4 border-r border-gray-700 flex flex-col"
+      >
         <div class="sidebar-content overflow-y-auto h-full">
           <h2 class="text-lg font-bold mb-2 text-gray-200">Main Screen</h2>
           <div class="card-preview mb-4">
