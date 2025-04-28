@@ -215,6 +215,25 @@
               </div>
             </div>
           </div>
+
+          <!-- Use Default Assets Checkbox -->
+          <div class="mb-4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="useDefaultAssets"
+                v-model="settings.assets.useDefaultAssets"
+                class="w-5 h-5 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                @change="settingsChanged"
+              />
+              <label for="useDefaultAssets" class="ml-2 text-sm font-medium text-gray-300">
+                Use default assets
+              </label>
+            </div>
+            <p class="mt-1 text-xs text-gray-400">
+              When checked, default assets will be used when custom assets are not set
+            </p>
+          </div>
         </div>
       </div>
 
@@ -348,6 +367,8 @@ onMounted(() => {
       settings.assets.backgroundNames = config.assets.backgroundNames || ''
       settings.assets.logo = config.assets.logo || ''
       settings.assets.logoInverted = config.assets.logoInverted || ''
+      settings.assets.useDefaultAssets =
+        config.assets.useDefaultAssets !== undefined ? config.assets.useDefaultAssets : true
 
       settings.fonts.slidesFont = config.fonts?.slidesFont || 'TheWaveSans-Bold'
       settings.namesPrecedence = config.namesPrecedence || 0
@@ -374,6 +395,8 @@ const initializeSettings = (): void => {
   settings.assets.backgroundNames = props.config.assets.backgroundNames || ''
   settings.assets.logo = props.config.assets.logo || ''
   settings.assets.logoInverted = props.config.assets.logoInverted || ''
+  settings.assets.useDefaultAssets =
+    props.config.assets.useDefaultAssets !== undefined ? props.config.assets.useDefaultAssets : true
 
   settings.fonts.slidesFont = props.config.fonts?.slidesFont || 'TheWaveSans-Bold'
   settings.namesPrecedence = props.config.namesPrecedence || 0
@@ -494,7 +517,8 @@ const settingsChanged = async (): Promise<void> => {
       background: settings.assets.background,
       backgroundNames: settings.assets.backgroundNames,
       logo: settings.assets.logo,
-      logoInverted: settings.assets.logoInverted
+      logoInverted: settings.assets.logoInverted,
+      useDefaultAssets: settings.assets.useDefaultAssets
     },
     fonts: {
       slidesFont: settings.fonts.slidesFont

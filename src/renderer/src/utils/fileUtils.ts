@@ -67,7 +67,6 @@ export async function generateSlidePreview(element: HTMLElement, hash: string): 
       skipAutoScale: true, // Don't auto-scale which can mess with rendering
       canvasWidth: 1920,
       canvasHeight: 1080,
-      backgroundColor: '#FFFFFF', // Default white background
       style: {
         display: 'block',
         width: '1920px',

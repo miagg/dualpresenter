@@ -252,7 +252,8 @@ const config = ref<Config>({
     background: '',
     backgroundNames: '',
     logo: '',
-    logoInverted: ''
+    logoInverted: '',
+    useDefaultAssets: true
   },
   fonts: {
     slidesFont: 'TheWaveSans-Bold'

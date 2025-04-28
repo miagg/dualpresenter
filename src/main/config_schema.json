@@ -42,6 +42,10 @@
           "logoInverted": {
             "type": "string",
             "default": ""
+          },
+          "useDefaultAssets": {
+            "type": "boolean",
+            "default": true
           }
         },
         "default": {}

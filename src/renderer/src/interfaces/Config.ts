@@ -10,6 +10,7 @@ export interface Config {
     backgroundNames: string
     logo: string
     logoInverted: string
+    useDefaultAssets: boolean
   }
   fonts: {
     slidesFont: string

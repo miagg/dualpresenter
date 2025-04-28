@@ -222,31 +222,46 @@ const slideStyles = computed(() => {
 
 // Computed properties for images that use the data URLs
 const backgroundImageSrc = computed(() => {
-  return backgroundImageDataUrl.value || defaultBg
+  const defaultAssets = props.config?.assets?.useDefaultAssets
+  if (backgroundImageDataUrl.value) {
+    return backgroundImageDataUrl.value
+  } else if (defaultAssets) {
+    return defaultBg
+  }
+  return null
 })
 
 const namesBackgroundImageSrc = computed(() => {
-  return namesBackgroundImageDataUrl.value || defaultBg2
+  const defaultAssets = props.config?.assets?.useDefaultAssets
+  if (namesBackgroundImageDataUrl.value) {
+    return namesBackgroundImageDataUrl.value
+  } else if (defaultAssets) {
+    return defaultBg2
+  }
+  return null
 })
 
 const logoSrc = computed(() => {
-  // For Names card, use secondary colors to determine darkness
-  if (props.card.type === CardType.Names) {
-    // Check if we have a dark background color
-    if (isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')) {
-      // Use inverted logo for dark backgrounds
-      return logoInvertedImageDataUrl.value || logoImageDataUrl.value || defaultLogoWhite
-    }
-  } else {
-    // For other card types, use primary colors to determine darkness
-    if (isColorDark(props.config?.colors?.primaryBackground || '#061D9F')) {
-      // Use inverted logo for dark backgrounds
-      return logoInvertedImageDataUrl.value || logoImageDataUrl.value || defaultLogoWhite
-    }
+  // Determine which logo to use based on background color
+  const isDark =
+    props.card.type === CardType.Names
+      ? isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')
+      : isColorDark(props.config?.colors?.primaryBackground || '#061D9F')
+
+  // First try to use custom logos if they exist
+  if (isDark && logoInvertedImageDataUrl.value) {
+    return logoInvertedImageDataUrl.value
+  } else if (logoImageDataUrl.value) {
+    return logoImageDataUrl.value
   }
 
-  // Default to regular logo
-  return logoImageDataUrl.value || defaultLogo
+  // Fall back to default logos only if useDefaultAssets is enabled
+  if (props.config?.assets?.useDefaultAssets) {
+    return isDark ? defaultLogoWhite : defaultLogo
+  }
+
+  // Return null if no logo should be used
+  return null
 })
 
 // Generate a hash for the current slide
