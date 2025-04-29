@@ -415,14 +415,51 @@ function createSettingsWindow(): void {
 
 // Create application menu with Actions menu
 function createApplicationMenu(): void {
-  // Get the default menu from Electron
-  const defaultMenu = Menu.getApplicationMenu()
-  const menuItems = defaultMenu ? Array.from(defaultMenu.items) : []
+  // Get the default application menu first
+  const defaultMenu = Menu.getApplicationMenu() || Menu.buildFromTemplate([])
 
-  // Find existing menus or create new ones
-  let fileMenu = menuItems.find((item) => item.role === 'filemenu' || item.label === 'File')
-  let editMenu = menuItems.find((item) => item.role === 'editmenu' || item.label === 'Edit')
-  let viewMenu = menuItems.find((item) => item.role === 'viewmenu' || item.label === 'View')
+  // Create our custom File menu
+  const customFileMenu: Electron.MenuItemConstructorOptions = {
+    label: 'File',
+    submenu: [
+      {
+        label: 'Open Excel File...',
+        accelerator: 'CmdOrCtrl+O',
+        click: () => {
+          // Open file dialog directly from the main process
+          const filePath = dialog.showOpenDialogSync({
+            title: 'Select Excel File',
+            properties: ['openFile'],
+            filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
+          })?.[0]
+
+          if (filePath) {
+            data.state.excelPath = filePath
+            config.set('state.excelPath', filePath)
+            loadData()
+          }
+        }
+      },
+      {
+        label: 'Refresh Data',
+        accelerator: 'CmdOrCtrl+R',
+        click: () => {
+          // Call loadData directly
+          loadData()
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Settings',
+        accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
+        click: () => {
+          createSettingsWindow()
+        }
+      },
+      { type: 'separator' },
+      { role: 'quit' }
+    ]
+  }
 
   // Create our custom Actions menu
   const actionsMenu: Electron.MenuItemConstructorOptions = {
@@ -439,9 +476,18 @@ function createApplicationMenu(): void {
       { type: 'separator' },
       {
         label: 'Freeze Output',
+        type: 'checkbox',
+        checked: data.state.freezeMonitors,
         click: () => {
+          data.state.freezeMonitors = !data.state.freezeMonitors
+          config.set('state.freezeMonitors', data.state.freezeMonitors)
+
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('toggle-freeze')
+            mainWindow.webContents.send('data-updated', data)
+          }
+
+          if (!data.state.freezeMonitors) {
+            updateDisplayWindows()
           }
         }
       }
@@ -456,8 +502,11 @@ function createApplicationMenu(): void {
         label: 'Previous Slide',
         accelerator: 'Left',
         click: () => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('prev-slide')
+          if (data.state.currentSlideIndex > 0) {
+            data.state.currentSlideIndex--
+            config.set('state.currentSlideIndex', data.state.currentSlideIndex)
+            sendData()
+            updateDisplayWindows()
           }
         }
       },
@@ -465,124 +514,101 @@ function createApplicationMenu(): void {
         label: 'Next Slide',
         accelerator: 'Right',
         click: () => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('next-slide')
+          if (data.state.currentSlideIndex < data.cards.length - 1) {
+            data.state.currentSlideIndex++
+            config.set('state.currentSlideIndex', data.state.currentSlideIndex)
+            sendData()
+            updateDisplayWindows()
           }
         }
       }
     ]
   }
 
-  // Add our custom items to the File menu if it exists,
-  // or create a new File menu with our custom items
-  if (fileMenu) {
-    // Get the submenu of the file menu
-    const fileSubmenu = fileMenu.submenu as Menu
-    if (fileSubmenu) {
-      // Insert our custom items at the beginning of the file menu
-      fileSubmenu.insert(
-        0,
-        new MenuItem({
-          label: 'Open Excel File...',
-          accelerator: 'CmdOrCtrl+O',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('open-excel')
-            }
-          }
-        })
-      )
+  // Extract all existing menus from the defaultMenu
+  const defaultMenus = Array.from(defaultMenu.items)
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = []
 
-      fileSubmenu.insert(
-        1,
-        new MenuItem({
-          label: 'Refresh Data',
-          accelerator: 'CmdOrCtrl+R',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('refresh-data')
-            }
-          }
-        })
-      )
-
-      fileSubmenu.insert(2, new MenuItem({ type: 'separator' }))
-
-      fileSubmenu.insert(
-        3,
-        new MenuItem({
-          label: 'Settings',
-          accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
-          click: () => {
-            createSettingsWindow()
-          }
-        })
-      )
-
-      fileSubmenu.insert(4, new MenuItem({ type: 'separator' }))
+  // Special handling for macOS app menu (must be first)
+  if (process.platform === 'darwin') {
+    // Look for the app menu in the default menu
+    const appMenu = defaultMenus.find((item) => item.role === 'appMenu' || item.label === app.name)
+    if (appMenu) {
+      // Use the default app menu
+      menuTemplate.push(appMenu)
+    } else {
+      // Create a standard macOS app menu
+      menuTemplate.push({
+        label: app.name,
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      })
     }
-  } else {
-    // Create a new File menu
-    fileMenu = {
-      label: 'File',
-      submenu: [
-        {
-          label: 'Open Excel File...',
-          accelerator: 'CmdOrCtrl+O',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('open-excel')
-            }
-          }
-        },
-        {
-          label: 'Refresh Data',
-          accelerator: 'CmdOrCtrl+R',
-          click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('refresh-data')
-            }
-          }
-        },
-        { type: 'separator' },
-        {
-          label: 'Settings',
-          accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
-          click: () => {
-            createSettingsWindow()
-          }
-        },
-        { type: 'separator' },
-        { role: 'quit' }
-      ]
-    }
-    menuItems.unshift(fileMenu as Electron.MenuItem)
   }
 
-  // Insert our custom menus after the Edit menu
-  let insertIndex = menuItems.findIndex((item) => item.role === 'editmenu' || item.label === 'Edit')
-  if (insertIndex === -1) {
-    insertIndex = fileMenu ? 1 : 0
-  } else {
-    insertIndex++
+  // Add our customized File menu
+  menuTemplate.push(customFileMenu)
+
+  // Add the rest of the default menus except File (which we replaced),
+  // and also skip any duplicate Actions or Navigation menus
+  for (const menuItem of defaultMenus) {
+    const label = menuItem.label || ''
+
+    // Skip the app menu (already added for macOS), our custom menus, and any empty menus
+    if (
+      label !== app.name &&
+      label !== 'File' &&
+      label !== 'Actions' &&
+      label !== 'Navigation' &&
+      menuItem.submenu
+    ) {
+      menuTemplate.push(menuItem)
+    }
   }
 
-  // Create new menu instances for our custom menus
-  const actionsMenuItem = new MenuItem(actionsMenu)
-  const navigationMenuItem = new MenuItem(navigationMenu)
+  // Add our custom Actions and Navigation menus
+  menuTemplate.push(actionsMenu, navigationMenu)
 
-  // Insert our custom menus at the appropriate position
-  menuItems.splice(insertIndex, 0, actionsMenuItem, navigationMenuItem)
+  // Finally, for Windows/Linux, add standard Window and Help menus if they don't exist
+  if (process.platform !== 'darwin') {
+    const hasWindowMenu = menuTemplate.some(
+      (item) => item.role === 'windowMenu' || item.label === 'Window'
+    )
+    const hasHelpMenu = menuTemplate.some((item) => item.role === 'help' || item.label === 'Help')
 
-  // Build the new menu
-  const menu = Menu.buildFromTemplate(
-    menuItems.map((item) => {
-      // Convert MenuItems back to MenuItemConstructorOptions
-      return item
-    })
-  )
+    if (!hasWindowMenu) {
+      menuTemplate.push({
+        label: 'Window',
+        submenu: [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'close' }]
+      })
+    }
 
-  // Set as application menu
+    if (!hasHelpMenu) {
+      menuTemplate.push({
+        role: 'help',
+        submenu: [
+          {
+            label: 'Learn More',
+            click: async () => {
+              await shell.openExternal('https://github.com/yourusername/dualpresenter')
+            }
+          }
+        ]
+      })
+    }
+  }
+
+  // Build and set the application menu
+  const menu = Menu.buildFromTemplate(menuTemplate)
   Menu.setApplicationMenu(menu)
 }
 

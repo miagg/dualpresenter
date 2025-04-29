@@ -291,6 +291,12 @@ onMounted(() => {
     }, 5000) // Reset after 5 seconds to avoid unnecessary regenerations
   })
 
+  // Listen for toggle-freeze events from the main process
+  window.electron.ipcRenderer.on('toggle-freeze', () => {
+    // Toggle the freeze state
+    state.freezeMonitors = !state.freezeMonitors
+  })
+
   // Listen for clear-previews command from the application menu
   window.electron.ipcRenderer.on('clear-previews', () => {
     clearPreviews()
@@ -306,6 +312,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('data-updated')
   window.electron.ipcRenderer.removeAllListeners('regenerate-previews')
+  window.electron.ipcRenderer.removeAllListeners('toggle-freeze')
   window.removeEventListener('keydown', handleKeyDown)
 })
 
