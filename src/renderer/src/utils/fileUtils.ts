@@ -14,7 +14,7 @@ import type { Config } from '../interfaces/Config'
 export function generateSlideHash(card: Card, names: Name[], config: Config): string {
   // Create a serializable object containing all relevant data that affects the slide appearance
   const slideData = {
-    id: card.id,
+    // id: card.id,
     type: card.type,
     title: card.title,
     subtitle: card.subtitle,
