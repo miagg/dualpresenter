@@ -27,7 +27,7 @@
     <!-- Title Card -->
     <div
       v-else-if="card.type === CardType.Title"
-      class="flex flex-col items-center justify-center h-full relative p-8"
+      class="flex flex-col items-left justify-center h-full relative p-24"
     >
       <!-- Background image -->
       <img
@@ -37,20 +37,21 @@
         class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img
-        v-if="logoSrc"
-        :src="logoSrc"
-        alt="Logo"
-        class="absolute top-[4%] left-[3%] w-[15%] z-10"
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
+      <h1
+        v-if="card.title"
+        class="text-7xl font-bold z-10"
+        v-html="card.title.replaceAll('\n', '<br />')"
       />
-      <h1 v-if="card.title" class="text-5xl font-bold text-center mb-4 z-10">
-        {{ card.title }}
-      </h1>
-      <h2 v-if="card.subtitle" class="text-3xl font-light text-center z-10">{{ card.subtitle }}</h2>
+      <h2
+        v-if="card.subtitle"
+        class="text-5xl mt-4 z-10"
+        v-html="card.subtitle.replaceAll('\n', '<br />')"
+      />
     </div>
 
     <!-- Names Card -->
-    <div v-else-if="card.type === CardType.Names" class="flex flex-col h-full p-8 relative">
+    <div v-else-if="card.type === CardType.Names" class="flex flex-col h-full p-24 relative">
       <!-- Background image - prioritize names-specific background if available -->
       <img
         v-if="namesBackgroundImageSrc"
@@ -65,19 +66,19 @@
         class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-4 left-4 max-h-16 z-10" />
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
+      <h1
+        v-if="card.group"
+        class="text-5xl text-center font-bold z-10 -mt-6"
+        v-html="card.group.replaceAll('\n', '<br />')"
+      />
 
-      <h1 v-if="card.title" class="text-4xl font-bold mb-2 z-10">{{ card.title }}</h1>
-      <h2 v-if="card.subtitle" class="text-2xl font-light mb-6 z-10">{{ card.subtitle }}</h2>
-
-      <div class="flex-grow overflow-auto z-10">
-        <div v-if="filteredNames.length > 0" class="grid grid-cols-2 gap-4">
-          <div v-for="name in filteredNames" :key="name.id" class="text-xl">
-            {{ name.name }}
-          </div>
-        </div>
-        <div v-else class="text-center text-xl italic opacity-70 mt-8">
-          No names available for this group
+      <div
+        class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 pb-20 z-10"
+        :class="{ 'justify-center': filteredNames.length < 8 }"
+      >
+        <div v-for="name in filteredNames" :key="name.id">
+          {{ name.name }}
         </div>
       </div>
     </div>
@@ -90,7 +91,7 @@ import type { PropType } from 'vue'
 import { CardType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
-import { generateSlideHash, generateSlidePreview, slidePreviewExists } from '../utils/fileUtils'
+import { generateSlideHash, generateSlidePreview } from '../utils/fileUtils'
 
 // Import default assets
 import defaultBg from '../../../../resources/bg.png'
