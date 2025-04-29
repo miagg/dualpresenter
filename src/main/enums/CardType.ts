@@ -1,5 +1,6 @@
 export enum CardType {
   Blank = 'Blank',
   Title = 'Title',
-  Names = 'Names'
+  Names = 'Names',
+  Unattended = 'Unattended'
 }

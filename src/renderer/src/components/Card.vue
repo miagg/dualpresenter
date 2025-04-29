@@ -82,6 +82,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Unattended Card -->
+    <div v-else-if="card.type === CardType.Unattended" class="flex flex-col h-full p-24 relative">
+      <!-- Background image - prioritize names-specific background if available -->
+      <img
+        v-if="namesBackgroundImageSrc"
+        :src="namesBackgroundImageSrc"
+        alt="Background"
+        class="absolute inset-0 object-cover w-full h-full"
+      />
+      <img
+        v-else-if="backgroundImageSrc"
+        :src="backgroundImageSrc"
+        alt="Background"
+        class="absolute inset-0 object-cover w-full h-full"
+      />
+      <!-- Logo based on background -->
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
+
+      <div
+        class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
+        :class="{ 'justify-center': filteredNames.length < 8 }"
+      >
+        <div v-for="name in unattendedNames" :key="name.id">
+          {{ name.name }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -155,9 +183,16 @@ const filteredNames = computed(() => {
   return filtered.sort((a, b) => a.name.localeCompare(b.name))
 })
 
+// Unattended names
+const unattendedNames = computed(() => {
+  let filtered = props.names.filter((name) => !name.attending)
+
+  return filtered.sort((a, b) => a.name.localeCompare(b.name))
+})
+
 // Determine background color based on card type
 const backgroundColor = computed(() => {
-  if (props.card.type === CardType.Names) {
+  if (props.card.type === CardType.Names || props.card.type === CardType.Unattended) {
     return props.config?.colors?.secondaryBackground || '#FFFFFF'
   } else {
     return props.config?.colors?.primaryBackground || '#061D9F'
@@ -166,7 +201,7 @@ const backgroundColor = computed(() => {
 
 // Determine text color based on card type
 const textColor = computed(() => {
-  if (props.card.type === CardType.Names) {
+  if (props.card.type === CardType.Names || props.card.type === CardType.Unattended) {
     return props.config?.colors?.secondaryText || '#061D9F'
   } else {
     return props.config?.colors?.primaryText || '#FFFFFF'
@@ -245,7 +280,7 @@ const namesBackgroundImageSrc = computed(() => {
 const logoSrc = computed(() => {
   // Determine which logo to use based on background color
   const isDark =
-    props.card.type === CardType.Names
+    props.card.type === CardType.Names || props.card.type === CardType.Unattended
       ? isColorDark(props.config?.colors?.secondaryBackground || '#FFFFFF')
       : isColorDark(props.config?.colors?.primaryBackground || '#061D9F')
 

@@ -70,7 +70,7 @@ const needsGeneration = ref(true)
 
 // Function to determine background color based on card type
 const getBackgroundColor = () => {
-  if (props.card.type === CardType.Names) {
+  if (props.card.type === CardType.Names || props.card.type === CardType.Unattended) {
     return props.config?.colors?.secondaryBackground || '#FFFFFF'
   } else {
     return props.config?.colors?.primaryBackground || '#061D9F'

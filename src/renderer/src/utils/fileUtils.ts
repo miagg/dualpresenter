@@ -1,8 +1,10 @@
 import md5 from 'md5'
 import { toPng } from 'html-to-image'
+import { CardType } from '../interfaces/Card'
 import type { Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
+import Card from '@renderer/components/Card.vue'
 
 /**
  * Generates an MD5 hash for a slide object
@@ -31,6 +33,10 @@ export function generateSlideHash(card: Card, names: Name[], config: Config): st
             (!card.until || name.name <= card.until)
         )
       : []
+  }
+  // If card is type "unattended" include the unattended names
+  if (card.type === CardType.Unattended) {
+    slideData.unattended = names.filter((name) => !name.attending)
   }
 
   // Convert to string and generate hash

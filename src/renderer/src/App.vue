@@ -158,7 +158,7 @@
       <div class="content-main flex-grow p-4 flex flex-col overflow-hidden bg-gray-900">
         <h2 class="text-xl font-bold mb-4 text-gray-200">All Slides</h2>
 
-        <div class="slides-list flex-grow overflow-y-auto space-y-4 pr-2">
+        <div class="slides-list flex-grow overflow-y-auto space-y-4 pr-2 select-none">
           <div
             v-for="(card, index) in cards"
             :key="card.id"
