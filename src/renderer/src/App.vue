@@ -163,7 +163,7 @@
             v-for="(card, index) in cards"
             :key="card.id"
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700"
-            :class="{ 'bg-blue-900 border-blue-700': index === state.currentSlideIndex }"
+            :class="{ '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex }"
             @click="goToSlide(index)"
             ref="currentSlideRef"
           >
