@@ -171,7 +171,11 @@
             </div>
 
             <div class="slide-info flex-grow">
-              <div class="slide-title font-bold text-gray-200">{{ card.type }} {{ index + 1 }}</div>
+              <div class="slide-title font-bold text-gray-200">
+                {{ String(index + 1).padStart(2, '0') }}
+                <span class="font-normal opacity-50">-</span>
+                {{ card.type }}
+              </div>
               <div class="slide-subtitle mt-1 text-gray-300" v-if="card.title">
                 {{ card.title }}
               </div>
