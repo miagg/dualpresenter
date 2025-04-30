@@ -351,9 +351,22 @@ watch(sideScreen, (newValue) => {
 
 // Methods
 const handleKeyDown = (event: KeyboardEvent) => {
+  // Skip if the event target is an input, textarea, or select element
+  if (
+    event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLTextAreaElement ||
+    event.target instanceof HTMLSelectElement
+  ) {
+    return
+  }
+
   if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    event.stopPropagation()
     prevSlide()
   } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === ' ') {
+    event.preventDefault()
+    event.stopPropagation()
     nextSlide()
   }
 }
