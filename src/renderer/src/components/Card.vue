@@ -69,7 +69,7 @@
       <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
       <h1
         v-if="card.group"
-        class="text-5xl text-center font-bold z-10 -mt-6"
+        class="text-5xl text-center font-bold z-10 -mt-6 px-96"
         v-html="card.group.replaceAll('\n', '<br />')"
       />
 
@@ -77,6 +77,14 @@
         class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 pb-20 z-10"
         :class="{ 'justify-center': filteredNames.length < 8 }"
       >
+        <div
+          v-if="card.title"
+          v-html="card.title.replaceAll('\n', '<br />')"
+          class="font-bold leading-snug pb-4"
+          :class="{
+            'mt-10': card.title.split('\n').length > 6
+          }"
+        />
         <div v-for="name in filteredNames" :key="name.id">
           {{ name.name }}
         </div>
