@@ -165,6 +165,7 @@
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700"
             :class="{ 'bg-blue-900 border-blue-700': index === state.currentSlideIndex }"
             @click="goToSlide(index)"
+            ref="currentSlideRef"
           >
             <div class="slide-thumbnail w-40 mr-4">
               <SlidePreview :card="card" :names="names" :config="config" />
@@ -235,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import SlidePreview from './components/SlidePreview.vue'
 import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
@@ -245,6 +246,7 @@ import { CardType } from './interfaces/Card'
 // Global state
 const cards = ref<CardInterface[]>([])
 const names = ref<Name[]>([])
+const currentSlideRef = ref<HTMLElement | null>(null)
 const config = ref<Config>({
   colors: {
     primaryBackground: '#061D9F',
@@ -359,12 +361,26 @@ const handleKeyDown = (event: KeyboardEvent) => {
 const nextSlide = () => {
   if (state.currentSlideIndex < cards.value.length - 1) {
     window.electron.ipcRenderer.send('next-slide')
+    nextTick(() => {
+      scrollSelectedSlideIntoView()
+    })
   }
 }
 
 const prevSlide = () => {
   if (state.currentSlideIndex > 0) {
     window.electron.ipcRenderer.send('prev-slide')
+    nextTick(() => {
+      scrollSelectedSlideIntoView()
+    })
+  }
+}
+
+const scrollSelectedSlideIntoView = () => {
+  const slideElements = document.querySelectorAll('.slide-item')
+  if (slideElements && slideElements.length > state.currentSlideIndex) {
+    const selectedSlide = slideElements[state.currentSlideIndex] as HTMLElement
+    selectedSlide?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 }
 
