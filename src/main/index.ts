@@ -807,6 +807,7 @@ function createWindow(): void {
     y: savedWindowState.y,
     minWidth: 1024,
     minHeight: 905,
+    title: 'DualPresenter',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
