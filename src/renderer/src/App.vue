@@ -118,7 +118,26 @@
 
           <!-- Display Selection -->
           <div class="display-selection mt-6">
-            <h2 class="text-lg font-bold mb-3 text-gray-200">Output</h2>
+            <h2 class="text-lg font-bold mb-3 text-gray-200 flex items-center justify-between">
+              <span>Output</span>
+              <button
+                @click="flipScreens"
+                class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
+                title="Flip main screen with side screen"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"
+                  />
+                </svg>
+              </button>
+            </h2>
 
             <div class="mb-4">
               <label class="block text-sm font-medium mb-1 text-gray-300">Main Screen</label>
@@ -453,6 +472,7 @@ const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
 const regeneratingPreviews = ref(false)
+const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flipping screens
 
 // Current time display
 const currentTime = ref('')
@@ -686,13 +706,19 @@ const sideScreenCard = computed(() => {
 
 // Watch monitor selection changes
 watch(mainScreen, (newValue) => {
-  window.electron.ipcRenderer.send('set-main-screen', newValue)
+  // Only send IPC message if not in the middle of a screen flip
+  if (!isScreenFlipping.value) {
+    window.electron.ipcRenderer.send('set-main-screen', newValue)
+  }
 })
 
 watch(sideScreen, (newValue) => {
-  // Ensure null string is converted to actual null
-  const value = newValue === 'null' ? null : newValue
-  window.electron.ipcRenderer.send('set-side-screen', value)
+  // Only send IPC message if not in the middle of a screen flip
+  if (!isScreenFlipping.value) {
+    // Ensure null string is converted to actual null
+    const value = newValue === 'null' ? null : newValue
+    window.electron.ipcRenderer.send('set-side-screen', value)
+  }
 })
 
 // Methods
@@ -820,6 +846,33 @@ const clearHoverTimer = () => {
 
 const keepLargeThumbnail = () => {
   clearHoverTimer()
+}
+
+const flipScreens = () => {
+  // Only proceed if at least one of the screens is selected
+  if (mainScreen.value === null && sideScreen.value === null) {
+    return
+  }
+
+  // Store current values
+  const tempMain = mainScreen.value
+  const tempSide = sideScreen.value
+
+  // First, clear both screens to avoid conflicts
+  window.electron.ipcRenderer.send('set-main-screen', null)
+  window.electron.ipcRenderer.send('set-side-screen', null)
+
+  // Wait for the screens to be cleared
+  setTimeout(() => {
+    mainScreen.value = tempSide
+    window.electron.ipcRenderer.send('set-main-screen', tempSide)
+  }, 1000)
+
+  setTimeout(() => {
+    sideScreen.value = tempMain
+    const sideValue = tempMain === 'null' ? null : tempMain
+    window.electron.ipcRenderer.send('set-side-screen', sideValue)
+  }, 2000)
 }
 </script>
 
