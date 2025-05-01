@@ -729,6 +729,8 @@ function registerGlobalShortcuts(): void {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      // Send message to scroll to current slide in the UI
+      mainWindow?.webContents.send('scroll-to-current')
     }
   })
 
@@ -739,6 +741,8 @@ function registerGlobalShortcuts(): void {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      // Send message to scroll to current slide in the UI
+      mainWindow?.webContents.send('scroll-to-current')
     }
   })
 

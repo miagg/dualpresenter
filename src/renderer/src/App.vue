@@ -688,6 +688,14 @@ onMounted(() => {
     flipScreens()
   })
 
+  // Listen for scroll-to-current command from the application menu
+  window.electron.ipcRenderer.on('scroll-to-current', () => {
+    // Scroll to selected slide when navigating with global shortcuts
+    nextTick(() => {
+      scrollSelectedSlideIntoView()
+    })
+  })
+
   // Load initial data
   window.electron.ipcRenderer.send('get-data')
 
