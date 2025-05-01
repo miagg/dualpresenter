@@ -235,8 +235,6 @@
 
             <div class="slide-info flex-grow">
               <div class="slide-title font-bold text-gray-200">
-                {{ String(index + 1).padStart(2, '0') }}
-                <span class="font-normal opacity-50">-</span>
                 {{ card.type }}
               </div>
               <div class="slide-subtitle mt-1 text-gray-300" v-if="card.title">
@@ -247,6 +245,14 @@
                 <span v-if="card.subtitle && card.group"> | </span>
                 <span v-if="card.group">Group: {{ card.group }}</span>
               </div>
+            </div>
+
+            <!-- Slide number on right side -->
+            <div
+              class="slide-number flex justify-center w-14 text-xl font-bold text-gray-600"
+              :class="{ 'text-white': index === state.currentSlideIndex }"
+            >
+              {{ String(index + 1).padStart(2, '0') }}
             </div>
           </div>
         </div>
