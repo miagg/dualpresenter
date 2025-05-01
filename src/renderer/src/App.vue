@@ -288,7 +288,9 @@
           </div>
         </div>
 
-        <div class="slides-list flex-grow overflow-y-auto space-y-4 pr-2 select-none focus:ring-0">
+        <div
+          class="slides-list flex-grow overflow-y-auto space-y-4 pr-2 select-none focus:outline-0 focus:ring-0"
+        >
           <div
             v-for="(card, index) in cards"
             :key="card.id"
