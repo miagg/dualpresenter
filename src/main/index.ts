@@ -100,32 +100,14 @@ function updateMonitorList(): void {
 }
 
 function loadData(): void {
-  while (!data.state.excelPath) {
-    // Show dialog to select excel file or exit application
-    const response = dialog.showMessageBoxSync({
-      type: 'info',
-      title: 'Open Project',
-      message: 'Please select an excel file or exit the application',
-      buttons: ['Select excel file', 'Exit'],
-      defaultId: 0,
-      cancelId: 1
-    })
-    if (response === 1) {
-      app.quit()
-      return
+  if (!data.state.excelPath) {
+    // If no file path is set, clear the watcher and return
+    if (watcher) {
+      watcher.close()
+      watcher = null
     }
-    // Show open file dialog to select excel file
-    data.state.excelPath = dialog.showOpenDialogSync({
-      title: 'Select Excel File',
-      properties: ['openFile'],
-      filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
-    })?.[0]
-    if (data.state.excelPath) {
-      config.set('state.excelPath', data.state.excelPath)
-    }
+    return
   }
-
-  // Setup file watcher if needed
   if (watcher) {
     watcher.close()
   }
@@ -161,14 +143,6 @@ function loadData(): void {
   const parsedData = parseExcel(data.state.excelPath)
   data.cards = parsedData.cards
   data.names = parsedData.names
-
-  // Handle empty or invalid excel file
-  if (data.cards.length === 0) {
-    data.state.excelPath = ''
-    config.set('state.excelPath', '')
-    loadData()
-    return
-  }
 
   // Make sure currentSlideIndex is within bounds
   if (data.state.currentSlideIndex >= data.cards.length) {
@@ -404,8 +378,8 @@ function createSettingsWindow(): void {
 
   // Create a new settings window
   settingsWindow = new BrowserWindow({
-    width: 800,
-    height: 700,
+    width: 974,
+    height: 855,
     title: 'Settings',
     parent: mainWindow || undefined,
     modal: true, // Make it a modal window to keep it pinned to the parent
@@ -778,7 +752,7 @@ function createWindow(): void {
   // Load saved window state from config
   const savedWindowState = data.state.windowBounds || {
     width: 1024,
-    height: 768
+    height: 905
   }
 
   // Create the browser window with saved dimensions
@@ -788,7 +762,7 @@ function createWindow(): void {
     x: savedWindowState.x,
     y: savedWindowState.y,
     minWidth: 1024,
-    minHeight: 768,
+    minHeight: 905,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
@@ -1184,7 +1158,6 @@ app.whenReady().then(() => {
   createApplicationMenu()
 
   createWindow()
-  loadData()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
