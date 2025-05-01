@@ -512,6 +512,7 @@ function createApplicationMenu(): void {
       {
         label: 'Refresh Data',
         accelerator: 'CmdOrCtrl+R',
+        enabled: data.cards.length > 0, // Disable when no Excel is loaded
         click: () => {
           // Call loadData directly
           loadData()
@@ -548,6 +549,7 @@ function createApplicationMenu(): void {
         accelerator: 'CommandOrControl+Shift+F',
         type: 'checkbox',
         checked: data.state.freezeMonitors,
+        enabled: data.cards.length > 0, // Disable when no Excel is loaded
         click: () => {
           data.state.freezeMonitors = !data.state.freezeMonitors
           config.set('state.freezeMonitors', data.state.freezeMonitors)
@@ -575,6 +577,7 @@ function createApplicationMenu(): void {
         accelerator: 'CommandOrControl+B',
         type: 'checkbox',
         checked: data.state.blackOutScreens,
+        enabled: data.cards.length > 0, // Disable when no Excel is loaded
         click: () => {
           data.state.blackOutScreens = !data.state.blackOutScreens
           config.set('state.blackOutScreens', data.state.blackOutScreens)
@@ -1193,10 +1196,9 @@ app.whenReady().then(() => {
   // Register global shortcuts when app is ready
   registerGlobalShortcuts()
 
-  // Create application menu
-  createApplicationMenu()
-
+  loadData()
   createWindow()
+  createApplicationMenu()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

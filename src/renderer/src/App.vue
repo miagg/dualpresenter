@@ -25,7 +25,11 @@
           Open File
         </button>
 
-        <button @click="refreshData" class="btn">
+        <button
+          @click="refreshData"
+          class="btn disabled:opacity-50 disabled:pointer-events-none"
+          :disabled="!state.isExcelLoaded"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5 mr-1"
@@ -43,8 +47,9 @@
 
         <button
           @click="toggleFreeze"
-          class="btn"
+          class="btn disabled:opacity-50 disabled:pointer-events-none"
           :class="{ '!bg-red-800 animate-pulse': state.freezeMonitors }"
+          :disabled="!state.isExcelLoaded"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -123,9 +128,10 @@
               <div class="flex space-x-2">
                 <button
                   @click="blackOutScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-cente disabled:opacity-50 disabled:pointer-events-none"
                   :class="{ '!bg-red-800 animate-pulse': state.blackOutScreens }"
                   title="Black out all screens"
+                  :disabled="!state.isExcelLoaded"
                 >
                   <svg
                     class="w-5 h-5"
@@ -221,7 +227,7 @@
             <div class="flex items-center bg-gray-800 rounded-lg px-2 py-1">
               <button
                 @click="prevSlide"
-                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer"
+                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer disabled:pointer-events-none"
                 :class="{ 'opacity-50 cursor-not-allowed': state.currentSlideIndex <= 0 }"
                 :disabled="state.currentSlideIndex <= 0"
               >
@@ -245,7 +251,7 @@
               >
               <button
                 @click="nextSlide"
-                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer"
+                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer disabled:pointer-events-none"
                 :class="{
                   'opacity-50 cursor-not-allowed': state.currentSlideIndex >= cards.length - 1
                 }"
@@ -493,7 +499,8 @@ const state = reactive({
   currentSlideIndex: 0,
   freezeMonitors: false,
   blackOutScreens: false,
-  frozenSlideIndex: null
+  frozenSlideIndex: null,
+  isExcelLoaded: false
 })
 const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
@@ -646,6 +653,9 @@ onMounted(() => {
     monitors.value = data.monitors || []
     mainScreen.value = data.state.mainScreen
     sideScreen.value = data.state.sideScreen
+
+    // Set isExcelLoaded based on whether we have cards data
+    state.isExcelLoaded = Array.isArray(data.cards) && data.cards.length > 0
   })
 
   // Listen for regenerate-previews events
