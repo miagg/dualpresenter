@@ -87,8 +87,8 @@
     <!-- Main Content Area -->
     <div class="main-content flex-grow flex">
       <!-- Left Sidebar - Current and Next Slide -->
-      <div class="sidebar-left shrink-0 w-1/3 max-w-[500px] bg-gray-800 p-4 flex flex-col">
-        <div class="sidebar-content overflow-y-auto h-full">
+      <div class="sidebar-left shrink-0 w-1/3 max-w-[500px] bg-gray-800 flex flex-col">
+        <div class="sidebar-content overflow-y-auto h-full p-4">
           <h2 class="text-lg font-bold mb-2 text-gray-200">Main Screen</h2>
           <div class="card-preview mb-4">
             <SlidePreview
@@ -217,9 +217,9 @@
 
       <!-- Main Content - Slide List -->
       <div
-        class="content-main flex-grow p-4 flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
+        class="content-main flex-grow flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
       >
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-4 p-4">
           <div class="flex items-center">
             <h2 class="text-xl font-bold text-gray-200 mr-3">All Slides</h2>
 
@@ -337,7 +337,7 @@
         </div>
 
         <div
-          class="slides-list flex-grow overflow-y-auto space-y-4 pr-2 select-none focus:outline-0 focus:ring-0"
+          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 !mr-1 select-none focus:outline-0 focus:ring-0"
         >
           <div
             v-for="(card, index) in cards"
@@ -945,6 +945,7 @@ const blackOutScreens = () => {
 
 .sidebar-content {
   scrollbar-width: thin;
+  scrollbar-gutter: 20px;
   scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 
@@ -964,7 +965,6 @@ const blackOutScreens = () => {
 .slides-list {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-  padding-right: 4px;
 }
 
 .slides-list::-webkit-scrollbar {
