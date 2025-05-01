@@ -266,12 +266,12 @@ function updateMainDisplayWindow(): void {
       height: targetMonitor.bounds.height,
       frame: false,
       fullscreen: true,
+      title: 'Main Screen',
       webPreferences: {
         preload: join(__dirname, '../preload/index.mjs'),
         sandbox: false
       }
     })
-
     mainDisplayWindow.loadURL(url)
 
     mainDisplayWindow.webContents.on('did-finish-load', () => {
@@ -338,12 +338,12 @@ function updateSideDisplayWindow(): void {
       height: targetMonitor.bounds.height,
       frame: false,
       fullscreen: true,
+      title: 'Side Screen',
       webPreferences: {
         preload: join(__dirname, '../preload/index.mjs'),
         sandbox: false
       }
     })
-
     sideDisplayWindow.loadURL(url)
 
     sideDisplayWindow.webContents.on('did-finish-load', () => {
