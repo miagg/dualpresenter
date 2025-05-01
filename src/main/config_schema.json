@@ -94,6 +94,10 @@
         "type": "boolean",
         "default": false
       },
+      "frozenSlideIndex": {
+        "type": ["number", "null"],
+        "default": null
+      },
       "windowBounds": {
         "type": "object",
         "properties": {

@@ -338,7 +338,8 @@
             :key="card.id"
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none"
             :class="{
-              '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex
+              '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex,
+              '!border-red-700 border-2': state.freezeMonitors && index === state.frozenSlideIndex
             }"
             @click="goToSlide(index)"
             ref="currentSlideRef"
@@ -490,7 +491,8 @@ const config = ref<Config>({
 const state = reactive({
   currentSlideIndex: 0,
   freezeMonitors: false,
-  blackOutScreens: false
+  blackOutScreens: false,
+  frozenSlideIndex: null
 })
 const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
@@ -637,6 +639,7 @@ onMounted(() => {
     state.currentSlideIndex = data.state.currentSlideIndex || 0
     state.freezeMonitors = data.state.freezeMonitors || false
     state.blackOutScreens = data.state.blackOutScreens || false
+    state.frozenSlideIndex = data.state.frozenSlideIndex || null
     monitors.value = data.monitors || []
     mainScreen.value = data.state.mainScreen
     sideScreen.value = data.state.sideScreen

@@ -48,6 +48,7 @@ if (data.state.currentSlideIndex === undefined) data.state.currentSlideIndex = 0
 if (data.config.namesPrecedence === undefined) data.config.namesPrecedence = 0
 if (data.state.freezeMonitors === undefined) data.state.freezeMonitors = false
 if (data.state.blackOutScreens === undefined) data.state.blackOutScreens = false
+if (data.state.frozenSlideIndex === undefined) data.state.frozenSlideIndex = null
 
 // Debounce function to prevent multiple rapid reloads
 function debounce(func: Function, delay: number): () => void {
@@ -503,6 +504,15 @@ function createApplicationMenu(): void {
           data.state.freezeMonitors = !data.state.freezeMonitors
           config.set('state.freezeMonitors', data.state.freezeMonitors)
 
+          // Store the current slide index when freezing, clear it when unfreezing
+          if (data.state.freezeMonitors) {
+            data.state.frozenSlideIndex = data.state.currentSlideIndex
+            config.set('state.frozenSlideIndex', data.state.frozenSlideIndex)
+          } else {
+            data.state.frozenSlideIndex = null
+            config.set('state.frozenSlideIndex', null)
+          }
+
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('data-updated', data)
           }
@@ -836,6 +846,16 @@ app.whenReady().then(() => {
   ipcMain.on('toggle-freeze', () => {
     data.state.freezeMonitors = !data.state.freezeMonitors
     config.set('state.freezeMonitors', data.state.freezeMonitors)
+
+    // Store the current slide index when freezing, clear it when unfreezing
+    if (data.state.freezeMonitors) {
+      data.state.frozenSlideIndex = data.state.currentSlideIndex
+      config.set('state.frozenSlideIndex', data.state.frozenSlideIndex)
+    } else {
+      data.state.frozenSlideIndex = null
+      config.set('state.frozenSlideIndex', null)
+    }
+
     sendData()
 
     if (!data.state.freezeMonitors) {
