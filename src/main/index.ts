@@ -435,6 +435,22 @@ function createSettingsWindow(): void {
   })
 }
 
+// Function to update the checked state of the Freeze Output menu item
+function updateFreezeMenuItemState(isChecked: boolean): void {
+  const menu = Menu.getApplicationMenu()
+  if (!menu) return
+
+  // Find the Actions menu
+  const actionsMenu = menu.items.find((item) => item.label === 'Actions')
+  if (!actionsMenu || !actionsMenu.submenu) return
+
+  // Find the Freeze Output menu item and update its checked state
+  const freezeMenuItem = actionsMenu.submenu.items.find((item) => item.label === 'Freeze Output')
+  if (freezeMenuItem) {
+    freezeMenuItem.checked = isChecked
+  }
+}
+
 // Create application menu with Actions menu
 function createApplicationMenu(): void {
   // Get the default application menu first
@@ -498,6 +514,7 @@ function createApplicationMenu(): void {
       { type: 'separator' },
       {
         label: 'Freeze Output',
+        accelerator: 'CommandOrControl+Shift+F',
         type: 'checkbox',
         checked: data.state.freezeMonitors,
         click: () => {
@@ -519,6 +536,37 @@ function createApplicationMenu(): void {
 
           if (!data.state.freezeMonitors) {
             updateDisplayWindows()
+          }
+        }
+      },
+      {
+        label: 'Black Out Screens',
+        accelerator: 'CommandOrControl+B',
+        type: 'checkbox',
+        checked: data.state.blackOutScreens,
+        click: () => {
+          data.state.blackOutScreens = !data.state.blackOutScreens
+          config.set('state.blackOutScreens', data.state.blackOutScreens)
+
+          // Send updated state to renderer
+          sendData()
+
+          // Update both display windows to apply or remove the black out
+          if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+            mainDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
+          }
+
+          if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+            sideDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
+          }
+        }
+      },
+      {
+        label: 'Flip Screens',
+        accelerator: 'CommandOrControl+Shift+X',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('flip-screens')
           }
         }
       }
@@ -678,6 +726,20 @@ function registerGlobalShortcuts(): void {
   globalShortcut.register('CommandOrControl+Shift+F', () => {
     data.state.freezeMonitors = !data.state.freezeMonitors
     config.set('state.freezeMonitors', data.state.freezeMonitors)
+
+    // Store the current slide index when freezing, clear it when unfreezing
+    if (data.state.freezeMonitors) {
+      data.state.frozenSlideIndex = data.state.currentSlideIndex
+      config.set('state.frozenSlideIndex', data.state.frozenSlideIndex)
+    } else {
+      data.state.frozenSlideIndex = null
+      config.set('state.frozenSlideIndex', null)
+    }
+
+    // Update menu item checked state
+    updateFreezeMenuItemState(data.state.freezeMonitors)
+
+    // Send data to update UI indicators in renderer
     sendData()
 
     if (!data.state.freezeMonitors) {
@@ -1061,6 +1123,42 @@ app.whenReady().then(() => {
       console.error('Error clearing slide preview images:', error)
       throw error
     }
+  })
+
+  // Add handler for flip-screens command from the application menu
+  ipcMain.on('flip-screens', () => {
+    if (!data.state.mainScreen && !data.state.sideScreen) {
+      return // Nothing to flip if no screens are assigned
+    }
+
+    // Store current values
+    const tempMain = data.state.mainScreen
+    const tempSide = data.state.sideScreen
+
+    // Close both display windows first
+    if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+      mainDisplayWindow.close()
+      mainDisplayWindow = null
+    }
+
+    if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+      sideDisplayWindow.close()
+      sideDisplayWindow = null
+    }
+
+    // Swap the screens
+    data.state.mainScreen = tempSide
+    data.state.sideScreen = tempMain
+
+    // Update configuration
+    config.set('state.mainScreen', data.state.mainScreen)
+    config.set('state.sideScreen', data.state.sideScreen)
+
+    // Notify renderer of the change
+    sendData()
+
+    // Update display windows
+    updateDisplayWindows()
   })
 
   // Register global shortcuts when app is ready

@@ -664,6 +664,11 @@ onMounted(() => {
     clearPreviews()
   })
 
+  // Listen for flip-screens command from the application menu
+  window.electron.ipcRenderer.on('flip-screens', () => {
+    flipScreens()
+  })
+
   // Load initial data
   window.electron.ipcRenderer.send('get-data')
 
