@@ -342,7 +342,7 @@
         </div>
 
         <div
-          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 !mr-1 select-none focus:outline-0 focus:ring-0"
+          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 pr-3.5 mr-0.5 select-none focus:outline-0 focus:ring-0"
         >
           <div
             v-for="(card, index) in cards"
