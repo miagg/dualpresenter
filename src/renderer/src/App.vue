@@ -156,13 +156,75 @@
       <div
         class="content-main flex-grow p-4 flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
       >
-        <h2 class="text-xl font-bold mb-4 text-gray-200">All Slides</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-200">All Slides</h2>
 
-        <div class="slides-list flex-grow overflow-y-auto space-y-4 pr-2 select-none">
+          <!-- Search Bar -->
+          <div class="relative" ref="searchContainerRef">
+            <div class="relative">
+              <input
+                type="text"
+                v-model="searchQuery"
+                class="w-64 px-4 py-2 pr-16 border rounded bg-gray-800 text-gray-200 border-gray-700 focus:border-blue-500 focus:outline-none"
+                placeholder="Search slides..."
+                @focus="showSearchResults = true"
+                @keydown.down.prevent="navigateSearchResults('down')"
+                @keydown.up.prevent="navigateSearchResults('up')"
+                @keydown.enter.prevent="selectSearchResult(selectedSearchIndex)"
+                @keydown.escape="closeSearch()"
+                ref="searchInputRef"
+              />
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"
+              >
+                {{ isMac ? '⌘F' : 'Ctrl+F' }}
+              </div>
+            </div>
+
+            <!-- Search Results Popup -->
+            <div
+              v-if="showSearchResults && filteredSearchResults.length > 0"
+              class="absolute z-50 top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto bg-gray-800 border border-gray-700 rounded shadow-lg"
+            >
+              <div
+                v-for="(result, index) in filteredSearchResults"
+                :key="result.id"
+                class="p-2 hover:bg-gray-700 cursor-pointer flex items-center"
+                :class="{ 'bg-blue-900': index === selectedSearchIndex }"
+                @click="selectSearchResult(index)"
+                @mouseover="selectedSearchIndex = index"
+              >
+                <div
+                  class="flex-shrink-0 mr-2 w-10 h-6 bg-gray-700 flex items-center justify-center rounded"
+                >
+                  {{ result.index + 1 }}
+                </div>
+                <div class="flex-grow">
+                  <div class="font-medium text-gray-200">{{ result.type }}</div>
+                  <div class="text-sm text-gray-400 truncate" v-if="result.title">
+                    {{ result.title }}
+                  </div>
+                  <!-- Display matched names if any -->
+                  <div
+                    class="text-xs text-green-400 mt-1"
+                    v-if="result.matchedNames && result.matchedNames.length > 0"
+                  >
+                    <span>Matched names: {{ result.matchedNames.slice(0, 3).join(', ') }}</span>
+                    <span v-if="result.matchedNames.length > 3">
+                      + {{ result.matchedNames.length - 3 }} more</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slides-list flex-grow overflow-y-auto space-y-4 pr-2 select-none focus:ring-0">
           <div
             v-for="(card, index) in cards"
             :key="card.id"
-            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700"
+            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none"
             :class="{ '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex }"
             @click="goToSlide(index)"
             ref="currentSlideRef"
@@ -275,6 +337,122 @@ const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
 const regeneratingPreviews = ref(false)
 
+// Search functionality
+const searchQuery = ref('')
+const showSearchResults = ref(false)
+const selectedSearchIndex = ref(-1)
+const searchContainerRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+
+const filteredSearchResults = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return []
+  }
+
+  const query = searchQuery.value.toLowerCase().trim()
+
+  return cards.value
+    .map((card, index) => ({
+      ...card,
+      index,
+      matchedNames: [] as string[] // Add property to store matched names
+    }))
+    .filter((card) => {
+      // Search in card fields
+      const matchInCardFields =
+        card.type.toLowerCase().includes(query) ||
+        (card.title && card.title.toLowerCase().includes(query)) ||
+        (card.subtitle && card.subtitle.toLowerCase().includes(query)) ||
+        (card.group && card.group.toLowerCase().includes(query)) ||
+        (card.from && card.from.toLowerCase().includes(query)) ||
+        (card.until && card.until.toLowerCase().includes(query))
+
+      // For Names cards, also search in the associated names
+      if (card.type === CardType.Names || card.type === CardType.Unattended) {
+        // Get all relevant names
+        const relevantNames = names.value.filter((name) => {
+          if (card.type === CardType.Names) {
+            // For Names cards, only include names that are in the right group and attending
+            return (
+              name.group === card.group &&
+              name.attending &&
+              // Apply from/until filters if present
+              (!card.from || name.name >= card.from) &&
+              (!card.until || name.name <= card.until)
+            )
+          } else if (card.type === CardType.Unattended) {
+            // For Unattended cards, include names that are not attending
+            return !name.attending
+          }
+          return false
+        })
+
+        // Find names matching the search query
+        const matchedNames = relevantNames.filter((name) => name.name.toLowerCase().includes(query))
+
+        // Store matched names for display
+        card.matchedNames = matchedNames.map((name) => name.name)
+
+        // Return true if any names match
+        if (matchedNames.length > 0) {
+          return true
+        }
+      }
+
+      return matchInCardFields
+    })
+})
+
+const navigateSearchResults = (direction: 'up' | 'down') => {
+  if (filteredSearchResults.value.length === 0) {
+    return
+  }
+  if (direction === 'up') {
+    selectedSearchIndex.value =
+      (selectedSearchIndex.value - 1 + filteredSearchResults.value.length) %
+      filteredSearchResults.value.length
+  } else if (direction === 'down') {
+    selectedSearchIndex.value = (selectedSearchIndex.value + 1) % filteredSearchResults.value.length
+  }
+}
+
+const selectSearchResult = (index: number) => {
+  if (index >= 0 && index < filteredSearchResults.value.length) {
+    goToSlide(filteredSearchResults.value[index].index)
+    // Clear search query and close popup when result is selected
+    searchQuery.value = ''
+    closeSearch()
+
+    // Set focus to the selected slide element after a small delay to ensure it's rendered
+    nextTick(() => {
+      const slideElements = document.querySelectorAll('.slide-item')
+      const selectedIndex = filteredSearchResults.value[index].index
+
+      if (slideElements && slideElements.length > selectedIndex) {
+        const selectedSlide = slideElements[selectedIndex] as HTMLElement
+        if (selectedSlide) {
+          // Focus on the slide element
+          selectedSlide.focus()
+          // Ensure it's scrolled into view
+          selectedSlide.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }
+    })
+
+    // Remove focus from the search input
+    if (searchInputRef.value) {
+      searchInputRef.value.blur()
+    }
+  }
+}
+
+const closeSearch = () => {
+  showSearchResults.value = false
+  selectedSearchIndex.value = -1
+  // No longer clearing the search query here as it's now handled in selectSearchResult
+}
+
 // Handle data updates from main process
 onMounted(() => {
   window.electron.ipcRenderer.on('data-updated', (_, data) => {
@@ -291,7 +469,6 @@ onMounted(() => {
   // Listen for regenerate-previews events
   window.electron.ipcRenderer.on('regenerate-previews', () => {
     regeneratingPreviews.value = true
-    // This flag will be passed to SlidePreview components to force regeneration
     setTimeout(() => {
       regeneratingPreviews.value = false
     }, 5000) // Reset after 5 seconds to avoid unnecessary regenerations
@@ -313,6 +490,12 @@ onMounted(() => {
 
   // Add keyboard event listeners for navigation
   window.addEventListener('keydown', handleKeyDown)
+
+  // Add click outside listener for search popup
+  document.addEventListener('click', handleClickOutside)
+
+  // Add keyboard shortcut for search
+  window.addEventListener('keydown', handleSearchShortcut)
 })
 
 onUnmounted(() => {
@@ -320,7 +503,39 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('regenerate-previews')
   window.electron.ipcRenderer.removeAllListeners('toggle-freeze')
   window.removeEventListener('keydown', handleKeyDown)
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('keydown', handleSearchShortcut)
 })
+
+// Handle clicks outside the search container to close the popup
+const handleClickOutside = (event: MouseEvent) => {
+  if (searchContainerRef.value && !searchContainerRef.value.contains(event.target as Node)) {
+    closeSearch()
+  }
+}
+
+// Handle search shortcut
+const handleSearchShortcut = (event: KeyboardEvent) => {
+  // Skip if the event target is already an input element to avoid conflicts
+  if (
+    event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLTextAreaElement ||
+    event.target instanceof HTMLSelectElement
+  ) {
+    return
+  }
+
+  if (
+    (isMac && event.metaKey && event.key === 'f') ||
+    (!isMac && event.ctrlKey && event.key === 'f')
+  ) {
+    event.preventDefault()
+    if (searchInputRef.value) {
+      searchInputRef.value.focus()
+      showSearchResults.value = true
+    }
+  }
+}
 
 const sideScreenCard = computed(() => {
   const namesPrecedence = config.value.namesPrecedence
