@@ -5,7 +5,11 @@
       <div class="app-title text-xl font-bold flex items-center">
         <span>DualPresenter</span>
         <span class="text-gray-600 mx-3 font-normal">|</span>
-        <span class="text-gray-400 text-base">{{ currentTime }}</span>
+        <span
+          class="text-gray-400 text-2xl ml-1 font-normal tabular-nums font-mono flex items-center space-x-4"
+        >
+          {{ currentTime }}
+        </span>
       </div>
 
       <div class="controls flex space-x-3">
@@ -343,7 +347,7 @@
           <div
             v-for="(card, index) in cards"
             :key="card.id"
-            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none"
+            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none transition"
             :class="{
               '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex,
               '!ring-red-700 ring-2': state.freezeMonitors && index === state.frozenSlideIndex
