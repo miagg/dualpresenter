@@ -346,7 +346,7 @@
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none"
             :class="{
               '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex,
-              '!border-red-700 border-2': state.freezeMonitors && index === state.frozenSlideIndex
+              '!ring-red-700 ring-2': state.freezeMonitors && index === state.frozenSlideIndex
             }"
             @click="goToSlide(index)"
             ref="currentSlideRef"
