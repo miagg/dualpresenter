@@ -185,6 +185,12 @@ function loadData(): void {
   updateDisplayWindows()
 }
 
+// Helper function to get filename without extension
+function getFileNameWithoutExtension(filePath: string): string {
+  if (!filePath) return ''
+  return path.basename(filePath, path.extname(filePath))
+}
+
 function sendData(): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.webContents.isLoading()) {
@@ -195,10 +201,14 @@ function sendData(): void {
       mainWindow.webContents.send('data-updated', data)
     }
 
-    // Update the main window title with current slide number and total
+    // Update the main window title with Excel filename and slide position
     if (data.cards && data.cards.length > 0) {
       const slidePosition = `${data.state.currentSlideIndex + 1}/${data.cards.length}`
-      mainWindow.setTitle(`DualPresenter (Slide ${slidePosition})`)
+      const filename = getFileNameWithoutExtension(data.state.excelPath || '')
+      const title = filename
+        ? `${filename} (Slide ${slidePosition})`
+        : `DualPresenter (Slide ${slidePosition})`
+      mainWindow.setTitle(title)
     } else {
       mainWindow.setTitle('DualPresenter')
     }
