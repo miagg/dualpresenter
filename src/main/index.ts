@@ -484,6 +484,9 @@ function createApplicationMenu(): void {
           if (filePath) {
             data.state.excelPath = filePath
             config.set('state.excelPath', filePath)
+            // Set currentSlideIndex to 0 when opening a new Excel file
+            data.state.currentSlideIndex = 0
+            config.set('state.currentSlideIndex', 0)
             loadData()
           }
         }
@@ -945,6 +948,9 @@ app.whenReady().then(() => {
     if (filePath) {
       data.state.excelPath = filePath
       config.set('state.excelPath', filePath)
+      // Set currentSlideIndex to 0 when opening a new Excel file
+      data.state.currentSlideIndex = 0
+      config.set('state.currentSlideIndex', 0)
       loadData()
     }
   })
