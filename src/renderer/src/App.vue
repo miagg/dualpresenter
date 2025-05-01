@@ -241,7 +241,7 @@
                 </svg>
               </button>
               <span class="text-sm text-gray-300 mx-2"
-                >{{ state.currentSlideIndex + 1 }} / {{ cards.length }}</span
+                >{{ cards.length ? state.currentSlideIndex + 1 : 0 }} / {{ cards.length }}</span
               >
               <button
                 @click="nextSlide"
@@ -371,7 +371,7 @@
                   @mouseleave="clearHoverTimer()"
                 >
                   <div class="bg-gray-800 border border-gray-600 p-2 rounded shadow-xl">
-                    <div class="w-[640px]">
+                    <div class="w-[455px] xl:w-[640px]">
                       <SlidePreview :card="card" :names="names" :config="config" />
                     </div>
                   </div>
@@ -434,7 +434,7 @@
       </button>
 
       <div class="slide-counter font-medium text-gray-200">
-        Slide {{ state.currentSlideIndex + 1 }} of {{ cards.length }}
+        Slide {{ cards.length ? state.currentSlideIndex + 1 : 0 }} of {{ cards.length }}
       </div>
 
       <button
