@@ -650,7 +650,8 @@ onMounted(() => {
     state.currentSlideIndex = data.state.currentSlideIndex || 0
     state.freezeMonitors = data.state.freezeMonitors || false
     state.blackOutScreens = data.state.blackOutScreens || false
-    state.frozenSlideIndex = data.state.frozenSlideIndex || null
+    state.frozenSlideIndex =
+      typeof data.state.frozenSlideIndex === 'number' ? data.state.frozenSlideIndex : null
     monitors.value = data.monitors || []
     mainScreen.value = data.state.mainScreen
     sideScreen.value = data.state.sideScreen
