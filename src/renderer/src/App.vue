@@ -275,7 +275,7 @@
               <input
                 type="text"
                 v-model="searchQuery"
-                class="w-64 px-4 py-2 pr-16 border rounded bg-gray-800 text-gray-200 border-gray-700 focus:border-blue-500 focus:outline-none"
+                class="w-64 xl:w-96 px-4 py-2 pr-16 border rounded bg-gray-800 text-gray-200 border-gray-700 focus:border-blue-500 focus:outline-none"
                 placeholder="Search slides..."
                 @focus="showSearchResults = true"
                 @keydown.down.prevent="navigateSearchResults('down')"
@@ -311,7 +311,7 @@
                 </div>
                 <div class="flex-grow">
                   <div class="font-medium text-gray-200">{{ result.type }}</div>
-                  <div class="text-sm text-gray-400 truncate" v-if="result.title">
+                  <div class="text-sm text-gray-400" v-if="result.title">
                     {{ result.title }}
                   </div>
                   <!-- Display matched names if any -->
@@ -464,6 +464,7 @@ import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
 import { CardType } from './interfaces/Card'
+import { normalizeForSearch } from './utils/textUtils'
 
 // Global state
 const cards = ref<CardInterface[]>([])
@@ -527,7 +528,7 @@ const filteredSearchResults = computed(() => {
     return []
   }
 
-  const query = searchQuery.value.toLowerCase().trim()
+  const normalizedQuery = normalizeForSearch(searchQuery.value.trim())
 
   return cards.value
     .map((card, index) => ({
@@ -536,14 +537,14 @@ const filteredSearchResults = computed(() => {
       matchedNames: [] as string[] // Add property to store matched names
     }))
     .filter((card) => {
-      // Search in card fields
+      // Search in card fields using normalized text
       const matchInCardFields =
-        card.type.toLowerCase().includes(query) ||
-        (card.title && card.title.toLowerCase().includes(query)) ||
-        (card.subtitle && card.subtitle.toLowerCase().includes(query)) ||
-        (card.group && card.group.toLowerCase().includes(query)) ||
-        (card.from && card.from.toLowerCase().includes(query)) ||
-        (card.until && card.until.toLowerCase().includes(query))
+        normalizeForSearch(card.type).includes(normalizedQuery) ||
+        (card.title && normalizeForSearch(card.title).includes(normalizedQuery)) ||
+        (card.subtitle && normalizeForSearch(card.subtitle).includes(normalizedQuery)) ||
+        (card.group && normalizeForSearch(card.group).includes(normalizedQuery)) ||
+        (card.from && normalizeForSearch(card.from).includes(normalizedQuery)) ||
+        (card.until && normalizeForSearch(card.until).includes(normalizedQuery))
 
       // For Names cards, also search in the associated names
       if (card.type === CardType.Names || card.type === CardType.Unattended) {
@@ -565,8 +566,10 @@ const filteredSearchResults = computed(() => {
           return false
         })
 
-        // Find names matching the search query
-        const matchedNames = relevantNames.filter((name) => name.name.toLowerCase().includes(query))
+        // Find names matching the search query using normalized text
+        const matchedNames = relevantNames.filter((name) =>
+          normalizeForSearch(name.name).includes(normalizedQuery)
+        )
 
         // Store matched names for display
         card.matchedNames = matchedNames.map((name) => name.name)
