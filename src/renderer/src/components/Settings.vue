@@ -287,7 +287,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, onUnmounted, watch, defineEmits } from 'vue'
+import { reactive, onMounted, onUnmounted, watch } from 'vue'
 import type { Config } from '../interfaces/Config'
 
 // Define emits for when component is used within main app
