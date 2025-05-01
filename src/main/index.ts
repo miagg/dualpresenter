@@ -693,7 +693,6 @@ function createApplicationMenu(): void {
     const hasWindowMenu = menuTemplate.some(
       (item) => item.role === 'windowMenu' || item.label === 'Window'
     )
-    const hasHelpMenu = menuTemplate.some((item) => item.role === 'help' || item.label === 'Help')
 
     if (!hasWindowMenu) {
       menuTemplate.push({
@@ -701,20 +700,12 @@ function createApplicationMenu(): void {
         submenu: [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'close' }]
       })
     }
+  }
 
-    if (!hasHelpMenu) {
-      menuTemplate.push({
-        role: 'help',
-        submenu: [
-          {
-            label: 'Learn More',
-            click: async () => {
-              await shell.openExternal('https://github.com/yourusername/dualpresenter')
-            }
-          }
-        ]
-      })
-    }
+  // Remove Help menu if it exists
+  const helpMenuIndex = menuTemplate.findIndex((item) => item.label === 'Help')
+  if (helpMenuIndex !== -1) {
+    menuTemplate.splice(helpMenuIndex, 1)
   }
 
   // Build and set the application menu
