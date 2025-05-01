@@ -159,6 +159,42 @@ function loadData(): void {
   updateDisplayWindows()
 }
 
+// Function to close the currently open Excel file
+function closeExcelFile(): void {
+  // Close and clear the file watcher
+  if (watcher) {
+    watcher.close()
+    watcher = null
+  }
+
+  // Clear the file path and reset data
+  data.state.excelPath = ''
+  data.state.currentSlideIndex = 0
+  data.cards = []
+  data.names = []
+
+  // Update configuration
+  config.set('state.excelPath', '')
+  config.set('state.currentSlideIndex', 0)
+
+  // Update title and send data to renderer
+  sendData()
+
+  // Close display windows since there's no data to show
+  if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+    mainDisplayWindow.close()
+    mainDisplayWindow = null
+  }
+
+  if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+    sideDisplayWindow.close()
+    sideDisplayWindow = null
+  }
+
+  // Recreate the application menu to update the "Close Excel File" enabled state
+  createApplicationMenu()
+}
+
 // Helper function to get filename without extension
 function getFileNameWithoutExtension(filePath: string): string {
   if (!filePath) return ''
@@ -462,8 +498,16 @@ function createApplicationMenu(): void {
             data.state.currentSlideIndex = 0
             config.set('state.currentSlideIndex', 0)
             loadData()
+
+            // Recreate the application menu to update the "Close Excel File" enabled state
+            createApplicationMenu()
           }
         }
+      },
+      {
+        label: 'Close Excel File',
+        enabled: !!data.state.excelPath,
+        click: closeExcelFile
       },
       {
         label: 'Refresh Data',
@@ -926,6 +970,9 @@ app.whenReady().then(() => {
       data.state.currentSlideIndex = 0
       config.set('state.currentSlideIndex', 0)
       loadData()
+
+      // Recreate the application menu to update the "Close Excel File" enabled state
+      createApplicationMenu()
     }
   })
 
