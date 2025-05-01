@@ -68,9 +68,11 @@
       <!-- Logo based on background -->
       <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
       <h1
-        v-if="card.group"
+        v-if="card.group || card.title"
         class="text-5xl text-center font-bold z-10 -mt-6 px-96"
-        v-html="card.group.replaceAll('\n', '<br />')"
+        v-html="
+          card.group ? card.group.replaceAll('\n', '<br />') : card.title.replaceAll('\n', '<br />')
+        "
       />
 
       <div
@@ -78,8 +80,12 @@
         :class="{ 'justify-center': filteredNames.length < 8 }"
       >
         <div
-          v-if="card.title"
-          v-html="card.title.replaceAll('\n', '<br />')"
+          v-if="card.subtitle || (card.group && card.title)"
+          v-html="
+            card.subtitle
+              ? card.subtitle.replaceAll('\n', '<br />')
+              : card.title.replaceAll('\n', '<br />')
+          "
           class="font-bold leading-snug pb-4"
           :class="{
             'mt-10': card.title.split('\n').length > 6
