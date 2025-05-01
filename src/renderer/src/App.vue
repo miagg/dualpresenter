@@ -2,7 +2,11 @@
   <div class="app-container bg-gray-900 text-gray-200">
     <!-- Top Navigation Bar -->
     <div class="toolbar bg-gray-800 text-gray-200 p-4 flex items-center justify-between">
-      <div class="app-title text-xl font-bold">DualPresenter</div>
+      <div class="app-title text-xl font-bold flex items-center">
+        <span>DualPresenter</span>
+        <span class="text-gray-600 mx-3 font-normal">|</span>
+        <span class="text-gray-400 text-base">{{ currentTime }}</span>
+      </div>
 
       <div class="controls flex space-x-3">
         <button @click="openExcel" class="btn">
@@ -98,7 +102,18 @@
 
           <h2 class="text-lg font-bold mb-2 text-gray-200">Side Screen</h2>
           <div class="card-preview">
-            <SlidePreview :card="sideScreenCard" :names="names" :config="config" />
+            <SlidePreview
+              v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+              :card="sideScreenCard"
+              :names="names"
+              :config="config"
+            />
+            <div
+              v-else
+              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400"
+            >
+              No slide available
+            </div>
           </div>
 
           <!-- Display Selection -->
@@ -436,6 +451,20 @@ const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
 const regeneratingPreviews = ref(false)
+
+// Current time display
+const currentTime = ref('')
+const updateCurrentTime = () => {
+  const now = new Date()
+  currentTime.value = now.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+}
+setInterval(updateCurrentTime, 1000)
+updateCurrentTime()
 
 // Search functionality
 const searchQuery = ref('')
