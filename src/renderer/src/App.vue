@@ -157,7 +157,60 @@
         class="content-main flex-grow p-4 flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
       >
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-200">All Slides</h2>
+          <div class="flex items-center">
+            <h2 class="text-xl font-bold text-gray-200 mr-3">All Slides</h2>
+
+            <!-- Add slide counter and navigation arrows -->
+            <div class="flex items-center bg-gray-800 rounded-lg px-2 py-1">
+              <button
+                @click="prevSlide"
+                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer"
+                :class="{ 'opacity-50 cursor-not-allowed': state.currentSlideIndex <= 0 }"
+                :disabled="state.currentSlideIndex <= 0"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <span class="text-sm text-gray-300 mx-2"
+                >{{ state.currentSlideIndex + 1 }} / {{ cards.length }}</span
+              >
+              <button
+                @click="nextSlide"
+                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer"
+                :class="{
+                  'opacity-50 cursor-not-allowed': state.currentSlideIndex >= cards.length - 1
+                }"
+                :disabled="state.currentSlideIndex >= cards.length - 1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
 
           <!-- Search Bar -->
           <div class="relative" ref="searchContainerRef">
@@ -206,7 +259,7 @@
                   </div>
                   <!-- Display matched names if any -->
                   <div
-                    class="text-xs text-green-400 mt-1"
+                    class="text-xs text-gray-400 mt-1"
                     v-if="result.matchedNames && result.matchedNames.length > 0"
                   >
                     <span>Matched names: {{ result.matchedNames.slice(0, 3).join(', ') }}</span>
@@ -225,15 +278,53 @@
             v-for="(card, index) in cards"
             :key="card.id"
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none"
-            :class="{ '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex }"
+            :class="{
+              '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex
+            }"
             @click="goToSlide(index)"
             ref="currentSlideRef"
           >
-            <div class="slide-thumbnail w-40 mr-4">
-              <SlidePreview :card="card" :names="names" :config="config" />
+            <div
+              class="slide-thumbnail w-40 mr-4 relative"
+              @mouseenter="startHoverTimer(index)"
+              @mouseleave="clearHoverTimer()"
+            >
+              <SlidePreview
+                :card="card"
+                :names="names"
+                :config="config"
+                :class="{
+                  'opacity-50': index < state.currentSlideIndex
+                }"
+              />
+
+              <!-- Large thumbnail preview that appears on hover -->
+              <transition name="fade">
+                <div
+                  v-if="hoveredSlideIndex === index && showLargeThumbnail"
+                  class="large-thumbnail-preview absolute z-50"
+                  :style="{
+                    left: '100%',
+                    top: '-20px'
+                  }"
+                  @mouseenter="keepLargeThumbnail()"
+                  @mouseleave="clearHoverTimer()"
+                >
+                  <div class="bg-gray-800 border border-gray-600 p-2 rounded shadow-xl">
+                    <div class="w-[640px]">
+                      <SlidePreview :card="card" :names="names" :config="config" />
+                    </div>
+                  </div>
+                </div>
+              </transition>
             </div>
 
-            <div class="slide-info flex-grow">
+            <div
+              class="slide-info flex-grow"
+              :class="{
+                'opacity-50': index < state.currentSlideIndex
+              }"
+            >
               <div class="slide-title font-bold text-gray-200">
                 {{ card.type }}
               </div>
@@ -250,7 +341,10 @@
             <!-- Slide number on right side -->
             <div
               class="slide-number flex justify-center w-14 text-xl font-bold text-gray-600"
-              :class="{ 'text-white': index === state.currentSlideIndex }"
+              :class="{
+                'text-white': index === state.currentSlideIndex,
+                'opacity-50': index < state.currentSlideIndex
+              }"
             >
               {{ String(index + 1).padStart(2, '0') }}
             </div>
@@ -670,6 +764,32 @@ const clearPreviews = async () => {
     console.error('Error clearing preview images:', error)
   }
 }
+
+// Hover functionality for large thumbnail preview
+const hoveredSlideIndex = ref<number | null>(null)
+const showLargeThumbnail = ref(false)
+let hoverTimer: number | null = null
+
+const startHoverTimer = (index: number) => {
+  clearHoverTimer()
+  hoverTimer = window.setTimeout(() => {
+    hoveredSlideIndex.value = index
+    showLargeThumbnail.value = true
+  }, 1000) // 1 second delay
+}
+
+const clearHoverTimer = () => {
+  if (hoverTimer) {
+    clearTimeout(hoverTimer)
+    hoverTimer = null
+  }
+  showLargeThumbnail.value = false
+  hoveredSlideIndex.value = null
+}
+
+const keepLargeThumbnail = () => {
+  clearHoverTimer()
+}
 </script>
 
 <style scoped>
@@ -758,5 +878,31 @@ const clearPreviews = async () => {
 
 .slide-thumbnail {
   min-width: 160px;
+}
+
+.large-thumbnail-preview {
+  animation: fadeIn 0.3s ease-in-out;
+  opacity: 1 !important; /* Ensure always full opacity */
+}
+
+/* Fade transition for the large thumbnail preview */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+  opacity: 1 !important; /* Force 100% opacity during transitions */
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

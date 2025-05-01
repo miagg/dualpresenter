@@ -192,6 +192,14 @@ function sendData(): void {
     } else {
       mainWindow.webContents.send('data-updated', data)
     }
+
+    // Update the main window title with current slide number and total
+    if (data.cards && data.cards.length > 0) {
+      const slidePosition = `${data.state.currentSlideIndex + 1}/${data.cards.length}`
+      mainWindow.setTitle(`DualPresenter (Slide ${slidePosition})`)
+    } else {
+      mainWindow.setTitle('DualPresenter')
+    }
   }
 }
 
