@@ -47,6 +47,7 @@ const data: Data = {
 if (data.state.currentSlideIndex === undefined) data.state.currentSlideIndex = 0
 if (data.config.namesPrecedence === undefined) data.config.namesPrecedence = 0
 if (data.state.freezeMonitors === undefined) data.state.freezeMonitors = false
+if (data.state.blackOutScreens === undefined) data.state.blackOutScreens = false
 
 // Debounce function to prevent multiple rapid reloads
 function debounce(func: Function, delay: number): () => void {
@@ -279,7 +280,10 @@ function updateMainDisplayWindow(): void {
           currentSlideIndex: data.state.currentSlideIndex,
           cards: data.cards,
           names: data.names,
-          config: data.config
+          config: data.config,
+          state: {
+            blackOutScreens: data.state.blackOutScreens
+          }
         })
       }
     })
@@ -298,7 +302,10 @@ function updateMainDisplayWindow(): void {
       currentSlideIndex: data.state.currentSlideIndex,
       cards: data.cards,
       names: data.names,
-      config: data.config
+      config: data.config,
+      state: {
+        blackOutScreens: data.state.blackOutScreens
+      }
     })
   }
 }
@@ -348,7 +355,10 @@ function updateSideDisplayWindow(): void {
           currentSlideIndex: data.state.currentSlideIndex,
           cards: data.cards,
           names: data.names,
-          config: data.config
+          config: data.config,
+          state: {
+            blackOutScreens: data.state.blackOutScreens
+          }
         })
       }
     })
@@ -366,7 +376,10 @@ function updateSideDisplayWindow(): void {
       currentSlideIndex: data.state.currentSlideIndex,
       cards: data.cards,
       names: data.names,
-      config: data.config
+      config: data.config,
+      state: {
+        blackOutScreens: data.state.blackOutScreens
+      }
     })
   }
 }
@@ -860,6 +873,23 @@ app.whenReady().then(() => {
     // Update settings window if it's open
     if (settingsWindow && !settingsWindow.isDestroyed()) {
       settingsWindow.webContents.send('settings-data', data.config)
+    }
+  })
+
+  ipcMain.on('toggle-black-out', () => {
+    data.state.blackOutScreens = !data.state.blackOutScreens
+    config.set('state.blackOutScreens', data.state.blackOutScreens)
+
+    // Send updated state to renderer
+    sendData()
+
+    // Update both display windows to apply or remove the black out
+    if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+      mainDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
+    }
+
+    if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+      sideDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
     }
   })
 

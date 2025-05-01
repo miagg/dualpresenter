@@ -44,7 +44,7 @@
         <button
           @click="toggleFreeze"
           class="btn"
-          :class="{ '!bg-red-500 animate-pulse': state.freezeMonitors }"
+          :class="{ '!bg-red-800 animate-pulse': state.freezeMonitors }"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -120,23 +120,46 @@
           <div class="display-selection mt-6">
             <h2 class="text-lg font-bold mb-3 text-gray-200 flex items-center justify-between">
               <span>Output</span>
-              <button
-                @click="flipScreens"
-                class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
-                title="Flip main screen with side screen"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+              <div class="flex space-x-2">
+                <button
+                  @click="blackOutScreens"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
+                  :class="{ '!bg-red-800 animate-pulse': state.blackOutScreens }"
+                  title="Black out all screens"
                 >
-                  <path
-                    fill-rule="evenodd"
-                    d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    class="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    fill="transparent"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2.99902 3L20.999 21M9.8433 9.91364C9.32066 10.4536 8.99902 11.1892 8.99902 12C8.99902 13.6569 10.3422 15 11.999 15C12.8215 15 13.5667 14.669 14.1086 14.133M6.49902 6.64715C4.59972 7.90034 3.15305 9.78394 2.45703 12C3.73128 16.0571 7.52159 19 11.9992 19C13.9881 19 15.8414 18.4194 17.3988 17.4184M10.999 5.04939C11.328 5.01673 11.6617 5 11.9992 5C16.4769 5 20.2672 7.94291 21.5414 12C21.2607 12.894 20.8577 13.7338 20.3522 14.5"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  @click="flipScreens"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
+                  title="Flip main screen with side screen"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"
+                    />
+                  </svg>
+                </button>
+              </div>
             </h2>
 
             <div class="mb-4">
@@ -466,7 +489,8 @@ const config = ref<Config>({
 })
 const state = reactive({
   currentSlideIndex: 0,
-  freezeMonitors: false
+  freezeMonitors: false,
+  blackOutScreens: false
 })
 const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
@@ -612,6 +636,7 @@ onMounted(() => {
     config.value = data.config
     state.currentSlideIndex = data.state.currentSlideIndex || 0
     state.freezeMonitors = data.state.freezeMonitors || false
+    state.blackOutScreens = data.state.blackOutScreens || false
     monitors.value = data.monitors || []
     mainScreen.value = data.state.mainScreen
     sideScreen.value = data.state.sideScreen
@@ -873,6 +898,13 @@ const flipScreens = () => {
     const sideValue = tempMain === 'null' ? null : tempMain
     window.electron.ipcRenderer.send('set-side-screen', sideValue)
   }, 2000)
+}
+
+const blackOutScreens = () => {
+  // Toggle the black out state
+  state.blackOutScreens = !state.blackOutScreens
+  // Send to main process
+  window.electron.ipcRenderer.send('toggle-black-out')
 }
 </script>
 

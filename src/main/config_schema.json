@@ -90,6 +90,10 @@
         "type": "boolean",
         "default": false
       },
+      "blackOutScreens": {
+        "type": "boolean",
+        "default": false
+      },
       "windowBounds": {
         "type": "object",
         "properties": {

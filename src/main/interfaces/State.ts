@@ -4,6 +4,7 @@ export interface State {
   mainScreen: string | null
   sideScreen: string | null
   freezeMonitors: boolean
+  blackOutScreens: boolean
   windowBounds?: {
     x: number
     y: number
