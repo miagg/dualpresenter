@@ -402,7 +402,7 @@ const generatePreviewImage = async (): Promise<string | null> => {
     }
 
     // Wait a bit to ensure rendering is complete
-    await new Promise((resolve) => setTimeout(resolve, 100)) // Increased timeout for better reliability
+    await new Promise((resolve) => setTimeout(resolve, 500)) // Increased timeout for better reliability
 
     // Final check before generating the preview
     if (!cardElement.value || !(cardElement.value instanceof HTMLElement)) {
