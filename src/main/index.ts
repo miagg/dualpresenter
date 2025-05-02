@@ -327,6 +327,12 @@ function updateMainDisplayWindow(): void {
         })
       }
     })
+    mainDisplayWindow.on('focus', () => {
+      // When main screen gets focus, redirect focus back to main window
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.focus()
+      }
+    })
   } else {
     // Reposition if needed
     mainDisplayWindow.setBounds(targetMonitor.bounds)
@@ -405,6 +411,13 @@ function updateSideDisplayWindow(): void {
             blackOutScreens: data.state.blackOutScreens
           }
         })
+      }
+    })
+
+    sideDisplayWindow.on('focus', () => {
+      // When side screen gets focus, redirect focus back to main window
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.focus()
       }
     })
   } else {
