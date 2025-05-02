@@ -88,7 +88,7 @@
           "
           class="font-bold leading-snug pb-4"
           :class="{
-            'mt-10': card.title.split('\n').length > 6
+            'mt-10': card.title?.split('\n')?.length > 6
           }"
         />
         <div v-for="name in filteredNames" :key="name.id">
