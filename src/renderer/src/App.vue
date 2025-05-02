@@ -763,6 +763,31 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
       showSearchResults.value = true
     }
   }
+
+  // Handle names precedence shortcuts
+  // Decrease with cmd-[ or ctrl-[
+  if (
+    (isMac && event.metaKey && event.key === '[') ||
+    (!isMac && event.ctrlKey && event.key === '[')
+  ) {
+    event.preventDefault()
+    if (config.value.namesPrecedence > 0) {
+      const newConfig = JSON.parse(JSON.stringify(config.value))
+      newConfig.namesPrecedence = Math.max(0, newConfig.namesPrecedence - 1)
+      updateConfig(newConfig)
+    }
+  }
+
+  // Increase with cmd-] or ctrl-]
+  if (
+    (isMac && event.metaKey && event.key === ']') ||
+    (!isMac && event.ctrlKey && event.key === ']')
+  ) {
+    event.preventDefault()
+    const newConfig = JSON.parse(JSON.stringify(config.value))
+    newConfig.namesPrecedence = newConfig.namesPrecedence + 1
+    updateConfig(newConfig)
+  }
 }
 
 const sideScreenCard = computed(() => {
