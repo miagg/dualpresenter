@@ -322,11 +322,27 @@ const generateHash = (): string => {
 
 // Generate a preview image for the current slide
 const generatePreviewImage = async (): Promise<string | null> => {
-  if (!cardElement.value) return null
+  // First validate that the card element exists
+  if (!cardElement.value) {
+    console.warn('Card element reference is null, cannot generate preview')
+    return null
+  }
+
+  // Verify it's a real DOM element that's in the document
+  if (!(cardElement.value instanceof HTMLElement) || !document.contains(cardElement.value)) {
+    console.warn('Card element is not a valid DOM element or not in document')
+    return null
+  }
 
   try {
     // Make sure the card is properly rendered and has content
     await nextTick()
+
+    // Double check the element reference is still valid after nextTick
+    if (!cardElement.value || !(cardElement.value instanceof HTMLElement)) {
+      console.warn('Card element reference was lost after nextTick')
+      return null
+    }
 
     // Force card to be rendered with proper dimensions
     cardElement.value.style.width = '1920px'
@@ -356,24 +372,32 @@ const generatePreviewImage = async (): Promise<string | null> => {
     }
 
     // Wait a bit to ensure rendering is complete
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 100)) // Increased timeout for better reliability
+
+    // Final check before generating the preview
+    if (!cardElement.value || !(cardElement.value instanceof HTMLElement)) {
+      console.warn('Card element reference was lost before generating preview')
+      return null
+    }
 
     // Generate the preview
     const path = await generateSlidePreview(cardElement.value, hash)
 
     // Reset styles
-    cardElement.value.style.position = ''
-    cardElement.value.style.top = ''
-    cardElement.value.style.left = ''
-    cardElement.value.style.zIndex = ''
-    cardElement.value.style.visibility = ''
-    cardElement.value.style.width = ''
-    cardElement.value.style.height = ''
+    if (cardElement.value) {
+      cardElement.value.style.position = ''
+      cardElement.value.style.top = ''
+      cardElement.value.style.left = ''
+      cardElement.value.style.zIndex = ''
+      cardElement.value.style.visibility = ''
+      cardElement.value.style.width = ''
+      cardElement.value.style.height = ''
+    }
 
     emit('preview-generated', { hash, path })
     return path
   } catch (error) {
-    console.error('Error generating preview image:', error)
+    console.error('Error generating slide preview image:', error)
     return null
   }
 }

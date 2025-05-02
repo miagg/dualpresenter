@@ -63,7 +63,7 @@ const props = defineProps({
   }
 })
 
-const cardRef = ref(null)
+const cardRef = ref<InstanceType<typeof CardComponent> | null>(null)
 const previewUrl = ref<string | null>(null)
 const loading = ref(true)
 const needsGeneration = ref(true)
@@ -76,13 +76,6 @@ const getBackgroundColor = () => {
     return props.config?.colors?.primaryBackground || '#061D9F'
   }
 }
-
-// Use watchEffect instead of watch to ensure immediate reaction to prop changes
-watchEffect(async () => {
-  if (props.card && props.config) {
-    await checkAndLoadPreview()
-  }
-})
 
 // Check if a preview exists and load it, or flag for generation
 const checkAndLoadPreview = async () => {
@@ -117,12 +110,30 @@ const checkAndLoadPreview = async () => {
   }
 }
 
+// Use watchEffect instead of watch to ensure immediate reaction to prop changes
+watchEffect(async () => {
+  if (props.card && props.config) {
+    await checkAndLoadPreview()
+  }
+})
+
 // Generate preview using the Card component
 const generatePreview = async () => {
-  if (!cardRef.value) return
+  if (!cardRef.value) {
+    console.warn('Card reference is not available yet, cannot generate preview')
+    return
+  }
 
   try {
-    await nextTick() // Ensure component is fully rendered
+    // Wait for next tick to ensure component is fully rendered
+    await nextTick()
+
+    // Double check the ref is still valid
+    if (!cardRef.value) {
+      console.warn('Card reference was lost after nextTick, cannot generate preview')
+      return
+    }
+
     await cardRef.value.generatePreviewImage()
     needsGeneration.value = false
   } catch (error) {

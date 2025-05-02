@@ -51,6 +51,11 @@ export function generateSlideHash(card: Card, names: Name[], config: Config): st
  */
 export async function generateSlidePreview(element: HTMLElement, hash: string): Promise<string> {
   try {
+    // Validate element is a proper HTMLElement
+    if (!element || !(element instanceof HTMLElement)) {
+      throw new Error('Invalid DOM element provided to generateSlidePreview')
+    }
+
     // Make sure the element is visible and fully rendered
     if (window.getComputedStyle(element).display === 'none') {
       console.warn('Element is not visible, forcing visibility')
