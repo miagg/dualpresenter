@@ -349,7 +349,7 @@
             :key="card.id"
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none transition"
             :class="{
-              '!bg-blue-900 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
+              '!bg-blue-900/70 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
                 index === state.currentSlideIndex,
               '!ring-red-700 ring-2': state.freezeMonitors && index === state.frozenSlideIndex
             }"
