@@ -361,11 +361,15 @@
             <!-- Slide connection visualization -->
             <div
               v-if="showConnectionForSlide(card, index)"
-              class="slide-connection absolute left-0 rounded-l top-0 bottom-0 w-1 bg-yellow-400"
+              class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-400"
             ></div>
             <div
-              v-if="card.type === CardType.Names && config.namesPrecedence === 0"
-              class="slide-connection absolute left-0 rounded-l top-0 bottom-0 w-1 bg-yellow-400"
+              v-if="card.type === CardType.Names"
+              class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1"
+              :class="{
+                'bg-yellow-400/20': config.namesPrecedence > 0,
+                'bg-yellow-400': config.namesPrecedence === 0
+              }"
             ></div>
 
             <div
@@ -424,7 +428,7 @@
 
             <!-- Slide number on right side -->
             <div
-              class="slide-number flex justify-center w-14 text-xl font-bold text-gray-600"
+              class="slide-number flex justify-end text-xl font-bold text-gray-600 tabular-nums"
               :class="{
                 'text-white animate-pulse': index === state.currentSlideIndex,
                 'opacity-50': index < state.currentSlideIndex
