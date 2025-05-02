@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container bg-gray-900 text-gray-200">
+  <div class="app-container bg-gray-900 text-gray-200 select-none">
     <!-- Top Navigation Bar -->
     <div class="toolbar bg-gray-800 text-gray-200 p-4 flex items-center justify-between">
       <div class="app-title text-xl font-bold flex items-center">
@@ -101,6 +101,7 @@
               :card="cards[state.currentSlideIndex]"
               :names="names"
               :config="config"
+              class="pointer-events-none"
             />
             <div
               v-else
@@ -119,6 +120,7 @@
               :card="sideScreenCard"
               :names="names"
               :config="config"
+              class="pointer-events-none"
             />
             <div
               v-else
@@ -135,7 +137,7 @@
               <div class="flex space-x-2">
                 <button
                   @click="blackOutScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-cente disabled:opacity-50 disabled:pointer-events-none"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-cente disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                   :class="{ '!bg-red-800 animate-pulse': state.blackOutScreens }"
                   title="Black out all screens"
                   :disabled="!state.isExcelLoaded"
@@ -157,7 +159,7 @@
                 </button>
                 <button
                   @click="flipScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center cursor-pointer"
                   title="Flip main screen with side screen"
                 >
                   <svg
@@ -344,7 +346,7 @@
         </div>
 
         <div
-          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 mr-0.5 select-none focus:outline-0 focus:ring-0"
+          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 mr-0.5 focus:outline-0 focus:ring-0"
         >
           <div
             v-for="(card, index) in cards"
@@ -1050,28 +1052,28 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background-color: #2563eb;
+  background-color: #334155;
   color: white;
   border-radius: 0.25rem;
   cursor: pointer;
 }
 
 .btn:hover {
-  background-color: #1d4ed8;
+  background-color: #475569;
 }
 
 .nav-btn {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background-color: #4b5563;
+  background-color: #374151;
   color: white;
   border-radius: 0.25rem;
   cursor: pointer;
 }
 
 .nav-btn:hover {
-  background-color: #374151;
+  background-color: #475569;
 }
 
 .nav-btn:disabled {
