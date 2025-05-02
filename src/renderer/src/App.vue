@@ -416,8 +416,16 @@
               <div class="slide-title font-bold text-gray-200">
                 {{ card.type }}
               </div>
-              <div class="slide-subtitle mt-1 text-gray-300" v-if="card.title">
-                {{ card.title }}
+              <div
+                class="slide-subtitle mt-1 text-gray-300"
+                style="overflow-wrap: anywhere"
+                v-if="card.title"
+              >
+                {{
+                  card.type === CardType.Image
+                    ? card.title.substring(card.title.lastIndexOf('/') + 1)
+                    : card.title
+                }}
               </div>
               <div class="slide-meta text-sm text-gray-400 mt-1" v-if="card.subtitle || card.group">
                 <span v-if="card.subtitle">{{ card.subtitle }}</span>

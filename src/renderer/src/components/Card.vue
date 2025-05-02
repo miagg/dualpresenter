@@ -130,11 +130,11 @@
       v-else-if="card.type === CardType.Image"
       class="flex items-center justify-center h-full relative"
     >
-      <!-- Background image -->
+      <!-- Image content -->
       <img
-        v-if="backgroundImageSrc"
-        :src="card.title"
-        alt="Background"
+        v-if="imageCardImageDataUrl"
+        :src="imageCardImageDataUrl"
+        alt="Full Screen Image"
         class="absolute inset-0 object-cover w-full h-full"
       />
     </div>
@@ -163,6 +163,7 @@ const backgroundImageDataUrl = ref<string | null>(null)
 const namesBackgroundImageDataUrl = ref<string | null>(null)
 const logoImageDataUrl = ref<string | null>(null)
 const logoInvertedImageDataUrl = ref<string | null>(null)
+const imageCardImageDataUrl = ref<string | null>(null)
 
 // Add ref for preview image URL
 const previewImageUrl = ref<string | null>(null)
@@ -269,6 +270,21 @@ const loadImageAsDataUrl = async (filePath: string): Promise<string | null> => {
   } catch (error) {
     console.error('Error loading image:', error, filePath)
     return null
+  }
+}
+
+// Function to load image card image from file path relative to Excel file
+const loadImageCardImage = async (): Promise<void> => {
+  if (props.card.type === CardType.Image && props.card.title) {
+    try {
+      // Load the image using the Electron API
+      imageCardImageDataUrl.value = await loadImageAsDataUrl(props.card.title)
+    } catch (error) {
+      console.error('Error loading image card:', error, props.card.title)
+      imageCardImageDataUrl.value = null
+    }
+  } else {
+    imageCardImageDataUrl.value = null
   }
 }
 
@@ -446,6 +462,13 @@ watchEffect(async () => {
     logoInvertedImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logoInverted)
   } else {
     logoInvertedImageDataUrl.value = null
+  }
+})
+
+// Watch for changes in card type and title for Image cards
+watchEffect(() => {
+  if (props.card.type === CardType.Image) {
+    loadImageCardImage()
   }
 })
 
