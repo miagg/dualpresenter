@@ -7,7 +7,7 @@ import {
   dialog,
   globalShortcut,
   Menu,
-  MenuItem
+  nativeTheme
 } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -287,10 +287,15 @@ function updateMainDisplayWindow(): void {
       frame: false,
       fullscreen: true,
       title: 'Main Screen',
+      show: false,
+      backgroundColor: '#000000',
       webPreferences: {
         preload: join(__dirname, '../preload/index.mjs'),
         sandbox: false
       }
+    })
+    mainDisplayWindow.on('ready-to-show', () => {
+      mainDisplayWindow.show()
     })
     mainDisplayWindow.loadURL(url)
 
@@ -359,10 +364,15 @@ function updateSideDisplayWindow(): void {
       frame: false,
       fullscreen: true,
       title: 'Side Screen',
+      show: false,
+      backgroundColor: '#000000',
       webPreferences: {
         preload: join(__dirname, '../preload/index.mjs'),
         sandbox: false
       }
+    })
+    sideDisplayWindow.on('ready-to-show', () => {
+      sideDisplayWindow.show()
     })
     sideDisplayWindow.loadURL(url)
 
@@ -425,6 +435,8 @@ function createSettingsWindow(): void {
     fullscreenable: false,
     minimizable: false, // Disable minimize button since it's pinned
     maximizable: false,
+    show: false,
+    backgroundColor: '#111827',
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
@@ -433,6 +445,10 @@ function createSettingsWindow(): void {
 
   // Remove the window menu
   settingsWindow.setMenu(null)
+
+  settingsWindow.on('ready-to-show', () => {
+    settingsWindow.show()
+  })
 
   // Load the settings URL
   const settingsUrl =
@@ -456,7 +472,7 @@ function createSettingsWindow(): void {
 }
 
 // Function to update the checked state of the Freeze Output menu item
-function updateFreezeMenuItemState(isChecked: boolean): void {
+function updateFreezeState(isChecked: boolean): void {
   const menu = Menu.getApplicationMenu()
   if (!menu) return
 
@@ -465,8 +481,8 @@ function updateFreezeMenuItemState(isChecked: boolean): void {
   if (!actionsMenu || !actionsMenu.submenu) return
 
   // Find the Freeze Output menu item and update its checked state
-  const freezeMenuItem = actionsMenu.submenu.items.find((item) => item.label === 'Freeze Output')
-  if (freezeMenuItem) {
+  const freeze = actionsMenu.submenu.items.find((item) => item.label === 'Freeze Output')
+  if (freeze) {
     freezeMenuItem.checked = isChecked
   }
 }
@@ -806,6 +822,8 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 905,
     title: 'DualPresenter',
+    show: false,
+    backgroundColor: '#111827',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
@@ -1198,6 +1216,9 @@ app.whenReady().then(() => {
     // Update display windows
     updateDisplayWindows()
   })
+
+  // Set Dark mode
+  nativeTheme.themeSource = 'dark'
 
   // Register global shortcuts when app is ready
   registerGlobalShortcuts()
