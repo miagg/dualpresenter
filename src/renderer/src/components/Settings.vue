@@ -342,12 +342,22 @@ const imagePreviews = reactive({
   logoInverted: ''
 })
 
+// Handle Escape keypress
+const handleKeyDown = (e: KeyboardEvent): void => {
+  if (e.key === 'Escape') {
+    closeSettings()
+  }
+}
+
 onMounted(() => {
   // Initialize with provided config
   initializeSettings()
 
   // Load image previews
   loadImagePreviews()
+
+  // Add Escape key event listener
+  document.addEventListener('keydown', handleKeyDown)
 
   // Add listener for settings data from main process when opened as standalone window
   window.electron.ipcRenderer.on('settings-data', (_, config) => {
@@ -428,6 +438,8 @@ const loadImagePreviews = async (): Promise<void> => {
 // Cleanup event listeners when component is unmounted
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('settings-data')
+  // Remove Escape key event listener
+  document.removeEventListener('keydown', handleKeyDown)
 })
 
 // File selection dialog
