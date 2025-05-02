@@ -224,7 +224,7 @@
       <div
         class="content-main flex-grow flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
       >
-        <div class="flex justify-between items-center mb-4 p-4">
+        <div class="flex justify-between items-center mb-4 p-4 pr-4.5">
           <div class="flex items-center">
             <h2 class="text-xl font-bold text-gray-200 mr-3">All Slides</h2>
 
@@ -342,14 +342,15 @@
         </div>
 
         <div
-          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 pr-3.5 mr-0.5 select-none focus:outline-0 focus:ring-0"
+          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 mr-0.5 select-none focus:outline-0 focus:ring-0"
         >
           <div
             v-for="(card, index) in cards"
             :key="card.id"
             class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none transition"
             :class="{
-              '!bg-blue-900 !border-blue-700': index === state.currentSlideIndex,
+              '!bg-blue-900 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
+                index === state.currentSlideIndex,
               '!ring-red-700 ring-2': state.freezeMonitors && index === state.frozenSlideIndex
             }"
             @click="goToSlide(index)"
@@ -413,7 +414,7 @@
             <div
               class="slide-number flex justify-center w-14 text-xl font-bold text-gray-600"
               :class="{
-                'text-white': index === state.currentSlideIndex,
+                'text-white animate-pulse': index === state.currentSlideIndex,
                 'opacity-50': index < state.currentSlideIndex
               }"
             >
@@ -998,14 +999,14 @@ const blackOutScreens = () => {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background-color: #3b82f6;
+  background-color: #2563eb;
   color: white;
   border-radius: 0.25rem;
   cursor: pointer;
 }
 
 .btn:hover {
-  background-color: #2563eb;
+  background-color: #1d4ed8;
 }
 
 .nav-btn {

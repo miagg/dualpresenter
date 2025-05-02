@@ -21,7 +21,7 @@
         class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="max-h-1/2 max-w-1/2 z-10" />
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="max-h-3/5 max-w-3/5 z-10" />
     </div>
 
     <!-- Title Card -->
