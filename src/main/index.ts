@@ -161,6 +161,20 @@ function loadData(): void {
 
 // Function to close the currently open Excel file
 function closeExcelFile(): void {
+  // Confirm closing when main display is active
+  if (data.state.mainScreen) {
+    const response = dialog.showMessageBoxSync(mainWindow, {
+      type: 'question',
+      buttons: ['Cancel', 'Close'],
+      title: 'Confirm Close',
+      message:
+        'Are you sure you want to close the currently open Excel file while the main display is on?'
+    })
+
+    if (response === 0) {
+      return // User canceled
+    }
+  }
   // Close and clear the file watcher
   if (watcher) {
     watcher.close()
@@ -538,6 +552,7 @@ function createApplicationMenu(): void {
       },
       {
         label: 'Close Excel File',
+        accelerator: 'CmdOrCtrl+W',
         enabled: !!data.state.excelPath,
         click: closeExcelFile
       },
@@ -878,6 +893,33 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  // Add a close event handler to confirm closing if excel is loaded and displays are active
+  mainWindow.on('close', (e) => {
+    // If there's an Excel file open and a main display is assigned
+    if (data.state.excelPath && data.state.mainScreen) {
+      e.preventDefault() // Prevent default close behavior
+
+      // Show confirmation dialog
+      const response = dialog.showMessageBoxSync(mainWindow, {
+        type: 'question',
+        buttons: ['Cancel', 'Exit'],
+        title: 'Confirm Exit',
+        message:
+          'A project is currently open and displays are active. Are you sure you want to exit?'
+      })
+
+      // Only exit if user confirmed with "Close"
+      if (response === 1) {
+        // Force quit by calling app.exit() which exits immediately
+        app.exit(0)
+      }
+      // If canceled (response === 0), do nothing and keep the app running
+    } else {
+      // If no Excel file is open or no main display is assigned, just quit the app
+      app.exit(0)
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -912,6 +954,30 @@ app.whenReady().then(() => {
 
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.miagg')
+
+  // Add handler for before-quit to show confirmation dialog if needed
+  app.on('before-quit', (e) => {
+    // If Excel file is open and display is assigned, show confirmation
+    if (data.state.excelPath && data.state.mainScreen) {
+      e.preventDefault() // Prevent the default quit behavior
+
+      // Show confirmation dialog
+      const response = dialog.showMessageBoxSync({
+        type: 'question',
+        buttons: ['Cancel', 'Exit'],
+        title: 'Confirm Exit',
+        message:
+          'A project is currently open and displays are active. Are you sure you want to exit?'
+      })
+
+      // Only exit if user confirmed with "Close"
+      if (response === 1) {
+        // Force quit by calling app.exit() which exits immediately
+        app.exit(0)
+      }
+      // If canceled (response === 0), do nothing and keep the app running
+    }
+  })
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
