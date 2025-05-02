@@ -14,4 +14,6 @@ export interface Card {
   group: string | null
   from: string | null
   until: string | null
+  main_only: boolean
+  precedence: number | null
 }

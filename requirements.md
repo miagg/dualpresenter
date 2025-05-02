@@ -39,6 +39,8 @@ This app will project slides on an external monitor based on an excel file. Each
 - The fourth column must be the slide group. This will be used to group slides of type "Names" (optional).
 - The fifth column must be the "from" field. This will be used to indicate the first name of the "Names" slide (optional).
 - The sixth column must be the "until" field. This will be used to indicate the last name of the "Names" slide (optional).
+- The seventh column must be the "main_only" field. This will be a boolean value that indicates if the slide will be displayed only on the main screen (optional).
+- The eighth column must be the "preceding" field. This will be used to indicate the number of slides that will be displayed before the "Names" slide (optional).
 
 ### Names sheet table structure
 

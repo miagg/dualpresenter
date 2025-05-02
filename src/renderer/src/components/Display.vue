@@ -33,12 +33,16 @@ onMounted(() => {
       if (route.name === 'mainscreen') {
         currentCard.value = data.cards[data.currentSlideIndex]
       } else {
-        const namesPrecedence = data.config.namesPrecedence
         const namesCard = data.cards.find((card) => {
+          let namesPrecedence =
+            card.precedence !== null ? card.precedence : data.config.namesPrecedence
           return (
             card.type === CardType.Names &&
+            card.main_only !== true &&
             data.currentSlideIndex + namesPrecedence >= card.id - 1 &&
-            (namesPrecedence > 0 ? data.currentSlideIndex < card.id - 1 : true)
+            (namesPrecedence === 0 || card.main_only === false
+              ? data.currentSlideIndex < card.id
+              : data.currentSlideIndex < card.id - 1)
           )
         })
         if (namesCard) {

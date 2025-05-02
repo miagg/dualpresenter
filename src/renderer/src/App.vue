@@ -356,19 +356,17 @@
               '!ring-red-700 ring-2': state.freezeMonitors && index === state.frozenSlideIndex
             }"
             @click="goToSlide(index)"
-            ref="currentSlideRef"
           >
-            <!-- Slide connection visualization -->
             <div
-              v-if="showConnectionForSlide(card, index)"
+              v-if="
+                getSideScreen(index) || (card.type === CardType.Names && card.main_only !== true)
+              "
               class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-600"
-            ></div>
-            <div
-              v-if="card.type === CardType.Names"
-              class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1"
               :class="{
-                'bg-yellow-700/30': config.namesPrecedence > 0,
-                'bg-yellow-600': config.namesPrecedence === 0
+                '!bg-yellow-700/30':
+                  card.type === CardType.Names &&
+                  card.main_only !== false &&
+                  (card.precedence !== null ? card.precedence : config.namesPrecedence) > 0
               }"
             ></div>
 
@@ -505,7 +503,6 @@ import { normalizeForSearch } from './utils/textUtils'
 // Global state
 const cards = ref<CardInterface[]>([])
 const names = ref<Name[]>([])
-const currentSlideRef = ref<HTMLElement | null>(null)
 const config = ref<Config>({
   colors: {
     primaryBackground: '#061D9F',
@@ -799,14 +796,7 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
 }
 
 const sideScreenCard = computed(() => {
-  const namesPrecedence = config.value.namesPrecedence
-  const namesCard = cards.value.find((card) => {
-    return (
-      card.type === CardType.Names &&
-      state.currentSlideIndex + namesPrecedence >= card.id - 1 &&
-      (namesPrecedence > 0 ? state.currentSlideIndex < card.id - 1 : true)
-    )
-  })
+  const namesCard = getSideScreen(state.currentSlideIndex)
   if (namesCard) {
     return namesCard
   } else {
@@ -992,44 +982,16 @@ const blackOutScreens = () => {
   window.electron.ipcRenderer.send('toggle-black-out')
 }
 
-// Slide connection visualization functions
-const showConnectionForSlide = (card: CardInterface, index: number): boolean => {
-  const namesPrecedence = config.value.namesPrecedence
-  if (namesPrecedence <= 0) return false
-
-  // Find the next Names slide
-  const nextNamesSlideIndex = findNextNameSlideIndex(index)
-
-  // Show connection line if this slide is within the precedence range of a Names slide
-  if (nextNamesSlideIndex !== -1) {
-    const distance = nextNamesSlideIndex - index
-    return distance > 0 && distance <= namesPrecedence
-  }
-
-  return false
-}
-
-const isConnectedToNameSlide = (card: CardInterface, index: number): boolean => {
-  const namesPrecedence = config.value.namesPrecedence
-  if (namesPrecedence <= 0) return false
-
-  // It's connected if it's the last slide before a Names slide
-  const nextSlideIndex = index + 1
-  if (nextSlideIndex < cards.value.length) {
-    const nextSlide = cards.value[nextSlideIndex]
-    return nextSlide.type === CardType.Names
-  }
-
-  return false
-}
-
-const findNextNameSlideIndex = (currentIndex: number): number => {
-  for (let i = currentIndex + 1; i < cards.value.length; i++) {
-    if (cards.value[i].type === CardType.Names) {
-      return i
-    }
-  }
-  return -1
+const getSideScreen = (index: number): CardInterface | undefined => {
+  return cards.value.find((card) => {
+    let namesPrecedence = card.precedence !== null ? card.precedence : config.value.namesPrecedence
+    return (
+      card.type === CardType.Names &&
+      card.main_only !== true &&
+      index + namesPrecedence >= card.id - 1 &&
+      (namesPrecedence === 0 || card.main_only === false ? index < card.id : index < card.id - 1)
+    )
+  })
 }
 </script>
 
