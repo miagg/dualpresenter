@@ -111,7 +111,7 @@
           </div>
 
           <h2 class="text-lg font-bold mb-2 text-gray-200">
-            Side Screen<span class="ml-2 text-yellow-400">⏺︎</span>
+            Side Screen<span class="ml-2 text-yellow-600">⏺︎</span>
           </h2>
           <div class="card-preview">
             <SlidePreview
@@ -226,7 +226,7 @@
       <div
         class="content-main flex-grow flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
       >
-        <div class="flex justify-between items-center mb-4 p-4 pr-4.5">
+        <div class="flex justify-between items-center p-4 pr-4.5">
           <div class="flex items-center">
             <h2 class="text-xl font-bold text-gray-200 mr-3">All Slides</h2>
 
@@ -361,14 +361,14 @@
             <!-- Slide connection visualization -->
             <div
               v-if="showConnectionForSlide(card, index)"
-              class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-400"
+              class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-600"
             ></div>
             <div
               v-if="card.type === CardType.Names"
               class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1"
               :class="{
-                'bg-yellow-400/20': config.namesPrecedence > 0,
-                'bg-yellow-400': config.namesPrecedence === 0
+                'bg-yellow-700/30': config.namesPrecedence > 0,
+                'bg-yellow-600': config.namesPrecedence === 0
               }"
             ></div>
 

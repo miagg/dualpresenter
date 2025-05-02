@@ -255,12 +255,6 @@
           </select>
           <p class="mt-1 text-xs text-gray-400">This font will be applied to all slides</p>
         </div>
-        <div class="font-preview mt-3 p-3 bg-gray-700 rounded">
-          <p class="mb-2 text-sm text-gray-300">Font Preview:</p>
-          <p :style="{ fontFamily: settings.fonts.slidesFont }" class="text-3xl">
-            The quick brown fox jumps over the lazy dog
-          </p>
-        </div>
       </div>
 
       <!-- Slide Offset -->

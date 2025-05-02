@@ -113,7 +113,7 @@
           },
           "height": {
             "type": "number",
-            "default": 905
+            "default": 913
           }
         },
         "default": {}

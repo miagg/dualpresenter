@@ -832,7 +832,7 @@ function createWindow(): void {
   // Load saved window state from config
   const savedWindowState = data.state.windowBounds || {
     width: 1024,
-    height: 905
+    height: 913
   }
 
   // Create the browser window with saved dimensions
@@ -842,7 +842,7 @@ function createWindow(): void {
     x: savedWindowState.x,
     y: savedWindowState.y,
     minWidth: 1024,
-    minHeight: 905,
+    minHeight: 913,
     title: 'DualPresenter',
     show: false,
     backgroundColor: '#111827',
