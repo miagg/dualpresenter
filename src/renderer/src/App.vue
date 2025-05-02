@@ -110,7 +110,9 @@
             </div>
           </div>
 
-          <h2 class="text-lg font-bold mb-2 text-gray-200">Side Screen</h2>
+          <h2 class="text-lg font-bold mb-2 text-gray-200">
+            Side Screen<span class="ml-2 text-yellow-400">⏺︎</span>
+          </h2>
           <div class="card-preview">
             <SlidePreview
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
@@ -347,7 +349,7 @@
           <div
             v-for="(card, index) in cards"
             :key="card.id"
-            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none transition"
+            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none transition relative"
             :class="{
               '!bg-blue-900/70 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
                 index === state.currentSlideIndex,
@@ -356,6 +358,16 @@
             @click="goToSlide(index)"
             ref="currentSlideRef"
           >
+            <!-- Slide connection visualization -->
+            <div
+              v-if="showConnectionForSlide(card, index)"
+              class="slide-connection absolute left-0 rounded-l top-0 bottom-0 w-1 bg-yellow-400"
+            ></div>
+            <div
+              v-if="card.type === CardType.Names && config.namesPrecedence === 0"
+              class="slide-connection absolute left-0 rounded-l top-0 bottom-0 w-1 bg-yellow-400"
+            ></div>
+
             <div
               class="slide-thumbnail w-40 mr-4 relative"
               @mouseenter="startHoverTimer(index)"
@@ -941,6 +953,46 @@ const blackOutScreens = () => {
   state.blackOutScreens = !state.blackOutScreens
   // Send to main process
   window.electron.ipcRenderer.send('toggle-black-out')
+}
+
+// Slide connection visualization functions
+const showConnectionForSlide = (card: CardInterface, index: number): boolean => {
+  const namesPrecedence = config.value.namesPrecedence
+  if (namesPrecedence <= 0) return false
+
+  // Find the next Names slide
+  const nextNamesSlideIndex = findNextNameSlideIndex(index)
+
+  // Show connection line if this slide is within the precedence range of a Names slide
+  if (nextNamesSlideIndex !== -1) {
+    const distance = nextNamesSlideIndex - index
+    return distance > 0 && distance <= namesPrecedence
+  }
+
+  return false
+}
+
+const isConnectedToNameSlide = (card: CardInterface, index: number): boolean => {
+  const namesPrecedence = config.value.namesPrecedence
+  if (namesPrecedence <= 0) return false
+
+  // It's connected if it's the last slide before a Names slide
+  const nextSlideIndex = index + 1
+  if (nextSlideIndex < cards.value.length) {
+    const nextSlide = cards.value[nextSlideIndex]
+    return nextSlide.type === CardType.Names
+  }
+
+  return false
+}
+
+const findNextNameSlideIndex = (currentIndex: number): number => {
+  for (let i = currentIndex + 1; i < cards.value.length; i++) {
+    if (cards.value[i].type === CardType.Names) {
+      return i
+    }
+  }
+  return -1
 }
 </script>
 
