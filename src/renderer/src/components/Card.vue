@@ -124,6 +124,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Image Card -->
+    <div
+      v-else-if="card.type === CardType.Image"
+      class="flex items-center justify-center h-full relative"
+    >
+      <!-- Background image -->
+      <img
+        v-if="backgroundImageSrc"
+        :src="card.title"
+        alt="Background"
+        class="absolute inset-0 object-cover w-full h-full"
+      />
+    </div>
   </div>
 </template>
 

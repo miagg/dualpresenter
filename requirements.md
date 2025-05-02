@@ -63,12 +63,13 @@ This app will project slides on an external monitor based on an excel file. Each
 
 - Dropdown selector with all available monitors except the main screen
 
-## Support for four type of slides: blank, title, names and unattended card
+## Support for four type of slides: blank, title, names, unattended and image card
 
 - Blank card: no content, just logo
 - Title card: big title and small title (optional)
 - Names card: list of names
 - Unattended card: list of names not attending
+- Image card: fullscreen image
 
 ## Configure app settings (colors, logos, background images, etc.)
 
