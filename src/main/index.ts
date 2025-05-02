@@ -483,7 +483,23 @@ function updateFreezeState(isChecked: boolean): void {
   // Find the Freeze Output menu item and update its checked state
   const freeze = actionsMenu.submenu.items.find((item) => item.label === 'Freeze Output')
   if (freeze) {
-    freezeMenuItem.checked = isChecked
+    freeze.checked = isChecked
+  }
+}
+
+// Function to update the checked state of the Black Out Screens menu item
+function updateBlackOutState(isChecked: boolean): void {
+  const menu = Menu.getApplicationMenu()
+  if (!menu) return
+
+  // Find the Actions menu
+  const actionsMenu = menu.items.find((item) => item.label === 'Actions')
+  if (!actionsMenu || !actionsMenu.submenu) return
+
+  // Find the Black Out Screens menu item and update its checked state
+  const blackOut = actionsMenu.submenu.items.find((item) => item.label === 'Black Out Screens')
+  if (blackOut) {
+    blackOut.checked = isChecked
   }
 }
 
@@ -579,6 +595,9 @@ function createApplicationMenu(): void {
             config.set('state.frozenSlideIndex', null)
           }
 
+          // Update menu item checked state
+          updateFreezeState(data.state.freezeMonitors)
+
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('data-updated', data)
           }
@@ -597,6 +616,9 @@ function createApplicationMenu(): void {
         click: () => {
           data.state.blackOutScreens = !data.state.blackOutScreens
           config.set('state.blackOutScreens', data.state.blackOutScreens)
+
+          // Update menu item checked state
+          updateBlackOutState(data.state.blackOutScreens)
 
           // Send updated state to renderer
           sendData()
@@ -782,7 +804,7 @@ function registerGlobalShortcuts(): void {
     }
 
     // Update menu item checked state
-    updateFreezeMenuItemState(data.state.freezeMonitors)
+    updateFreezeState(data.state.freezeMonitors)
 
     // Send data to update UI indicators in renderer
     sendData()
@@ -968,6 +990,9 @@ app.whenReady().then(() => {
       config.set('state.frozenSlideIndex', null)
     }
 
+    // Update menu item checked state
+    updateFreezeState(data.state.freezeMonitors)
+
     sendData()
 
     if (!data.state.freezeMonitors) {
@@ -1017,6 +1042,9 @@ app.whenReady().then(() => {
   ipcMain.on('toggle-black-out', () => {
     data.state.blackOutScreens = !data.state.blackOutScreens
     config.set('state.blackOutScreens', data.state.blackOutScreens)
+
+    // Update menu item checked state
+    updateBlackOutState(data.state.blackOutScreens)
 
     // Send updated state to renderer
     sendData()
