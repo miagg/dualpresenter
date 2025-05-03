@@ -276,12 +276,107 @@
           example a value of 2 means the names will appear two slides ahead of the current slide.
         </p>
       </div>
+
+      <!-- Keyboard Shortcuts -->
+      <div class="mt-8">
+        <h3 class="text-xl font-semibold mb-4">Keyboard Shortcuts</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Navigation shortcuts -->
+          <div class="keyboard-shortcuts-section">
+            <h4 class="text-lg font-medium mb-3 text-blue-400">Navigation</h4>
+            <ul class="space-y-2">
+              <li class="flex justify-between">
+                <span class="text-gray-300">Previous Slide</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">←/↑</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Next Slide</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">→/↓/Space</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Previous Slide (Global)</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+Shift+←</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Next Slide (Global)</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+Shift+→</code>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Control shortcuts -->
+          <div class="keyboard-shortcuts-section">
+            <h4 class="text-lg font-medium mb-3 text-green-400">Display Controls</h4>
+            <ul class="space-y-2">
+              <li class="flex justify-between">
+                <span class="text-gray-300">Freeze/Unfreeze Displays</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+Shift+F</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Black Out Screens</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+B</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Flip Screens</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+Shift+X</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Refresh Data</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+R</code>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Settings shortcuts -->
+          <div class="keyboard-shortcuts-section">
+            <h4 class="text-lg font-medium mb-3 text-yellow-400">Settings</h4>
+            <ul class="space-y-2">
+              <li class="flex justify-between">
+                <span class="text-gray-300">Open Settings</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">{{
+                  isMacOs ? 'Cmd+,' : 'Ctrl+P'
+                }}</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Close Settings</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Esc</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Decrease Precedence</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+[</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Increase Precedence</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+]</code>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Other shortcuts -->
+          <div class="keyboard-shortcuts-section">
+            <h4 class="text-lg font-medium mb-3 text-purple-400">Other</h4>
+            <ul class="space-y-2">
+              <li class="flex justify-between">
+                <span class="text-gray-300">Search</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+F</code>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-gray-300">Close Excel File</span>
+                <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+W</code>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <p class="mt-4 text-xs text-gray-400">
+          Note: On macOS, use Command (⌘) key instead of Control (Ctrl) key.
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, onUnmounted, watch } from 'vue'
+import { reactive, onMounted, onUnmounted, watch, ref } from 'vue'
 import type { Config } from '../interfaces/Config'
 
 // Define emits for when component is used within main app
@@ -289,6 +384,9 @@ const emit = defineEmits(['save'])
 
 // Check if we're running in standalone mode by checking the URL
 const isStandaloneMode = window.location.hash.includes('/settings')
+
+// Check if we're on macOS
+const isMacOs = ref(navigator.platform.toUpperCase().indexOf('MAC') >= 0)
 
 const props = defineProps({
   config: {
