@@ -536,6 +536,7 @@ const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
 const regeneratingPreviews = ref(false)
 const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flipping screens
+const initialLoadComplete = ref(false) // Flag to track initial load
 
 // Current time display
 const currentTime = ref('')
@@ -686,6 +687,15 @@ onMounted(() => {
 
     // Set isExcelLoaded based on whether we have cards data
     state.isExcelLoaded = Array.isArray(data.cards) && data.cards.length > 0
+
+    // Scroll to the current slide after data is loaded
+    if (state.isExcelLoaded && state.currentSlideIndex >= 0 && !initialLoadComplete.value) {
+      // Use nextTick to ensure the DOM is updated before scrolling
+      nextTick(() => {
+        scrollSelectedSlideIntoView(false)
+        initialLoadComplete.value = true
+      })
+    }
   })
 
   // Listen for regenerate-previews events
@@ -863,11 +873,11 @@ const prevSlide = () => {
   }
 }
 
-const scrollSelectedSlideIntoView = () => {
+const scrollSelectedSlideIntoView = (smooth: boolean = true) => {
   const slideElements = document.querySelectorAll('.slide-item')
   if (slideElements && slideElements.length > state.currentSlideIndex) {
     const selectedSlide = slideElements[state.currentSlideIndex] as HTMLElement
-    selectedSlide?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    selectedSlide?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'center' })
   }
 }
 
