@@ -112,6 +112,16 @@ function loadData(): void {
     watcher.close()
   }
 
+  // If file does not exist, reset the state
+  if (!fs.existsSync(data.state.excelPath)) {
+    data.state.excelPath = ''
+    data.state.currentSlideIndex = 0
+    config.set('state.excelPath', '')
+    config.set('state.currentSlideIndex', 0)
+    sendData()
+    return
+  }
+
   // Configure more robust file watching for Excel files
   watcher = fileWatcher.watch(data.state.excelPath, {
     persistent: true,
