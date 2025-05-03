@@ -508,6 +508,56 @@ function createSettingsWindow(): void {
   })
 }
 
+// Create Excel Structure window
+function createExcelStructureWindow(): void {
+  // Close the existing window if it's open
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.focus()
+    return
+  }
+
+  // Create a new Excel structure window
+  const excelStructureWindow = new BrowserWindow({
+    width: 974,
+    height: 855,
+    title: 'Excel File Structure',
+    parent: mainWindow || undefined,
+    modal: true, // Make it a modal window to keep it pinned to the parent
+    movable: true, // Allow it to be moved but still attached to the parent
+    frame: true,
+    resizable: true,
+    fullscreenable: false,
+    minimizable: false, // Disable minimize button since it's pinned
+    maximizable: false,
+    show: false,
+    backgroundColor: '#111827',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.mjs'),
+      sandbox: false
+    }
+  })
+
+  // Remove the window menu
+  excelStructureWindow.setMenu(null)
+
+  excelStructureWindow.on('ready-to-show', () => {
+    excelStructureWindow.show()
+  })
+
+  // Load the excel structure URL
+  const excelStructureUrl =
+    is.dev && process.env['ELECTRON_RENDERER_URL']
+      ? `${process.env['ELECTRON_RENDERER_URL']}/#/excel-structure`
+      : `file://${join(__dirname, '../renderer/index.html')}#/excel-structure`
+
+  excelStructureWindow.loadURL(excelStructureUrl)
+
+  // Handle window close
+  excelStructureWindow.on('closed', () => {
+    // Nothing to do here
+  })
+}
+
 // Function to update the checked state of the Freeze Output menu item
 function updateFreezeState(isChecked: boolean): void {
   const menu = Menu.getApplicationMenu()
@@ -557,7 +607,7 @@ function createApplicationMenu(): void {
           const filePath = dialog.showOpenDialogSync({
             title: 'Select Excel File',
             properties: ['openFile'],
-            filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
+            filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
           })?.[0]
 
           if (filePath) {
@@ -589,6 +639,12 @@ function createApplicationMenu(): void {
         }
       },
       { type: 'separator' },
+      {
+        label: 'Excel File Structure',
+        click: () => {
+          createExcelStructureWindow()
+        }
+      },
       {
         label: 'Settings',
         accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
@@ -1093,7 +1149,7 @@ app.whenReady().then(() => {
     const filePath = dialog.showOpenDialogSync({
       title: 'Select Excel File',
       properties: ['openFile'],
-      filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx'] }]
+      filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
     })?.[0]
 
     if (filePath) {
@@ -1156,6 +1212,11 @@ app.whenReady().then(() => {
   // Add handler for opening settings window
   ipcMain.on('open-settings', () => {
     createSettingsWindow()
+  })
+
+  // Add handler for opening Excel structure window
+  ipcMain.on('open-excel-structure', () => {
+    createExcelStructureWindow()
   })
 
   // Add handler for settings window requesting data
@@ -1332,6 +1393,41 @@ app.whenReady().then(() => {
 
     // Update display windows
     updateDisplayWindows()
+  })
+
+  // Add handler for saving template file to user location
+  ipcMain.handle('save-excel-template', async () => {
+    try {
+      const templatePath = join(app.getAppPath(), 'resources', 'template.xlsm')
+
+      // Ensure the template exists
+      if (!fs.existsSync(templatePath)) {
+        throw new Error('Template file not found')
+      }
+
+      // Open save dialog to get destination path
+      const result = await dialog.showSaveDialog({
+        title: 'Save Excel Template',
+        defaultPath: 'template.xlsm',
+        filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
+      })
+
+      // If user canceled, exit
+      if (result.canceled || !result.filePath) {
+        return { success: false, message: 'Operation canceled' }
+      }
+
+      // Copy the template to the selected location
+      fs.copyFileSync(templatePath, result.filePath)
+
+      return { success: true, filePath: result.filePath }
+    } catch (error) {
+      console.error('Error saving template:', error)
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
   })
 
   // Set Dark mode

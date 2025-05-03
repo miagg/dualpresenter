@@ -490,12 +490,17 @@
         </svg>
       </button>
     </div>
+
+    <!-- Excel Structure Modal -->
+    <ExcelStructure v-if="showExcelStructure" @close="showExcelStructure = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import SlidePreview from './components/SlidePreview.vue'
+import Settings from './components/Settings.vue'
+import ExcelStructure from './components/ExcelStructure.vue'
 import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
@@ -537,6 +542,8 @@ const sideScreen = ref<string | null>(null)
 const regeneratingPreviews = ref(false)
 const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flipping screens
 const initialLoadComplete = ref(false) // Flag to track initial load
+const showSettings = ref(false) // Controls visibility of settings modal
+const showExcelStructure = ref(false) // Controls visibility of Excel structure modal
 
 // Current time display
 const currentTime = ref('')
@@ -900,6 +907,11 @@ const toggleFreeze = () => {
 const openSettings = () => {
   // Send message to main process to open settings window
   window.electron.ipcRenderer.send('open-settings')
+}
+
+const openExcelStructure = () => {
+  // Toggle the modal directly instead of sending to main process
+  showExcelStructure.value = true
 }
 
 const updateConfig = (newConfig: Config) => {
