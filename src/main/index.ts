@@ -1398,7 +1398,7 @@ app.whenReady().then(() => {
   // Add handler for saving template file to user location
   ipcMain.handle('save-excel-template', async () => {
     try {
-      const templatePath = join(app.getAppPath(), 'resources', 'template.xlsm')
+      const templatePath = join(app.getAppPath(), 'resources', 'template.xlsx')
 
       // Ensure the template exists
       if (!fs.existsSync(templatePath)) {
@@ -1408,7 +1408,7 @@ app.whenReady().then(() => {
       // Open save dialog to get destination path
       const result = await dialog.showSaveDialog({
         title: 'Save Excel Template',
-        defaultPath: 'template.xlsm',
+        defaultPath: 'template.xlsx',
         filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
       })
 
