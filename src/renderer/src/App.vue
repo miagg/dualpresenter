@@ -347,6 +347,8 @@
 
         <div
           class="slides-list flex-grow overflow-y-auto space-y-4 p-4 mr-0.5 focus:outline-0 focus:ring-0"
+          ref="slidesListRef"
+          tabindex="0"
         >
           <div
             v-for="(card, index) in cards"
@@ -565,6 +567,7 @@ const showSearchResults = ref(false)
 const selectedSearchIndex = ref(-1)
 const searchContainerRef = ref<HTMLElement | null>(null)
 const searchInputRef = ref<HTMLInputElement | null>(null)
+const slidesListRef = ref<HTMLElement | null>(null) // Add ref for slides-list
 const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 
 const filteredSearchResults = computed(() => {
@@ -851,14 +854,30 @@ const handleKeyDown = (event: KeyboardEvent) => {
     return
   }
 
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-    event.preventDefault()
-    event.stopPropagation()
-    prevSlide()
-  } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === ' ') {
-    event.preventDefault()
-    event.stopPropagation()
-    nextSlide()
+  // Get the slides list element
+  const slidesList = document.querySelector('.slides-list') as HTMLElement
+
+  if (
+    event.key === 'ArrowLeft' ||
+    event.key === 'ArrowUp' ||
+    event.key === 'ArrowRight' ||
+    event.key === 'ArrowDown' ||
+    event.key === ' '
+  ) {
+    // Focus on the slides-list first to ensure keyboard navigation works properly
+    if (slidesList && document.activeElement !== slidesList) {
+      slidesList.focus()
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      event.stopPropagation()
+      prevSlide()
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === ' ') {
+      event.preventDefault()
+      event.stopPropagation()
+      nextSlide()
+    }
   }
 }
 
