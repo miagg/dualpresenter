@@ -290,7 +290,7 @@
               <input
                 type="text"
                 v-model="searchQuery"
-                class="w-64 xl:w-96 px-4 py-2 pr-16 border rounded bg-gray-800 text-gray-200 border-gray-700 focus:border-blue-500 focus:outline-none"
+                class="w-64 xl:w-96 px-4 py-2 pr-16 border rounded bg-gray-800 text-gray-200 border-gray-700 focus:outline-none"
                 placeholder="Search slides..."
                 @focus="showSearchResults = true"
                 @keydown.down.prevent="navigateSearchResults('down')"
@@ -1026,6 +1026,18 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+}
+
+/* Global styles for focus states - only show outline when using keyboard */
+:global(:focus:not(:focus-visible)) {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: 0 !important;
+}
+
+:global(:focus-visible:not(.slides-list)) {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
 }
 
 .main-content {
