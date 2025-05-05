@@ -11,8 +11,9 @@ import {
 } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { autoUpdater } from 'electron-updater'
-import icon from '../../resources/icon.png?asset'
+// Import electron-updater correctly as a CommonJS module
+const { autoUpdater } = require('electron-updater')
+import icon from '../../build/icon.png?asset'
 import config from './config'
 import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
