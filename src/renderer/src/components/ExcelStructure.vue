@@ -2,7 +2,7 @@
   <div
     class="excel-structure-panel bg-gray-800 w-full h-full overflow-hidden p-6 text-gray-200 select-none"
   >
-    <div class="flex justify-between items-center mb-6">
+    <div v-if="isMacOs" class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold">Excel File Structure</h2>
       <button
         @click="closeWindow"
@@ -256,13 +256,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 // Define emits for when component is used within main app
 const emit = defineEmits(['close'])
 
 // Check if we're running in standalone mode by checking the URL
 const isStandaloneMode = window.location.hash.includes('/excel-structure')
+
+// Check if we're on macOS
+const isMacOs = ref(navigator.platform.toUpperCase().indexOf('MAC') >= 0)
 
 // Function to close the window
 const closeWindow = () => {
