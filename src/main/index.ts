@@ -29,6 +29,7 @@ let watcher: fileWatcher.FSWatcher | null = null
 let lastModifiedTime: Date | null = null
 let fileCheckInterval: NodeJS.Timeout | null = null
 let debounceTimer: NodeJS.Timeout | null = null
+let isQuittingForUpdate = false // Add this flag
 
 // Directory for slide previews
 const previewsDir = path.join(app.getPath('userData'), 'slide-previews')
@@ -1116,14 +1117,25 @@ app.whenReady().then(() => {
         buttons: ['Restart Now', 'Later']
       })
 
-      if (response === 0) {
-        autoUpdater.quitAndInstall()
-      }
+      const shouldRestart = response === 0
 
       mainWindow.webContents.send('update-status', {
         status: 'downloaded',
         info
       })
+
+      // Handle the actual restart separate from the window checks
+      if (shouldRestart) {
+        // Set the flag before calling quitAndInstall
+        isQuittingForUpdate = true
+        // Set a small timeout to allow the update status to be sent
+        setTimeout(() => {
+          // For all platforms, use quitAndInstall with the right parameters
+          // - isSilent = false: shows a standard OS dialog during installation
+          // - isForceRunAfter = true: forces app to restart after update
+          autoUpdater.quitAndInstall(false, true)
+        }, 100)
+      }
     }
   })
 
@@ -1157,6 +1169,11 @@ app.whenReady().then(() => {
 
   // Ad handler for before-quit to show confirmation dialog if needed
   app.on('before-quit', (e) => {
+    // If quitting for an update, bypass the confirmation dialog
+    if (isQuittingForUpdate) {
+      return
+    }
+
     // If Excel file is open and display is assigned, show confirmation
     if (data.state.excelPath && data.state.mainScreen) {
       e.preventDefault() // Prevent the default quit behavior
