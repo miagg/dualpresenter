@@ -782,23 +782,34 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
     return
   }
 
-  if (
-    (isMac && event.metaKey && event.key === 'f') ||
-    (!isMac && event.ctrlKey && event.key === 'f')
-  ) {
+  // Check for Ctrl+F or Cmd+F using both key and keyCode for international keyboard support
+  // KeyCode 70 is the keyCode for 'F' key on standard keyboards regardless of layout
+  const isFKey = event.key.toLowerCase() === 'f' || event.keyCode === 70
+  const isModifierPressed = (isMac && event.metaKey) || (!isMac && event.ctrlKey)
+
+  if (isModifierPressed && isFKey) {
     event.preventDefault()
+    event.stopPropagation() // Stop event propagation to prevent browser's find dialog
+
+    // Focus the search input and show results
     if (searchInputRef.value) {
       searchInputRef.value.focus()
       showSearchResults.value = true
+
+      // Select all existing text if any
+      nextTick(() => {
+        if (searchInputRef.value) {
+          searchInputRef.value.select()
+        }
+      })
     }
   }
 
   // Handle names precedence shortcuts
-  // Decrease with cmd-[ or ctrl-[
-  if (
-    (isMac && event.metaKey && event.key === '[') ||
-    (!isMac && event.ctrlKey && event.key === '[')
-  ) {
+
+  // Check for [ key (keyCode 219 on standard keyboards)
+  const isLeftBracketKey = event.key === '[' || event.keyCode === 219
+  if (((isMac && event.metaKey) || (!isMac && event.ctrlKey)) && isLeftBracketKey) {
     event.preventDefault()
     if (config.value.namesPrecedence > 0) {
       const newConfig = JSON.parse(JSON.stringify(config.value))
@@ -807,11 +818,9 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
     }
   }
 
-  // Increase with cmd-] or ctrl-]
-  if (
-    (isMac && event.metaKey && event.key === ']') ||
-    (!isMac && event.ctrlKey && event.key === ']')
-  ) {
+  // Check for ] key (keyCode 221 on standard keyboards)
+  const isRightBracketKey = event.key === ']' || event.keyCode === 221
+  if (((isMac && event.metaKey) || (!isMac && event.ctrlKey)) && isRightBracketKey) {
     event.preventDefault()
     const newConfig = JSON.parse(JSON.stringify(config.value))
     newConfig.namesPrecedence = newConfig.namesPrecedence + 1
