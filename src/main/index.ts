@@ -11,6 +11,7 @@ import {
 } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import config from './config'
 import { parseExcel } from './utils'
@@ -652,6 +653,25 @@ function createApplicationMenu(): void {
       },
       { type: 'separator' },
       {
+        label: 'Check for Updates',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('update-status', { status: 'checking' })
+          }
+          autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+            console.error('Error checking for updates:', err)
+
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('update-status', {
+                status: 'error',
+                error: err.message
+              })
+            }
+          })
+        }
+      },
+      { type: 'separator' },
+      {
         label: 'Excel File Structure',
         click: () => {
           createExcelStructureWindow()
@@ -1045,6 +1065,90 @@ app.whenReady().then(() => {
 
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.miagg')
+
+  // Configure auto-updater behavior
+  autoUpdater.logger = console
+  autoUpdater.autoDownload = true
+
+  // Handle update events
+  autoUpdater.on('checking-for-update', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-status', { status: 'checking' })
+    }
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-status', {
+        status: 'available',
+        info
+      })
+    }
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-status', { status: 'not-available' })
+    }
+  })
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-status', {
+        status: 'downloading',
+        progress: progressObj
+      })
+    }
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // Show a notification that an update is ready
+      const response = dialog.showMessageBoxSync({
+        type: 'info',
+        title: 'Update Ready',
+        message: 'A new version has been downloaded. Restart the application to apply the updates.',
+        buttons: ['Restart Now', 'Later']
+      })
+
+      if (response === 0) {
+        autoUpdater.quitAndInstall()
+      }
+
+      mainWindow.webContents.send('update-status', {
+        status: 'downloaded',
+        info
+      })
+    }
+  })
+
+  autoUpdater.on('error', (err) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-status', {
+        status: 'error',
+        error: err.message
+      })
+    }
+  })
+
+  // Check for updates
+  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+    console.error('Error checking for updates:', err)
+  })
+
+  // Add handler for manually checking updates
+  ipcMain.on('check-for-updates', () => {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error('Error checking for updates:', err)
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-status', {
+          status: 'error',
+          error: err.message
+        })
+      }
+    })
+  })
 
   // Ad handler for before-quit to show confirmation dialog if needed
   app.on('before-quit', (e) => {
