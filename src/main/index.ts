@@ -309,7 +309,9 @@ function updateMainDisplayWindow(): void {
       width: targetMonitor.bounds.width,
       height: targetMonitor.bounds.height,
       frame: false,
-      fullscreen: true,
+      alwaysOnTop: true,
+      fullscreenable: false,
+      enableLargerThanScreen: true,
       title: 'Main Screen',
       show: false,
       backgroundColor: '#000000',
@@ -319,6 +321,9 @@ function updateMainDisplayWindow(): void {
       }
     })
     mainDisplayWindow.on('ready-to-show', () => {
+      mainDisplayWindow.setAlwaysOnTop(true, 'screen-saver')
+      mainDisplayWindow.setFullScreenable(false)
+      mainDisplayWindow.moveTop()
       mainDisplayWindow.show()
     })
     mainDisplayWindow.loadURL(url)
@@ -347,9 +352,11 @@ function updateMainDisplayWindow(): void {
     // Reposition if needed
     mainDisplayWindow.setBounds(targetMonitor.bounds)
 
-    // Ensure fullscreen is maintained
-    if (!mainDisplayWindow.isFullScreen()) {
-      mainDisplayWindow.setFullScreen(true)
+    // Ensure always-on-top is maintained
+    if (!mainDisplayWindow.isAlwaysOnTop()) {
+      mainDisplayWindow.setAlwaysOnTop(true, 'screen-saver')
+      mainDisplayWindow.setFullScreenable(false)
+      mainDisplayWindow.moveTop()
     }
 
     // Update content
@@ -392,7 +399,9 @@ function updateSideDisplayWindow(): void {
       width: targetMonitor.bounds.width,
       height: targetMonitor.bounds.height,
       frame: false,
-      fullscreen: true,
+      alwaysOnTop: true,
+      fullscreenable: false,
+      enableLargerThanScreen: true,
       title: 'Side Screen',
       show: false,
       backgroundColor: '#000000',
@@ -401,16 +410,17 @@ function updateSideDisplayWindow(): void {
         sandbox: false
       }
     })
+
     sideDisplayWindow.on('ready-to-show', () => {
+      sideDisplayWindow.setAlwaysOnTop(true, 'screen-saver')
+      sideDisplayWindow.setFullScreenable(false)
+      sideDisplayWindow.moveTop()
       sideDisplayWindow.show()
     })
     sideDisplayWindow.loadURL(url)
 
     sideDisplayWindow.webContents.on('did-finish-load', () => {
       if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
-        // Ensure fullscreen is set after content is loaded
-        sideDisplayWindow.setFullScreen(true)
-
         sideDisplayWindow.webContents.send('display-data', {
           type: 'side',
           currentSlideIndex: data.state.currentSlideIndex,
@@ -434,9 +444,11 @@ function updateSideDisplayWindow(): void {
     // Reposition if needed
     sideDisplayWindow.setBounds(targetMonitor.bounds)
 
-    // Ensure fullscreen is maintained
-    if (!sideDisplayWindow.isFullScreen()) {
-      sideDisplayWindow.setFullScreen(true)
+    // Ensure always-on-top is maintained
+    if (!sideDisplayWindow.isAlwaysOnTop()) {
+      sideDisplayWindow.setAlwaysOnTop(true, 'screen-saver')
+      sideDisplayWindow.setFullScreenable(false)
+      sideDisplayWindow.moveTop()
     }
 
     sideDisplayWindow.webContents.send('display-data', {
@@ -1034,7 +1046,7 @@ app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.miagg')
 
-  // Add handler for before-quit to show confirmation dialog if needed
+  // Ad handler for before-quit to show confirmation dialog if needed
   app.on('before-quit', (e) => {
     // If Excel file is open and display is assigned, show confirmation
     if (data.state.excelPath && data.state.mainScreen) {
