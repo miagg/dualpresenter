@@ -1148,10 +1148,12 @@ app.whenReady().then(() => {
     }
   })
 
-  // Check for updates
-  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-    console.error('Error checking for updates:', err)
-  })
+  // Check for updates unless on MacOS
+  if (process.platform !== 'darwin') {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error('Error checking for updates:', err)
+    })
+  }
 
   // Add handler for manually checking updates
   ipcMain.on('check-for-updates', () => {
