@@ -1032,7 +1032,7 @@ function createWindow(): void {
       // If canceled (response === 0), do nothing and keep the app running
     } else {
       // If no Excel file is open or no main display is assigned, just quit the app
-      app.exit(0)
+      mainWindow.close()
     }
   })
 
