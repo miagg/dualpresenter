@@ -2,6 +2,7 @@ import { CardType } from '../enums/CardType'
 import { Card } from '../models/Card'
 import { Name } from '../models/Name'
 import xlsx from 'node-xlsx'
+import path from 'path'
 
 interface ParsedData {
   cards: Card[]
@@ -27,10 +28,11 @@ const parseExcel = function (excelPath: string): ParsedData {
     // Add excel path to images cards
     cards.forEach((card) => {
       if (card.type === CardType.Image) {
-        // Extract the path from the excel path
-        const path = excelPath.split('/').slice(0, -1).join('/') + '/' + card.title
+        // Extract the directory from the excel path and join with the image filename
+        const directory = path.dirname(excelPath)
+        const imagePath = path.join(directory, card.title)
         if (card.title?.length) {
-          card.title = path
+          card.title = imagePath
         }
       }
     })

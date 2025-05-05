@@ -425,7 +425,9 @@
               >
                 {{
                   card.type === CardType.Image
-                    ? card.title.substring(card.title.lastIndexOf('/') + 1)
+                    ? card.title.substring(
+                        Math.max(card.title.lastIndexOf('/'), card.title.lastIndexOf('\\')) + 1
+                      )
                     : card.title
                 }}
               </div>
