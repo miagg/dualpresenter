@@ -881,6 +881,12 @@ function createApplicationMenu(): void {
     menuTemplate.splice(helpMenuIndex, 1)
   }
 
+  // Remove view menu when not running in dev mode
+  const viewMenuIndex = menuTemplate.findIndex((item) => item.label === 'View')
+  if (viewMenuIndex !== -1 && !is.dev) {
+    menuTemplate.splice(viewMenuIndex, 1)
+  }
+
   // Build and set the application menu
   const menu = Menu.buildFromTemplate(menuTemplate)
   Menu.setApplicationMenu(menu)
