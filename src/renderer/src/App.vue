@@ -1020,13 +1020,13 @@ const flipScreens = () => {
   setTimeout(() => {
     mainScreen.value = tempSide
     window.electron.ipcRenderer.send('set-main-screen', tempSide)
-  }, 1000)
+  }, 100)
 
   setTimeout(() => {
     sideScreen.value = tempMain
     const sideValue = tempMain === 'null' ? null : tempMain
     window.electron.ipcRenderer.send('set-side-screen', sideValue)
-  }, 2000)
+  }, 200)
 }
 
 const blackOutScreens = () => {
