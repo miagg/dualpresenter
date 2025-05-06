@@ -379,7 +379,7 @@
               @mouseenter="startHoverTimer(index)"
               @mouseleave="clearHoverTimer()"
             >
-              <LazySlidePreview
+              <SlidePreview
                 :card="card"
                 :names="names"
                 :config="config"
@@ -503,7 +503,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import SlidePreview from './components/SlidePreview.vue'
-import LazySlidePreview from './components/LazySlidePreview.vue'
 import Settings from './components/Settings.vue'
 import ExcelStructure from './components/ExcelStructure.vue'
 import type { Card as CardInterface } from './interfaces/Card'
