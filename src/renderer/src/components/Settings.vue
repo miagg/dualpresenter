@@ -268,7 +268,7 @@
             min="0"
             max="20"
             class="w-16 p-2 border rounded bg-gray-700 text-gray-200 border-gray-600"
-            @change="settingsChanged"
+            @change="settingsChanged(false)"
           />
         </div>
         <p class="mt-2 text-sm text-gray-400">
@@ -608,7 +608,7 @@ watch(
   { deep: true, immediate: true }
 )
 
-const settingsChanged = async (): Promise<void> => {
+const settingsChanged = async (forcePreviewRegeneraion: boolean = true): Promise<void> => {
   // Create a complete deep copy to ensure we're working with a new object
   const settingsCopy = {
     colors: {
@@ -636,7 +636,9 @@ const settingsChanged = async (): Promise<void> => {
     const { clearAllSlidePreviewImages } = await import('../utils/fileUtils')
 
     // Clear all previews immediately without confirmation dialog
-    await clearAllSlidePreviewImages(true)
+    if (forcePreviewRegeneraion) {
+      await clearAllSlidePreviewImages(true)
+    }
   } catch (error) {
     console.error('Error clearing preview images:', error)
   }

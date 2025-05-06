@@ -22,14 +22,13 @@
       />
     </div>
 
-    <!-- Loading state or fallback -->
+    <!-- Loading state -->
     <div
       v-else
       class="fallback flex items-center justify-center h-full aspect-video"
       :style="{ backgroundColor: getBackgroundColor() }"
     >
-      <div v-if="loading" class="loading-spinner"></div>
-      <div v-else class="text-gray-400">Preview unavailable</div>
+      <div class="loading-spinner"></div>
     </div>
   </div>
 </template>
