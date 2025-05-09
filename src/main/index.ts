@@ -643,6 +643,16 @@ function createApplicationMenu(): void {
         }
       },
       {
+        label: 'Edit Excel File',
+        accelerator: 'CmdOrCtrl+E',
+        enabled: !!data.state.excelPath,
+        click: () => {
+          if (data.state.excelPath) {
+            shell.openExternal(`file://${data.state.excelPath}`)
+          }
+        }
+      },
+      {
         label: 'Close Excel File',
         accelerator: 'CmdOrCtrl+W',
         enabled: !!data.state.excelPath,
