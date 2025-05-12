@@ -601,7 +601,7 @@ function createApplicationMenu(): void {
   // Get the default application menu first
   const defaultMenu = Menu.getApplicationMenu() || Menu.buildFromTemplate([])
 
-  // Create our custom File menu
+  // Create our custom File menu - different for macOS vs Windows/Linux
   const customFileMenu: Electron.MenuItemConstructorOptions = {
     label: 'File',
     submenu: [
@@ -655,38 +655,43 @@ function createApplicationMenu(): void {
         }
       },
       { type: 'separator' },
-      {
-        label: 'Check for Updates',
-        click: () => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('update-status', { status: 'checking' })
-          }
-          autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-            console.error('Error checking for updates:', err)
+      // Only show these items in File menu for Windows/Linux, not for macOS
+      ...(process.platform !== 'darwin'
+        ? [
+            {
+              label: 'Check for Updates',
+              click: () => {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                  mainWindow.webContents.send('update-status', { status: 'checking' })
+                }
+                autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+                  console.error('Error checking for updates:', err)
 
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('update-status', {
-                status: 'error',
-                error: err.message
-              })
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('update-status', {
+                      status: 'error',
+                      error: err.message
+                    })
+                  }
+                })
+              }
+            },
+            { type: 'separator' },
+            {
+              label: 'Excel File Structure',
+              click: () => {
+                createExcelStructureWindow()
+              }
+            },
+            {
+              label: 'Settings',
+              accelerator: 'Ctrl+P',
+              click: () => {
+                createSettingsWindow()
+              }
             }
-          })
-        }
-      },
-      { type: 'separator' },
-      {
-        label: 'Excel File Structure',
-        click: () => {
-          createExcelStructureWindow()
-        }
-      },
-      {
-        label: 'Settings',
-        accelerator: process.platform === 'darwin' ? 'Cmd+,' : 'Ctrl+P',
-        click: () => {
-          createSettingsWindow()
-        }
-      },
+          ]
+        : []),
       { type: 'separator' },
       { role: 'quit' }
     ]
@@ -802,28 +807,53 @@ function createApplicationMenu(): void {
 
   // Special handling for macOS app menu (must be first)
   if (process.platform === 'darwin') {
-    // Look for the app menu in the default menu
-    const appMenu = defaultMenus.find((item) => item.role === 'appMenu' || item.label === app.name)
-    if (appMenu) {
-      // Use the default app menu
-      menuTemplate.push(appMenu)
-    } else {
-      // Create a standard macOS app menu
-      menuTemplate.push({
-        label: app.name,
-        submenu: [
-          { role: 'about' },
-          { type: 'separator' },
-          { role: 'services' },
-          { type: 'separator' },
-          { role: 'hide' },
-          { role: 'hideOthers' },
-          { role: 'unhide' },
-          { type: 'separator' },
-          { role: 'quit' }
-        ]
-      })
-    }
+    // For macOS, we create a custom app menu with our additional items
+    menuTemplate.push({
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('update-status', { status: 'checking' })
+            }
+            autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+              console.error('Error checking for updates:', err)
+
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('update-status', {
+                  status: 'error',
+                  error: err.message
+                })
+              }
+            })
+          }
+        },
+        {
+          label: 'Excel File Structure',
+          click: () => {
+            createExcelStructureWindow()
+          }
+        },
+        {
+          label: 'Settings',
+          accelerator: 'Cmd+,',
+          click: () => {
+            createSettingsWindow()
+          }
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    })
   }
 
   // Add our customized File menu
@@ -858,7 +888,25 @@ function createApplicationMenu(): void {
     if (!hasWindowMenu) {
       menuTemplate.push({
         label: 'Window',
-        submenu: [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'close' }]
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          { type: 'separator' },
+          { role: 'close' },
+          { type: 'separator' },
+          {
+            label: 'About DualPresenter',
+            click: () => {
+              dialog.showMessageBox({
+                title: 'About DualPresenter',
+                message: 'DualPresenter',
+                detail: `Version: ${app.getVersion()}\n\nA dual-screen presentation app for managing slides across multiple displays.`,
+                buttons: ['OK'],
+                icon: icon
+              })
+            }
+          }
+        ]
       })
     }
   }
