@@ -30,7 +30,6 @@
     "crypto-js": "^4.2.0",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.3.9",
-    "html-to-image": "^1.11.13",
     "md5": "^2.3.0",
     "node-xlsx": "^0.24.0",
     "tailwindcss": "^4.0.8",
