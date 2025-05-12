@@ -1,10 +1,11 @@
 <template>
   <div
-    class="aspect-video overflow-hidden slides-content w-full h-full"
+    class="aspect-video overflow-hidden slides-content w-full h-full origin-top-left pointer-events-none"
     :style="{
       fontFamily: slideStyles.fontFamilyImportant,
       backgroundColor: backgroundColor,
-      color: textColor
+      color: textColor,
+      zoom: zoom
     }"
     ref="cardElement"
   >
@@ -147,7 +148,6 @@ import type { PropType } from 'vue'
 import { CardType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
-import { generateSlideHash, generateSlidePreview } from '../utils/fileUtils'
 
 // Import default assets
 import defaultBg from '../../../../resources/bg.png'
@@ -165,12 +165,6 @@ const logoImageDataUrl = ref<string | null>(null)
 const logoInvertedImageDataUrl = ref<string | null>(null)
 const imageCardImageDataUrl = ref<string | null>(null)
 
-// Add ref for preview image URL
-const previewImageUrl = ref<string | null>(null)
-
-// Define emits for when a preview is generated
-const emit = defineEmits(['preview-generated'])
-
 const props = defineProps({
   card: {
     type: Object as PropType<Card>,
@@ -184,13 +178,9 @@ const props = defineProps({
     type: Object as PropType<Config>,
     default: null
   },
-  isPreview: {
-    type: Boolean,
-    default: false
-  },
-  generatePreview: {
-    type: Boolean,
-    default: false
+  zoom: {
+    type: Number,
+    default: 1
   }
 })
 
@@ -344,94 +334,6 @@ const logoSrc = computed(() => {
   return null
 })
 
-// Generate a hash for the current slide
-const generateHash = (): string => {
-  if (!props.card || !props.config) return ''
-  return generateSlideHash(props.card, props.names, props.config)
-}
-
-// Generate a preview image for the current slide
-const generatePreviewImage = async (): Promise<string | null> => {
-  // First validate that the card element exists
-  if (!cardElement.value) {
-    console.warn('Card element reference is null, cannot generate preview')
-    return null
-  }
-
-  // Verify it's a real DOM element that's in the document
-  if (!(cardElement.value instanceof HTMLElement) || !document.contains(cardElement.value)) {
-    console.warn('Card element is not a valid DOM element or not in document')
-    return null
-  }
-
-  try {
-    // Make sure the card is properly rendered and has content
-    await nextTick()
-
-    // Double check the element reference is still valid after nextTick
-    if (!cardElement.value || !(cardElement.value instanceof HTMLElement)) {
-      console.warn('Card element reference was lost after nextTick')
-      return null
-    }
-
-    // Force card to be rendered with proper dimensions
-    cardElement.value.style.width = '1920px'
-    cardElement.value.style.height = '1080px'
-    cardElement.value.style.position = 'fixed'
-    cardElement.value.style.top = '0'
-    cardElement.value.style.left = '0'
-    cardElement.value.style.visibility = 'visible'
-    cardElement.value.style.zIndex = '-9999'
-
-    // Force a repaint
-    const hash = generateHash()
-
-    // Ensure all images are loaded
-    const images = cardElement.value.querySelectorAll('img')
-    if (images.length > 0) {
-      await Promise.all(
-        Array.from(images).map((img) =>
-          img.complete
-            ? Promise.resolve()
-            : new Promise((resolve) => {
-                img.onload = resolve
-                img.onerror = resolve // Continue even if image fails to load
-              })
-        )
-      )
-    }
-
-    // Wait a bit to ensure rendering is complete
-    await new Promise((resolve) => setTimeout(resolve, 500)) // Increased timeout for better reliability
-
-    // Final check before generating the preview
-    if (!cardElement.value || !(cardElement.value instanceof HTMLElement)) {
-      console.warn('Card element reference was lost before generating preview')
-      return null
-    }
-
-    // Generate the preview
-    const path = await generateSlidePreview(cardElement.value, hash)
-
-    // Reset styles
-    if (cardElement.value) {
-      cardElement.value.style.position = ''
-      cardElement.value.style.top = ''
-      cardElement.value.style.left = ''
-      cardElement.value.style.zIndex = ''
-      cardElement.value.style.visibility = ''
-      cardElement.value.style.width = ''
-      cardElement.value.style.height = ''
-    }
-
-    emit('preview-generated', { hash, path })
-    return path
-  } catch (error) {
-    console.error('Error generating slide preview image:', error)
-    return null
-  }
-}
-
 // Use watchEffect to react to changes in config
 watchEffect(async () => {
   // For background image
@@ -503,19 +405,5 @@ onMounted(async () => {
   } else {
     logoInvertedImageDataUrl.value = null
   }
-
-  // Generate preview if requested
-  if (props.generatePreview) {
-    // Wait for the next render cycle to ensure all content is properly loaded and rendered
-    nextTick(async () => {
-      await generatePreviewImage()
-    })
-  }
-})
-
-// Expose the generatePreviewImage method
-defineExpose({
-  generatePreviewImage,
-  generateHash
 })
 </script>
