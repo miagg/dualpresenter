@@ -718,6 +718,11 @@ onMounted(() => {
     flipScreens()
   })
 
+  // Listen for toggle-black-out command from the application menu
+  window.electron.ipcRenderer.on('toggle-black-out', () => {
+    blackOutScreens()
+  })
+
   // Listen for scroll-to-current command from the application menu
   window.electron.ipcRenderer.on('scroll-to-current', () => {
     // Scroll to selected slide when navigating with global shortcuts
@@ -742,6 +747,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('data-updated')
   window.electron.ipcRenderer.removeAllListeners('toggle-freeze')
+  window.electron.ipcRenderer.removeAllListeners('toggle-black-out')
+  window.electron.ipcRenderer.removeAllListeners('flip-screens')
+  window.electron.ipcRenderer.removeAllListeners('scroll-to-current')
   window.removeEventListener('keydown', handleKeyDown)
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('keydown', handleSearchShortcut)

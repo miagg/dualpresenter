@@ -195,23 +195,9 @@ export function createApplicationMenu(
         checked: data.state.blackOutScreens,
         enabled: data.cards.length > 0, // Disable when no Excel is loaded
         click: () => {
-          data.state.blackOutScreens = !data.state.blackOutScreens
-          config.set('state.blackOutScreens', data.state.blackOutScreens)
-
-          // Update menu item checked state
-          updateBlackOutState(data.state.blackOutScreens)
-
-          // Send updated state to renderer
-          sendData()
-
-          // Update both display windows to apply or remove the black out
+          // Use the same IPC message that the renderer button uses
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
-          }
-
-          // Update both display windows to apply or remove the black out
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
+            mainWindow.webContents.send('toggle-black-out')
           }
         }
       },
