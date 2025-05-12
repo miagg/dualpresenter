@@ -31,14 +31,6 @@ let fileCheckInterval: NodeJS.Timeout | null = null
 let debounceTimer: NodeJS.Timeout | null = null
 let isQuittingForUpdate = false // Add this flag
 
-// Directory for slide previews
-const previewsDir = path.join(app.getPath('userData'), 'slide-previews')
-
-// Create previews directory if it doesn't exist
-if (!fs.existsSync(previewsDir)) {
-  fs.mkdirSync(previewsDir, { recursive: true })
-}
-
 const data: Data = {
   cards: [],
   names: [],
@@ -161,11 +153,6 @@ function loadData(): void {
   if (data.state.currentSlideIndex >= data.cards.length) {
     data.state.currentSlideIndex = 0
     config.set('state.currentSlideIndex', 0)
-  }
-
-  // After loading data, notify renderer to regenerate all slide previews
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('regenerate-previews')
   }
 
   sendData()
@@ -709,15 +696,6 @@ function createApplicationMenu(): void {
   const actionsMenu: Electron.MenuItemConstructorOptions = {
     label: 'Actions',
     submenu: [
-      {
-        label: 'Delete All Previews',
-        click: () => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('clear-previews')
-          }
-        }
-      },
-      { type: 'separator' },
       {
         label: 'Freeze Output',
         accelerator: 'CommandOrControl+Shift+F',
@@ -1326,11 +1304,6 @@ app.whenReady().then(() => {
     sendData()
     updateDisplayWindows()
 
-    // Trigger regeneration of all slide previews when config changes
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('regenerate-previews')
-    }
-
     // Update settings window if it's open
     if (settingsWindow && !settingsWindow.isDestroyed()) {
       settingsWindow.webContents.send('settings-data', data.config)
@@ -1435,37 +1408,6 @@ app.whenReady().then(() => {
     }
   })
 
-  // Add handlers for slide preview operations
-  ipcMain.handle('save-slide-preview', async (_, dataUrl: string, hash: string) => {
-    try {
-      // Parse the data URL to get the base64 data
-      const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
-      if (!matches || matches.length !== 3) {
-        throw new Error('Invalid data URL format')
-      }
-
-      const imageData = Buffer.from(matches[2], 'base64')
-      const filePath = path.join(previewsDir, `slide_preview_${hash}.png`)
-
-      // Write the file
-      fs.writeFileSync(filePath, imageData)
-
-      return filePath
-    } catch (error) {
-      console.error('Error saving slide preview:', error)
-      throw error
-    }
-  })
-
-  ipcMain.handle('check-slide-preview', async (_, hash: string) => {
-    const filePath = path.join(previewsDir, `slide_preview_${hash}.png`)
-    return fs.existsSync(filePath)
-  })
-
-  ipcMain.handle('get-slide-preview-path', async (_, hash: string) => {
-    return path.join(previewsDir, `slide_preview_${hash}.png`)
-  })
-
   // New handler for showing confirmation dialog
   ipcMain.handle(
     'show-confirm-dialog',
@@ -1483,34 +1425,6 @@ app.whenReady().then(() => {
       return response === 1
     }
   )
-
-  // New handler for clearing all slide preview images
-  ipcMain.handle('clear-all-slide-previews', async () => {
-    try {
-      // Get all files in the previews directory
-      const files = fs.readdirSync(previewsDir)
-
-      // Filter for PNG files that match the slide preview pattern
-      const previewFiles = files.filter(
-        (file) => file.startsWith('slide_preview_') && file.endsWith('.png')
-      )
-
-      // Keep track of how many files we delete
-      let deletedCount = 0
-
-      // Delete each file
-      for (const file of previewFiles) {
-        const filePath = path.join(previewsDir, file)
-        fs.unlinkSync(filePath)
-        deletedCount++
-      }
-
-      return deletedCount
-    } catch (error) {
-      console.error('Error clearing slide preview images:', error)
-      throw error
-    }
-  })
 
   // Add handler for flip-screens command from the application menu
   ipcMain.on('flip-screens', () => {

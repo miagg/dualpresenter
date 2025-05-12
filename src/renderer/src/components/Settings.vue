@@ -630,19 +630,6 @@ const settingsChanged = async (forcePreviewRegeneraion: boolean = true): Promise
     namesPrecedence: settings.namesPrecedence
   }
 
-  // Clear all slide previews without confirmation dialog
-  try {
-    // Import the utility function
-    const { clearAllSlidePreviewImages } = await import('../utils/fileUtils')
-
-    // Clear all previews immediately without confirmation dialog
-    if (forcePreviewRegeneraion) {
-      await clearAllSlidePreviewImages(true)
-    }
-  } catch (error) {
-    console.error('Error clearing preview images:', error)
-  }
-
   // Force an immediate save with the copy
   if (isStandaloneMode) {
     window.electron.ipcRenderer.send('update-config', settingsCopy)

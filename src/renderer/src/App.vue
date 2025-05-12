@@ -95,13 +95,13 @@
       <div class="sidebar-left shrink-0 w-1/3 max-w-[500px] bg-gray-800 flex flex-col">
         <div class="sidebar-content overflow-y-auto h-full p-4">
           <h2 class="text-lg font-bold mb-2 text-gray-200">Main Screen</h2>
-          <div class="card-preview mb-4">
-            <SlidePreview
+          <div class="card-preview mb-4" ref="mainPreview">
+            <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+              :zoom="$refs.mainPreview.clientWidth / 1920"
               :card="cards[state.currentSlideIndex]"
               :names="names"
               :config="config"
-              class="pointer-events-none"
             />
             <div
               v-else
@@ -114,20 +114,14 @@
           <h2 class="text-lg font-bold mb-2 text-gray-200">
             Side Screen<span class="ml-2 text-yellow-600">⏺︎</span>
           </h2>
-          <div class="card-preview">
-            <SlidePreview
+          <div class="card-preview" ref="sidePreview">
+            <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+              :zoom="$refs.sidePreview.clientWidth / 1920"
               :card="sideScreenCard"
               :names="names"
               :config="config"
-              class="pointer-events-none"
             />
-            <div
-              v-else
-              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400"
-            >
-              No slide available
-            </div>
           </div>
 
           <!-- Display Selection -->
@@ -379,7 +373,8 @@
               @mouseenter="startHoverTimer(index)"
               @mouseleave="clearHoverTimer()"
             >
-              <SlidePreview
+              <Card
+                :zoom="0.08333333"
                 :card="card"
                 :names="names"
                 :config="config"
@@ -402,7 +397,12 @@
                 >
                   <div class="bg-gray-800 border border-gray-600 p-2 rounded shadow-xl">
                     <div class="w-[455px] xl:w-[640px]">
-                      <SlidePreview :card="card" :names="names" :config="config" />
+                      <Card
+                        :zoom="$el.clientWidth >= 1280 ? 0.33333333 : 0.23697917"
+                        :card="card"
+                        :names="names"
+                        :config="config"
+                      />
                     </div>
                   </div>
                 </div>
@@ -502,14 +502,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
-import SlidePreview from './components/SlidePreview.vue'
-import Settings from './components/Settings.vue'
 import ExcelStructure from './components/ExcelStructure.vue'
 import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
 import { CardType } from './interfaces/Card'
 import { normalizeForSearch } from './utils/textUtils'
+import Card from './components/Card.vue'
 
 // Global state
 const cards = ref<CardInterface[]>([])
@@ -543,10 +542,8 @@ const state = reactive({
 const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
-const regeneratingPreviews = ref(false)
 const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flipping screens
 const initialLoadComplete = ref(false) // Flag to track initial load
-const showSettings = ref(false) // Controls visibility of settings modal
 const showExcelStructure = ref(false) // Controls visibility of Excel structure modal
 
 // Current time display
@@ -710,23 +707,10 @@ onMounted(() => {
     }
   })
 
-  // Listen for regenerate-previews events
-  window.electron.ipcRenderer.on('regenerate-previews', () => {
-    regeneratingPreviews.value = true
-    setTimeout(() => {
-      regeneratingPreviews.value = false
-    }, 5000) // Reset after 5 seconds to avoid unnecessary regenerations
-  })
-
   // Listen for toggle-freeze events from the main process
   window.electron.ipcRenderer.on('toggle-freeze', () => {
     // Toggle the freeze state
     state.freezeMonitors = !state.freezeMonitors
-  })
-
-  // Listen for clear-previews command from the application menu
-  window.electron.ipcRenderer.on('clear-previews', () => {
-    clearPreviews()
   })
 
   // Listen for flip-screens command from the application menu
@@ -757,7 +741,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('data-updated')
-  window.electron.ipcRenderer.removeAllListeners('regenerate-previews')
   window.electron.ipcRenderer.removeAllListeners('toggle-freeze')
   window.removeEventListener('keydown', handleKeyDown)
   document.removeEventListener('click', handleClickOutside)
@@ -955,27 +938,6 @@ const updateConfig = (newConfig: Config) => {
   window.electron.ipcRenderer.send('update-config', configCopy)
 }
 
-const clearPreviews = async () => {
-  try {
-    // Import the utility function
-    const { clearAllSlidePreviewImages } = await import('./utils/fileUtils')
-
-    // Call the function to clear previews (this will show confirmation dialog)
-    const deletedCount = await clearAllSlidePreviewImages()
-
-    // Notify user of the result
-    if (deletedCount > 0) {
-      // Trigger regeneration of previews for current visible slides
-      regeneratingPreviews.value = true
-      setTimeout(() => {
-        regeneratingPreviews.value = false
-      }, 500)
-    }
-  } catch (error) {
-    console.error('Error clearing preview images:', error)
-  }
-}
-
 // Hover functionality for large thumbnail preview
 const hoveredSlideIndex = ref<number | null>(null)
 const showLargeThumbnail = ref(false)
@@ -1151,14 +1113,16 @@ const getSideScreen = (index: number): CardInterface | undefined => {
 
 .large-thumbnail-preview {
   animation: fadeIn 0.3s ease-in-out;
-  opacity: 1 !important; /* Ensure always full opacity */
+  opacity: 1 !important;
+  /* Ensure always full opacity */
 }
 
 /* Fade transition for the large thumbnail preview */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
-  opacity: 1 !important; /* Force 100% opacity during transitions */
+  opacity: 1 !important;
+  /* Force 100% opacity during transitions */
 }
 
 .fade-enter-from,
@@ -1170,6 +1134,7 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
