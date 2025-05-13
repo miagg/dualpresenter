@@ -80,8 +80,17 @@
             </thead>
             <tbody>
               <tr class="border-b border-gray-700">
+                <td class="px-4 py-3 font-mono text-sm">order</td>
+                <td class="px-4 py-3 text-sm">
+                  This can be used as a slide number. You might want to sort the slides using this
+                  column
+                </td>
+                <td class="px-4 py-3 text-sm">Number</td>
+                <td class="px-4 py-3 text-sm">No</td>
+              </tr>
+              <tr class="border-b border-gray-700">
                 <td class="px-4 py-3 font-mono text-sm">type</td>
-                <td class="px-4 py-3 text-sm">Type of slide to display (first column)</td>
+                <td class="px-4 py-3 text-sm">Type of slide to display</td>
                 <td class="px-4 py-3 text-sm">Blank, Title, Names, Image, Unattended</td>
                 <td class="px-4 py-3 text-sm">Yes</td>
               </tr>
@@ -243,7 +252,7 @@
         <ul class="list-disc pl-5 text-gray-300 space-y-2">
           <li>Always use a fresh template for a new project</li>
           <li>For image slides, use valid relative or absolute paths to the image files</li>
-          <li>The Excel file is automatically monitored for changes and will refresh when saved</li>
+          <li>The Excel file is automatically monitored for changes and will reload when saved</li>
           <li>Use the "main_only" option for slides that should not appear on the side screen</li>
           <li>
             When "from" and "until" fields are not specified, all names in the group will be

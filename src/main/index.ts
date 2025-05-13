@@ -607,7 +607,7 @@ function registerGlobalShortcuts(): void {
     }
   })
 
-  // For refreshing data: Control+Shift+R
+  // For reloading data: Control+Shift+R
   globalShortcut.register('CommandOrControl+Shift+R', () => {
     loadData()
   })
@@ -1004,7 +1004,7 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.on('refresh-data', loadData)
+  ipcMain.on('reload-data', loadData)
 
   ipcMain.on('update-config', (_, newConfig) => {
     data.config = newConfig

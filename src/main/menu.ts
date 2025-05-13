@@ -108,7 +108,7 @@ export function createApplicationMenu(
         click: closeExcelFile
       },
       {
-        label: 'Refresh Data',
+        label: 'Reload Data',
         accelerator: 'CmdOrCtrl+R',
         enabled: data.cards.length > 0, // Disable when no Excel is loaded
         click: () => {

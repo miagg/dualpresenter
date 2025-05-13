@@ -16,14 +16,14 @@ export class Card {
   static fromArray(array: number | string[]): Card {
     return new Card(
       parseInt(array[0]),
-      CardType[array[1] as keyof typeof CardType],
-      array[2] || null,
+      CardType[array[2] as keyof typeof CardType],
       array[3] || null,
       array[4] || null,
       array[5] || null,
       array[6] || null,
-      array[7] === 'Yes' ? true : array[7] === 'No' ? false : null,
-      parseInt(array[8]) >= 0 ? parseInt(array[8]) : null
+      array[7] || null,
+      array[8] === 'Yes' ? true : array[8] === 'No' ? false : null,
+      parseInt(array[9]) >= 0 ? parseInt(array[9]) : null
     )
   }
 }
