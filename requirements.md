@@ -33,14 +33,15 @@ This app will project slides on an external monitor based on an excel file. Each
 ### Slide sheet table structure
 
 - The first row must be the header
-- The first column must be the slide type that can be either "Blank", "Title" or "Names"
-- The second column must be the slide title. This will be a big title displayed on the center of the screen.
-- The third column must be the slide subtitle. This will be a small title below the big title (optional).
-- The fourth column must be the slide group. This will be used to group slides of type "Names" (optional).
-- The fifth column must be the "from" field. This will be used to indicate the first name of the "Names" slide (optional).
-- The sixth column must be the "until" field. This will be used to indicate the last name of the "Names" slide (optional).
-- The seventh column must be the "main_only" field. This will be a boolean value that indicates if the slide will be displayed only on the main screen (optional).
-- The eighth column must be the "preceding" field. This will be used to indicate the number of slides that will be displayed before the "Names" slide (optional).
+- The first column can be used as order column. It will be skipped.
+- The second column must be the slide type that can be either "Blank", "Title" or "Names"
+- The third column must be the slide title. This will be a big title displayed on the center of the screen.
+- The fourth column must be the slide subtitle. This will be a small title below the big title (optional).
+- The fifth column must be the slide group. This will be used to group slides of type "Names" (optional).
+- The sixth column must be the "from" field. This will be used to indicate the first name of the "Names" slide (optional).
+- The seventh column must be the "until" field. This will be used to indicate the last name of the "Names" slide (optional).
+- The eighth column must be the "main_only" field. This will be a boolean value that indicates if the slide will be displayed only on the main screen (optional).
+- The ninth column must be the "preceding" field. This will be used to indicate the number of slides that will be displayed before the "Names" slide (optional).
 
 ### Names sheet table structure
 

@@ -80,8 +80,17 @@
             </thead>
             <tbody>
               <tr class="border-b border-gray-700">
+                <td class="px-4 py-3 font-mono text-sm">order</td>
+                <td class="px-4 py-3 text-sm">
+                  This can be used as a slide number. You might want to sort the slides using this
+                  column
+                </td>
+                <td class="px-4 py-3 text-sm">Number</td>
+                <td class="px-4 py-3 text-sm">No</td>
+              </tr>
+              <tr class="border-b border-gray-700">
                 <td class="px-4 py-3 font-mono text-sm">type</td>
-                <td class="px-4 py-3 text-sm">Type of slide to display (first column)</td>
+                <td class="px-4 py-3 text-sm">Type of slide to display</td>
                 <td class="px-4 py-3 text-sm">Blank, Title, Names, Image, Unattended</td>
                 <td class="px-4 py-3 text-sm">Yes</td>
               </tr>
