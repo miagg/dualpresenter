@@ -31,7 +31,7 @@
         </button>
 
         <button
-          @click="refreshData"
+          @click="reloadData"
           class="btn disabled:opacity-50 disabled:pointer-events-none"
           :disabled="!state.isExcelLoaded"
         >
@@ -47,7 +47,7 @@
               clip-rule="evenodd"
             />
           </svg>
-          Refresh
+          Reload
         </button>
 
         <button
@@ -917,8 +917,8 @@ const openExcel = () => {
   window.electron.ipcRenderer.send('open-excel')
 }
 
-const refreshData = () => {
-  window.electron.ipcRenderer.send('refresh-data')
+const reloadData = () => {
+  window.electron.ipcRenderer.send('reload-data')
 }
 
 const toggleFreeze = () => {

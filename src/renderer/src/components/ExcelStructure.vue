@@ -252,7 +252,7 @@
         <ul class="list-disc pl-5 text-gray-300 space-y-2">
           <li>Always use a fresh template for a new project</li>
           <li>For image slides, use valid relative or absolute paths to the image files</li>
-          <li>The Excel file is automatically monitored for changes and will refresh when saved</li>
+          <li>The Excel file is automatically monitored for changes and will reload when saved</li>
           <li>Use the "main_only" option for slides that should not appear on the side screen</li>
           <li>
             When "from" and "until" fields are not specified, all names in the group will be

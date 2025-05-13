@@ -321,7 +321,7 @@
                 <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+Shift+X</code>
               </li>
               <li class="flex justify-between">
-                <span class="text-gray-300">Refresh Data</span>
+                <span class="text-gray-300">Reload Data</span>
                 <code class="px-2 py-1 bg-gray-700 rounded text-sm">Ctrl+R</code>
               </li>
             </ul>

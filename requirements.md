@@ -80,7 +80,7 @@ This app will project slides on an external monitor based on an excel file. Each
 
 - Last opened excel file, current slide, main and side screens
 
-## Add button to manually refresh the data (read the excel file)
+## Add button to manually reload the data (read the excel file)
 
 ## Add button to open a new excel file (close current one and open a new one)
 
