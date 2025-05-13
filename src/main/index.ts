@@ -6,7 +6,8 @@ import {
   screen,
   dialog,
   globalShortcut,
-  nativeTheme
+  nativeTheme,
+  powerSaveBlocker
 } from 'electron'
 import { createApplicationMenu, updateFreezeState, updateBlackOutState } from './menu'
 import { join } from 'path'
@@ -1225,6 +1226,9 @@ app.whenReady().then(() => {
     config,
     autoUpdater
   )
+
+  // Prevent sleeping while the app is running
+  powerSaveBlocker.start('prevent-display-sleep')
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
