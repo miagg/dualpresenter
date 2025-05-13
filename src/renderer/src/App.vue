@@ -585,6 +585,7 @@ const filteredSearchResults = computed(() => {
     .filter((card) => {
       // Search in card fields using normalized text
       const matchInCardFields =
+        card.id.toString().includes(normalizedQuery) ||
         normalizeForSearch(card.type).includes(normalizedQuery) ||
         (card.title && normalizeForSearch(card.title).includes(normalizedQuery)) ||
         (card.subtitle && normalizeForSearch(card.subtitle).includes(normalizedQuery)) ||
@@ -644,6 +645,10 @@ const navigateSearchResults = (direction: 'up' | 'down') => {
 }
 
 const selectSearchResult = (index: number) => {
+  // if no index, choose first result
+  if (index < 0) {
+    index = 0
+  }
   if (index >= 0 && index < filteredSearchResults.value.length) {
     goToSlide(filteredSearchResults.value[index].index)
     // Clear search query and close popup when result is selected
