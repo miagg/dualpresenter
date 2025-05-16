@@ -684,6 +684,16 @@ const closeSearch = () => {
   // No longer clearing the search query here as it's now handled in selectSearchResult
 }
 
+// Watch currentSlideIndex and always center selected slide
+watch(
+  () => state.currentSlideIndex,
+  () => {
+    nextTick(() => {
+      scrollSelectedSlideIntoView(true)
+    })
+  }
+)
+
 // Handle data updates from main process
 onMounted(() => {
   window.electron.ipcRenderer.on('data-updated', (_, data) => {
@@ -891,18 +901,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
 const nextSlide = () => {
   if (state.currentSlideIndex < cards.value.length - 1) {
     window.electron.ipcRenderer.send('next-slide')
-    nextTick(() => {
-      scrollSelectedSlideIntoView()
-    })
   }
 }
 
 const prevSlide = () => {
   if (state.currentSlideIndex > 0) {
     window.electron.ipcRenderer.send('prev-slide')
-    nextTick(() => {
-      scrollSelectedSlideIntoView()
-    })
   }
 }
 
