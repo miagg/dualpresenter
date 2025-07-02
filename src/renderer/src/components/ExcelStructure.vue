@@ -91,7 +91,7 @@
               <tr class="border-b border-gray-700">
                 <td class="px-4 py-3 font-mono text-sm">type</td>
                 <td class="px-4 py-3 text-sm">Type of slide to display</td>
-                <td class="px-4 py-3 text-sm">Blank, Title, Names, Image, Unattended</td>
+                <td class="px-4 py-3 text-sm">Blank, Category, Title, Names, Image, Unattended</td>
                 <td class="px-4 py-3 text-sm">Yes</td>
               </tr>
               <tr class="border-b border-gray-700">
@@ -175,6 +175,12 @@
                 <td class="px-4 py-3 text-sm">Yes</td>
               </tr>
               <tr>
+                <td class="px-4 py-3 font-mono text-sm">presenter</td>
+                <td class="px-4 py-3 text-sm">The presenter name (not for use)</td>
+                <td class="px-4 py-3 text-sm">Text</td>
+                <td class="px-4 py-3 text-sm">No</td>
+              </tr>
+              <tr>
                 <td class="px-4 py-3 font-mono text-sm">attending</td>
                 <td class="px-4 py-3 text-sm">Whether the person is attending or not</td>
                 <td class="px-4 py-3 text-sm">Yes/No</td>
@@ -196,6 +202,12 @@
             <h4 class="text-lg font-medium text-blue-400 mb-2">Blank</h4>
             <p class="text-gray-300">
               A blank slide showing only the logo, with no additional content.
+            </p>
+          </div>
+          <div class="card-type bg-gray-800 p-4 rounded-lg">
+            <h4 class="text-lg font-medium text-blue-400 mb-2">Category</h4>
+            <p class="text-gray-300">
+              Displays a large title and optional subtitle in the center of the screen.
             </p>
           </div>
           <div class="card-type bg-gray-800 p-4 rounded-lg">

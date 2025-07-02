@@ -27,7 +27,7 @@
 
     <!-- Title Card -->
     <div
-      v-else-if="card.type === CardType.Title"
+      v-else-if="card.type === CardType.Title || card.type === CardType.Category"
       class="flex flex-col items-left justify-center h-full relative p-24"
     >
       <!-- Background image -->
@@ -41,8 +41,9 @@
       <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
       <h1
         v-if="card.title"
-        class="text-7xl font-bold z-10"
-        v-html="card.title.replaceAll('\n', '<br />')"
+        class="text-7xl z-10"
+        :class="{ 'font-bold': props.config.fonts.useBoldTitles }"
+        v-text="card.title.replaceAll('\n', '<br />')"
       />
       <h2
         v-if="card.subtitle"
@@ -70,7 +71,7 @@
       <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
       <h1
         v-if="card.group || card.title"
-        class="text-5xl text-center font-bold z-10 -mt-6 px-96"
+        class="text-5xl text-center z-10 -mt-6 px-96"
         v-html="
           card.group ? card.group.replaceAll('\n', '<br />') : card.title.replaceAll('\n', '<br />')
         "
@@ -87,7 +88,7 @@
               ? card.subtitle.replaceAll('\n', '<br />')
               : card.title.replaceAll('\n', '<br />')
           "
-          class="font-bold leading-snug pb-4"
+          class="leading-snug pb-4"
           :class="{
             'mt-10': card.title?.split('\n')?.length > 6
           }"
@@ -281,7 +282,7 @@ const loadImageCardImage = async (): Promise<void> => {
 // Apply selected font to slides
 const slideStyles = computed(() => {
   // Force the computed property to react to changes in props.config.fonts.slidesFont
-  const fontName = props.config?.fonts?.slidesFont || 'TheWaveSans-Bold'
+  const fontName = props.config?.fonts?.slidesFont || 'TheWaveSans'
 
   return {
     fontFamily: fontName,

@@ -528,7 +528,8 @@ const config = ref<Config>({
     useDefaultAssets: true
   },
   fonts: {
-    slidesFont: 'TheWaveSans-Bold'
+    slidesFont: 'TheWaveSans',
+    useBoldTitles: false
   },
   namesPrecedence: 0
 })

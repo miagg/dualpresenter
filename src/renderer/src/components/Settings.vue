@@ -247,13 +247,25 @@
             class="w-full p-2 border rounded bg-gray-700 text-gray-200 border-gray-600"
             @change="settingsChanged"
           >
-            <option value="TheWaveSans-Bold">The Wave Sans Bold</option>
+            <option value="TheWaveSans">The Wave Sans</option>
             <option value="CFDin-Bold">CF Din Bold</option>
             <option value="Effra-Heavy">Effra Heavy</option>
             <option value="FreeScript">Free Script</option>
             <option value="ZonaPro-Black">Zona Pro Black</option>
           </select>
           <p class="mt-1 text-xs text-gray-400">This font will be applied to all slides</p>
+        </div>
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="useBoldTitles"
+            v-model="settings.fonts.useBoldTitles"
+            class="w-5 h-5 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+            @change="settingsChanged"
+          />
+          <label for="useBoldTitles" class="ml-2 text-sm font-medium text-gray-300">
+            Use bold titles
+          </label>
         </div>
       </div>
 
@@ -405,7 +417,7 @@ const props = defineProps({
         logoInverted: ''
       },
       fonts: {
-        slidesFont: 'TheWaveSans-Bold'
+        slidesFont: 'TheWaveSans'
       },
       namesPrecedence: 0
     })
@@ -427,7 +439,7 @@ const settings = reactive<Config>({
     logoInverted: ''
   },
   fonts: {
-    slidesFont: 'TheWaveSans-Bold'
+    slidesFont: 'TheWaveSans'
   },
   namesPrecedence: 0
 })
@@ -472,7 +484,9 @@ onMounted(() => {
       settings.assets.useDefaultAssets =
         config.assets.useDefaultAssets !== undefined ? config.assets.useDefaultAssets : true
 
-      settings.fonts.slidesFont = config.fonts?.slidesFont || 'TheWaveSans-Bold'
+      settings.fonts.slidesFont = config.fonts?.slidesFont || 'TheWaveSans'
+      settings.fonts.useBoldTitles =
+        config.fonts.useBoldTitles !== undefined ? config.fonts.useBoldTitles : false
       settings.namesPrecedence = config.namesPrecedence || 0
 
       // Load image previews after settings are updated
@@ -500,7 +514,9 @@ const initializeSettings = (): void => {
   settings.assets.useDefaultAssets =
     props.config.assets.useDefaultAssets !== undefined ? props.config.assets.useDefaultAssets : true
 
-  settings.fonts.slidesFont = props.config.fonts?.slidesFont || 'TheWaveSans-Bold'
+  settings.fonts.slidesFont = props.config.fonts?.slidesFont || 'TheWaveSans'
+  settings.fonts.useBoldTitles =
+    props.config.fonts.useBoldTitles !== undefined ? props.config.fonts.useBoldTitles : false
   settings.namesPrecedence = props.config.namesPrecedence || 0
 }
 
@@ -600,7 +616,7 @@ watch(
     settings.assets.logo = newConfig.assets.logo || ''
     settings.assets.logoInverted = newConfig.assets.logoInverted || ''
 
-    settings.fonts.slidesFont = newConfig.fonts?.slidesFont || 'TheWaveSans-Bold'
+    settings.fonts.slidesFont = newConfig.fonts?.slidesFont || 'TheWaveSans'
 
     // Load image previews when config changes
     loadImagePreviews()
@@ -625,7 +641,8 @@ const settingsChanged = async (forcePreviewRegeneraion: boolean = true): Promise
       useDefaultAssets: settings.assets.useDefaultAssets
     },
     fonts: {
-      slidesFont: settings.fonts.slidesFont
+      slidesFont: settings.fonts.slidesFont,
+      useBoldTitles: settings.fonts.useBoldTitles
     },
     namesPrecedence: settings.namesPrecedence
   }

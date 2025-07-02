@@ -14,6 +14,7 @@ export interface Config {
   }
   fonts: {
     slidesFont: string
+    useBoldTitles: boolean
   }
   namesPrecedence: number
 }

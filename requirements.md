@@ -34,7 +34,7 @@ This app will project slides on an external monitor based on an excel file. Each
 
 - The first row must be the header
 - The first column can be used as order column. It will be skipped.
-- The second column must be the slide type that can be either "Blank", "Title" or "Names"
+- The second column must be the slide type that can be either "Blank", "Category", "Title" or "Names"
 - The third column must be the slide title. This will be a big title displayed on the center of the screen.
 - The fourth column must be the slide subtitle. This will be a small title below the big title (optional).
 - The fifth column must be the slide group. This will be used to group slides of type "Names" (optional).
@@ -48,7 +48,8 @@ This app will project slides on an external monitor based on an excel file. Each
 - The first row must be the header
 - The first column must be the name of the person.
 - The second column must be the group of the person. This will be used to group names in the slides (required).
-- The third column must be the attending status. It can be either "Yes" or "No".
+- The third column must be the presenter name (optional).
+- The forth column must be the attending status. It can be either "Yes" or "No".
 
 ## Navigate between slides using mouse or keyboard (arrow keys)
 
@@ -69,6 +70,7 @@ This app will project slides on an external monitor based on an excel file. Each
 ## Support for four type of slides: blank, title, names, unattended and image card
 
 - Blank card: no content, just logo
+- Category card: big title and small title (optional)
 - Title card: big title and small title (optional)
 - Names card: list of names
 - Unattended card: list of names not attending

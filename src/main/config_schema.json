@@ -55,7 +55,11 @@
         "properties": {
           "slidesFont": {
             "type": "string",
-            "default": "TheWaveSans-Bold"
+            "default": "TheWaveSans"
+          },
+          "useBoldTitles": {
+            "type": "boolean",
+            "default": false
           }
         },
         "default": {}
