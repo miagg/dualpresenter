@@ -32,3 +32,13 @@ $ npm run build:mac
 # For Linux
 $ npm run build:linux
 ```
+
+### Download in Mac
+
+Due to the security policy of macOS, if you wish to download the app you may use a helper script to bypass the Gatekeeper. Please run the following command in your terminal:
+
+```bash
+$ cd ~/Documents && echo "curl https://raw.githubusercontent.com/miagg/dualpresenter/refs/heads/master/download_mac.sh | sh" > Download_DualPresenter && chmod +x Download_DualPresenter
+```
+
+You will find the `Download_DualPresenter` script in your Documents folder. You can run it to download the latest version of DualPresenter for macOS.
