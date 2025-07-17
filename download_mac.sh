@@ -10,5 +10,4 @@ xattr -d com.apple.quarantine ~/Downloads/dualpresenter*.dmg 2>/dev/null
 echo "DualPresenter Downloaded! ✨"
 echo "You can find it in your Downloads folder."
 echo "To install, double-click the downloaded file and follow the instructions."
-echo "You may close this window now."
 exit 0
