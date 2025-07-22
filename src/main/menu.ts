@@ -36,6 +36,40 @@ export function updateBlackOutState(isChecked: boolean): void {
   }
 }
 
+// Function to update the checked state of the Auto Playback menu item
+export function updateAutoPlaybackState(isChecked: boolean): void {
+  const menu = Menu.getApplicationMenu()
+  if (!menu) return
+
+  // Find the Actions menu
+  const actionsMenu = menu.items.find((item) => item.label === 'Actions')
+  if (!actionsMenu || !actionsMenu.submenu) return
+
+  // Find the Auto Playback menu item and update its checked state
+  const autoPlayback = actionsMenu.submenu.items.find((item) => item.label === 'Auto Playback')
+  if (autoPlayback) {
+    autoPlayback.checked = isChecked
+  }
+}
+
+// Function to update the checked state of the Enable Audible Names menu item
+export function updateAudibleNamesState(isChecked: boolean): void {
+  const menu = Menu.getApplicationMenu()
+  if (!menu) return
+
+  // Find the Actions menu
+  const actionsMenu = menu.items.find((item) => item.label === 'Actions')
+  if (!actionsMenu || !actionsMenu.submenu) return
+
+  // Find the Enable Audible Names menu item and update its checked state
+  const audibleNames = actionsMenu.submenu.items.find(
+    (item) => item.label === 'Enable Audible Names'
+  )
+  if (audibleNames) {
+    audibleNames.checked = isChecked
+  }
+}
+
 // Create application menu with Actions menu
 export function createApplicationMenu(
   data: Data,
@@ -207,6 +241,50 @@ export function createApplicationMenu(
         click: () => {
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('flip-screens')
+          }
+        }
+      },
+      {
+        label: 'Enable Audible Names',
+        accelerator: 'CommandOrControl+Shift+A',
+        type: 'checkbox',
+        checked: data.config.audibleNames.enabled,
+        click: () => {
+          data.config.audibleNames.enabled = !data.config.audibleNames.enabled
+          config.set('config.audibleNames.enabled', data.config.audibleNames.enabled)
+
+          // Update menu item checked state
+          updateAudibleNamesState(data.config.audibleNames.enabled)
+
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('data-updated', data)
+          }
+        }
+      },
+      {
+        label: 'Play/Stop Audible Names',
+        accelerator: 'CommandOrControl+P',
+        enabled: data.cards.length > 0, // Disable when no Excel is loaded
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('toggle-audio-playback')
+          }
+        }
+      },
+      {
+        label: 'Auto Playback',
+        accelerator: 'CommandOrControl+Shift+P',
+        type: 'checkbox',
+        checked: data.config.audibleNames.autoPlayback,
+        click: () => {
+          data.config.audibleNames.autoPlayback = !data.config.audibleNames.autoPlayback
+          config.set('config.audibleNames.autoPlayback', data.config.audibleNames.autoPlayback)
+
+          // Update menu item checked state
+          updateAutoPlaybackState(data.config.audibleNames.autoPlayback)
+
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('data-updated', data)
           }
         }
       },

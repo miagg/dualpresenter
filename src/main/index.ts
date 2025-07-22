@@ -18,6 +18,9 @@ import icon from '../../build/icon.png?asset'
 import config from './config'
 import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
+import { audioManager } from './utils/audioManager'
+import { CardType } from './enums/CardType'
+import { filterNamesForCard } from '../shared/nameFilters'
 import fileWatcher from 'chokidar'
 import fs from 'fs'
 import path from 'path'
@@ -45,6 +48,16 @@ if (data.config.namesPrecedence === undefined) data.config.namesPrecedence = 0
 if (data.state.freezeMonitors === undefined) data.state.freezeMonitors = false
 if (data.state.blackOutScreens === undefined) data.state.blackOutScreens = false
 if (data.state.frozenSlideIndex === undefined) data.state.frozenSlideIndex = null
+
+// Initialize audible names config if needed
+if (data.config.audibleNames === undefined) {
+  data.config.audibleNames = {
+    enabled: false,
+    delayBeforePlayback: 1000,
+    gapBetweenNames: 500,
+    autoPlayback: true
+  }
+}
 
 // Debounce function to prevent multiple rapid reloads
 function debounce(func: Function, delay: number): () => void {
@@ -638,18 +651,30 @@ function registerGlobalShortcuts(): void {
     }
   })
 
-  // For opening settings - Platform specific shortcuts
   if (process.platform === 'darwin') {
-    // For macOS: Cmd+.
-    globalShortcut.register('Command+.', () => {
+    globalShortcut.register('Command+,', () => {
       createSettingsWindow()
     })
   } else {
-    // For Windows/Linux: Ctrl+P
-    globalShortcut.register('Control+P', () => {
+    globalShortcut.register('Control+,', () => {
       createSettingsWindow()
     })
   }
+
+  // For audio playback toggle: Cmd+P (macOS) or Ctrl+P (Windows/Linux)
+  globalShortcut.register('CommandOrControl+P', () => {
+    // Check if audible names is enabled and we're on a names slide
+    if (data.config.audibleNames.enabled) {
+      const currentCard = data.cards[data.state.currentSlideIndex]
+      if (
+        currentCard &&
+        (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
+      ) {
+        // Send message to renderer to toggle audio
+        mainWindow?.webContents.send('toggle-audio-playback')
+      }
+    }
+  })
 }
 
 function createWindow(): void {
@@ -982,6 +1007,8 @@ app.whenReady().then(() => {
     })?.[0]
 
     if (filePath) {
+      // Stop any ongoing audio playback when opening a new Excel file
+      audioManager.stopPlayback()
       data.state.excelPath = filePath
       config.set('state.excelPath', filePath)
       // Set currentSlideIndex to 0 when opening a new Excel file
@@ -1005,7 +1032,9 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.on('reload-data', loadData)
+  ipcMain.on('reload-data', () => {
+    loadData()
+  })
 
   ipcMain.on('update-config', (_, newConfig) => {
     data.config = newConfig
@@ -1204,6 +1233,31 @@ app.whenReady().then(() => {
         message: error instanceof Error ? error.message : 'Unknown error'
       }
     }
+  })
+
+  // Audible Names IPC handlers
+  ipcMain.on('audio-play-names', (_, names) => {
+    if (data.config.audibleNames.enabled && data.state.excelPath) {
+      // Always stop any existing audio playback before starting manual playback
+      audioManager.stopPlayback()
+
+      const voiceoverFolder = path.join(path.dirname(data.state.excelPath), 'voiceover')
+      // For manual playback, don't use the configured delay - start immediately
+      audioManager.setConfiguration(
+        0, // No delay for manual playback
+        data.config.audibleNames.gapBetweenNames,
+        voiceoverFolder
+      )
+      audioManager.playNamesSequence(names)
+    }
+  })
+
+  ipcMain.on('audio-stop', () => {
+    audioManager.stopPlayback()
+  })
+
+  ipcMain.handle('audio-get-status', () => {
+    return audioManager.getPlaybackStatus()
   })
 
   // Set Dark mode
