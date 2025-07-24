@@ -9,6 +9,13 @@ curl -s https://api.github.com/repos/miagg/dualpresenter/releases/latest | grep 
 xattr -d com.apple.quarantine ~/Downloads/dualpresenter*.dmg 2>/dev/null
 echo ""
 echo "DualPresenter Downloaded! ✨"
+echo "--------------------------------------"
+echo "What's next?"
+echo "$(curl -s https://api.github.com/repos/miagg/dualpresenter/releases/latest | grep body | cut -d'"' -f4)"
+echo "---------------------------------------"
 echo "You can find it in your Downloads folder."
 echo "To install, double-click the downloaded file and follow the instructions."
+echo ""
+echo ""
+echo ""
 exit 0
