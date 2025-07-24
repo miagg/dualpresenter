@@ -64,6 +64,28 @@
         },
         "default": {}
       },
+      "audibleNames": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": false
+          },
+          "delayBeforePlayback": {
+            "type": "number",
+            "default": 200
+          },
+          "gapBetweenNames": {
+            "type": "number",
+            "default": 200
+          },
+          "autoPlayback": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "default": {}
+      },
       "namesPrecedence": {
         "type": "number",
         "default": 2

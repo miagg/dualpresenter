@@ -16,5 +16,11 @@ export interface Config {
     slidesFont: string
     useBoldTitles: boolean
   }
+  audibleNames: {
+    enabled: boolean
+    delayBeforePlayback: number
+    gapBetweenNames: number
+    autoPlayback: boolean
+  }
   namesPrecedence: number
 }

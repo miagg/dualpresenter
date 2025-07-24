@@ -14,5 +14,11 @@ export interface Config {
   fonts: {
     slidesFont: string
   }
+  audibleNames: {
+    enabled: boolean
+    delayBeforePlayback: number
+    gapBetweenNames: number
+    autoPlayback: boolean
+  }
   namesPrecedence: number
 }

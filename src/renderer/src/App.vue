@@ -168,6 +168,81 @@
                     />
                   </svg>
                 </button>
+
+                <!-- Audio Settings Toggle Buttons -->
+                <button
+                  v-if="config.audibleNames.enabled"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center cursor-pointer"
+                  :title="
+                    config.audibleNames.autoPlayback
+                      ? 'Disable auto playback (manual mode)'
+                      : 'Enable auto playback'
+                  "
+                  @click="toggleAutoPlayback"
+                >
+                  <!-- Simple text letters for auto/manual -->
+                  <span class="text-sm font-bold w-5 h-5 flex items-center justify-center">
+                    {{ config.audibleNames.autoPlayback ? 'A' : 'M' }}
+                  </span>
+                </button>
+
+                <div v-if="config.audibleNames.enabled" class="flex space-x-2 font-normal text-sm">
+                  <button
+                    :disabled="
+                      !currentNamesSlide &&
+                      cards[state.currentSlideIndex].type !== CardType.Unattended
+                    "
+                    class="btn !px-2 !py-1 min-w-18 justify-center items-center disabled:opacity-50 disabled:pointer-events-none relative overflow-hidden"
+                    :title="
+                      audioStatus.isPlaying
+                        ? 'Stop audible names playback'
+                        : 'Play audible names for current slide'
+                    "
+                    @click="toggleAudibleNames"
+                  >
+                    <!-- Progress bar background (only visible when playing) -->
+                    <div
+                      class="absolute inset-0 bg-slate-500"
+                      :class="{
+                        'transition-all duration-[3s] ease-out': audioStatus.isPlaying
+                      }"
+                      :style="{
+                        width: `${audioStatus.isPlaying ? Math.ceil(((audioStatus.currentIndex + 1) / audioStatus.totalNames) * 100) : 0}%`
+                      }"
+                    ></div>
+
+                    <!-- Button content -->
+                    <div class="relative z-10 flex items-center">
+                      <svg
+                        v-if="!audioStatus.isPlaying"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-1"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      <svg
+                        v-else
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-1"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      <span>{{ audioStatus.isPlaying ? 'Stop' : 'Play' }}</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </h2>
 
@@ -508,6 +583,7 @@ import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
 import { CardType } from './interfaces/Card'
 import { normalizeForSearch } from './utils/textUtils'
+import { filterNamesForCard, filterUnattendedNames } from '../../shared/nameFilters'
 import Card from './components/Card.vue'
 
 // Global state
@@ -531,6 +607,12 @@ const config = ref<Config>({
     slidesFont: 'TheWaveSans',
     useBoldTitles: false
   },
+  audibleNames: {
+    enabled: false,
+    delayBeforePlayback: 1000,
+    gapBetweenNames: 500,
+    autoPlayback: true
+  },
   namesPrecedence: 0
 })
 const state = reactive({
@@ -546,6 +628,14 @@ const sideScreen = ref<string | null>(null)
 const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flipping screens
 const initialLoadComplete = ref(false) // Flag to track initial load
 const showExcelStructure = ref(false) // Controls visibility of Excel structure modal
+const audioPlaybackTimeout = ref<NodeJS.Timeout | null>(null)
+
+// Audio status for audible names
+const audioStatus = ref({
+  isPlaying: false,
+  currentIndex: 0,
+  totalNames: 0
+})
 
 // Current time display
 const currentTime = ref('')
@@ -691,6 +781,31 @@ watch(
   () => {
     nextTick(() => {
       scrollSelectedSlideIntoView(true)
+
+      // Stop any existing audible names playback
+      if (config.value.audibleNames.enabled) {
+        stopAudibleNames()
+      }
+      // If no audible names are enabled, or auto playback is disabled, do nothing
+      if (
+        !config.value.audibleNames.enabled ||
+        !config.value.audibleNames.autoPlayback ||
+        state.freezeMonitors
+      ) {
+        return
+      }
+      // If we're on a names slide, start playback
+      if (
+        currentNamesSlide.value ||
+        cards.value[state.currentSlideIndex].type === CardType.Unattended
+      ) {
+        if (audioPlaybackTimeout.value) {
+          clearTimeout(audioPlaybackTimeout.value)
+        }
+        audioPlaybackTimeout.value = setTimeout(() => {
+          playAudibleNames()
+        }, config.value.audibleNames.delayBeforePlayback)
+      }
     })
   }
 )
@@ -747,8 +862,31 @@ onMounted(() => {
     })
   })
 
+  // Listen for toggle-audio-playback command from global shortcut
+  window.electron.ipcRenderer.on('toggle-audio-playback', () => {
+    // Only toggle if audible names is enabled and we're on a names or unattended slide
+    if (
+      config.value.audibleNames.enabled &&
+      (currentNamesSlide.value || cards.value[state.currentSlideIndex].type === CardType.Unattended)
+    ) {
+      toggleAudibleNames()
+    }
+  })
+
   // Load initial data
   window.electron.ipcRenderer.send('get-data')
+
+  // Set up audio status polling for audible names
+  const audioStatusInterval = setInterval(async () => {
+    if (config.value.audibleNames.enabled) {
+      updateAudioStatus()
+    }
+  }, 500) // Update every 500ms
+
+  // Clean up interval on unmount
+  onUnmounted(() => {
+    clearInterval(audioStatusInterval)
+  })
 
   // Add keyboard event listeners for navigation
   window.addEventListener('keydown', handleKeyDown)
@@ -842,6 +980,12 @@ const sideScreenCard = computed(() => {
   } else {
     return { type: CardType.Blank }
   }
+})
+
+// Computed property to check if current slide has audible names
+const currentNamesSlide = computed(() => {
+  const currentCard = cards.value[state.currentSlideIndex]
+  return currentCard && currentCard.type === CardType.Names ? currentCard : null
 })
 
 // Watch monitor selection changes
@@ -954,6 +1098,62 @@ const updateConfig = (newConfig: Config) => {
 
   // Send to main process to persist and update displays
   window.electron.ipcRenderer.send('update-config', configCopy)
+}
+
+// Audio control methods for audible names
+const toggleAudibleNames = () => {
+  if (audioStatus.value.isPlaying) {
+    // If playing, stop the audio
+    stopAudibleNames()
+  } else {
+    // If not playing, start playing
+    playAudibleNames()
+  }
+}
+
+const toggleAutoPlayback = () => {
+  const newConfig = JSON.parse(JSON.stringify(config.value))
+  newConfig.audibleNames.autoPlayback = !newConfig.audibleNames.autoPlayback
+  updateConfig(newConfig)
+}
+
+const playAudibleNames = () => {
+  const namesCard = currentNamesSlide.value
+  if (namesCard) {
+    // Use the same filtering logic as the Card component
+    const namesToPlay = filterNamesForCard(names.value, namesCard)
+
+    if (namesToPlay.length > 0) {
+      // Convert to plain objects to avoid cloning issues with Vue reactive objects
+      const serializedNames = namesToPlay.map((name) => ({
+        name: name.name,
+        group: name.group,
+        attending: name.attending
+      }))
+      window.electron.ipcRenderer.send('audio-play-names', serializedNames)
+    }
+  }
+  // If Unattended card, play all unattended names
+  else if (cards.value[state.currentSlideIndex].type === CardType.Unattended) {
+    const unattendedNames = filterUnattendedNames(names.value)
+    if (unattendedNames.length > 0) {
+      const serializedNames = unattendedNames.map((name) => ({
+        name: name.name,
+        group: name.group,
+        attending: name.attending
+      }))
+      window.electron.ipcRenderer.send('audio-play-names', serializedNames)
+    }
+  }
+}
+
+const stopAudibleNames = () => {
+  window.electron.ipcRenderer.send('audio-stop')
+}
+
+const updateAudioStatus = async () => {
+  const status = await window.electron.ipcRenderer.invoke('audio-get-status')
+  audioStatus.value = status
 }
 
 // Hover functionality for large thumbnail preview

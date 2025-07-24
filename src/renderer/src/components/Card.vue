@@ -149,6 +149,7 @@ import type { PropType } from 'vue'
 import { CardType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
+import { filterNamesForCard, filterUnattendedNames } from '../../../shared/nameFilters'
 
 // Import default assets
 import defaultBg from '../../../../resources/bg.png'
@@ -187,27 +188,12 @@ const props = defineProps({
 
 // Filter names based on the card group, from, and until properties
 const filteredNames = computed(() => {
-  if (!props.card.group || props.card.type !== CardType.Names) {
-    return []
-  }
-
-  let filtered = props.names.filter((name) => name.group === props.card.group && name.attending)
-
-  // If from and until are provided, filter by alphabetical range
-  if (props.card.from && props.card.until) {
-    filtered = filtered.filter(
-      (name) => name.name >= props.card.from! && name.name <= props.card.until!
-    )
-  }
-
-  return filtered.sort((a, b) => a.name.localeCompare(b.name))
+  return filterNamesForCard(props.names, props.card)
 })
 
 // Unattended names
 const unattendedNames = computed(() => {
-  let filtered = props.names.filter((name) => !name.attending)
-
-  return filtered.sort((a, b) => a.name.localeCompare(b.name))
+  return filterUnattendedNames(props.names)
 })
 
 // Determine background color based on card type
