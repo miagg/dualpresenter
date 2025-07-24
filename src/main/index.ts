@@ -106,6 +106,9 @@ function updateMonitorList(): void {
   // No auto-assignment of monitors anymore
   // Just send the updated monitor list to the renderer
   sendData()
+  
+  // Update display windows to handle monitor disconnections
+  updateDisplayWindows()
 }
 
 function loadData(): void {
@@ -308,7 +311,18 @@ function updateMainDisplayWindow(): void {
   }
 
   const targetMonitor = data.monitors?.find((m) => m.id.toString() === data.state.mainScreen)
-  if (!targetMonitor) return
+  if (!targetMonitor) {
+    // Monitor was disconnected - close the window and clear the selection
+    if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+      mainDisplayWindow.close()
+      mainDisplayWindow = null
+    }
+    // Clear the main screen selection since the monitor is no longer available
+    data.state.mainScreen = null
+    config.set('state.mainScreen', null)
+    sendData()
+    return
+  }
 
   // Create or update main display window
   const url =
@@ -401,7 +415,18 @@ function updateSideDisplayWindow(): void {
   }
 
   const targetMonitor = data.monitors?.find((m) => m.id.toString() === data.state.sideScreen)
-  if (!targetMonitor) return
+  if (!targetMonitor) {
+    // Monitor was disconnected - close the window and clear the selection
+    if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+      sideDisplayWindow.close()
+      sideDisplayWindow = null
+    }
+    // Clear the side screen selection since the monitor is no longer available
+    data.state.sideScreen = null
+    config.set('state.sideScreen', null)
+    sendData()
+    return
+  }
 
   // Create or update side display window
   const url =
