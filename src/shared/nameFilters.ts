@@ -12,16 +12,22 @@ export function filterNamesForCard(names: Name[], card: Card): Name[] {
     return []
   }
 
-  // Start with names in the right group and attending
-  let filtered = names.filter((name) => name.group === card.group && name.attending)
+  // Start with names in the right group and attending, sorted alphabetically
+  let filtered = names
+    .filter((name) => name.group === card.group && name.attending)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   // Apply from/until filters if present (alphabetical range)
   if (card.from && card.until) {
-    filtered = filtered.filter((name) => name.name >= card.from! && name.name <= card.until!)
+    console.log(filtered)
+    filtered = filtered.filter(
+      (name) =>
+        name.name.localeCompare(card.from!, 'el') >= 0 &&
+        name.name.localeCompare(card.until!, 'el') <= 0
+    )
   }
 
-  // Sort alphabetically
-  return filtered.sort((a, b) => a.name.localeCompare(b.name))
+  return filtered
 }
 
 /**
