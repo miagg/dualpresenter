@@ -48,8 +48,7 @@ This app will project slides on an external monitor based on an excel file. Each
 - The first row must be the header
 - The first column must be the name of the person.
 - The second column must be the group of the person. This will be used to group names in the slides (required).
-- The third column must be the presenter name (optional).
-- The forth column must be the attending status. It can be either "Yes" or "No".
+- The third column must be the attending status. It can be either "Yes" or "No".
 
 ## Navigate between slides using mouse or keyboard (arrow keys)
 
