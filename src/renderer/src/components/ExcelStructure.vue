@@ -175,12 +175,6 @@
                 <td class="px-4 py-3 text-sm">Yes</td>
               </tr>
               <tr>
-                <td class="px-4 py-3 font-mono text-sm">presenter</td>
-                <td class="px-4 py-3 text-sm">The presenter name (not for use)</td>
-                <td class="px-4 py-3 text-sm">Text</td>
-                <td class="px-4 py-3 text-sm">No</td>
-              </tr>
-              <tr>
                 <td class="px-4 py-3 font-mono text-sm">attending</td>
                 <td class="px-4 py-3 text-sm">Whether the person is attending or not</td>
                 <td class="px-4 py-3 text-sm">Yes/No</td>
