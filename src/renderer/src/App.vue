@@ -190,7 +190,9 @@
                   <button
                     :disabled="
                       !currentNamesSlide &&
-                      cards[state.currentSlideIndex].type !== CardType.Unattended
+                      (cards.length === 0 ||
+                        state.currentSlideIndex >= cards.length ||
+                        cards[state.currentSlideIndex].type !== CardType.Unattended)
                     "
                     class="btn !px-2 !py-1 min-w-18 justify-center items-center disabled:opacity-50 disabled:pointer-events-none relative overflow-hidden"
                     :title="
@@ -797,7 +799,9 @@ watch(
       // If we're on a names slide, start playback
       if (
         currentNamesSlide.value ||
-        cards.value[state.currentSlideIndex].type === CardType.Unattended
+        (cards.value.length > 0 &&
+          state.currentSlideIndex < cards.value.length &&
+          cards.value[state.currentSlideIndex].type === CardType.Unattended)
       ) {
         if (audioPlaybackTimeout.value) {
           clearTimeout(audioPlaybackTimeout.value)
@@ -867,7 +871,10 @@ onMounted(() => {
     // Only toggle if audible names is enabled and we're on a names or unattended slide
     if (
       config.value.audibleNames.enabled &&
-      (currentNamesSlide.value || cards.value[state.currentSlideIndex].type === CardType.Unattended)
+      (currentNamesSlide.value ||
+        (cards.value.length > 0 &&
+          state.currentSlideIndex < cards.value.length &&
+          cards.value[state.currentSlideIndex].type === CardType.Unattended))
     ) {
       toggleAudibleNames()
     }
@@ -984,6 +991,9 @@ const sideScreenCard = computed(() => {
 
 // Computed property to check if current slide has audible names
 const currentNamesSlide = computed(() => {
+  if (cards.value.length === 0 || state.currentSlideIndex >= cards.value.length) {
+    return null
+  }
   const currentCard = cards.value[state.currentSlideIndex]
   return currentCard && currentCard.type === CardType.Names ? currentCard : null
 })
@@ -1134,7 +1144,11 @@ const playAudibleNames = () => {
     }
   }
   // If Unattended card, play all unattended names
-  else if (cards.value[state.currentSlideIndex].type === CardType.Unattended) {
+  else if (
+    cards.value.length > 0 &&
+    state.currentSlideIndex < cards.value.length &&
+    cards.value[state.currentSlideIndex].type === CardType.Unattended
+  ) {
     const unattendedNames = filterUnattendedNames(names.value)
     if (unattendedNames.length > 0) {
       const serializedNames = unattendedNames.map((name) => ({

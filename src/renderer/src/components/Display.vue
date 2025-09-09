@@ -31,7 +31,12 @@ onMounted(() => {
       }
 
       if (route.name === 'mainscreen') {
-        currentCard.value = data.cards[data.currentSlideIndex]
+        // Check bounds before accessing the card
+        if (data.cards && data.cards.length > 0 && data.currentSlideIndex < data.cards.length) {
+          currentCard.value = data.cards[data.currentSlideIndex]
+        } else {
+          currentCard.value = null
+        }
       } else {
         const namesCard = data.cards.find((card) => {
           let namesPrecedence =
