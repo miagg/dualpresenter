@@ -106,7 +106,7 @@ function updateMonitorList(): void {
   // No auto-assignment of monitors anymore
   // Just send the updated monitor list to the renderer
   sendData()
-  
+
   // Update display windows to handle monitor disconnections
   updateDisplayWindows()
 }
@@ -1239,6 +1239,40 @@ app.whenReady().then(() => {
       const result = await dialog.showSaveDialog({
         title: 'Save Excel Template',
         defaultPath: 'template.xlsx',
+        filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
+      })
+
+      // If user canceled, exit
+      if (result.canceled || !result.filePath) {
+        return { success: false, message: 'Operation canceled' }
+      }
+
+      // Copy the template to the selected location
+      fs.copyFileSync(templatePath, result.filePath)
+
+      return { success: true, filePath: result.filePath }
+    } catch (error) {
+      console.error('Error saving template:', error)
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  })
+
+  ipcMain.handle('save-excel-client-template', async () => {
+    try {
+      const templatePath = join(app.getAppPath(), 'resources', 'template_for_client.xlsx')
+
+      // Ensure the template exists
+      if (!fs.existsSync(templatePath)) {
+        throw new Error('Template file not found')
+      }
+
+      // Open save dialog to get destination path
+      const result = await dialog.showSaveDialog({
+        title: 'Save Excel Template',
+        defaultPath: 'template_for_client.xlsx',
         filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
       })
 
