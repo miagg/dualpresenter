@@ -19,7 +19,6 @@ export function filterNamesForCard(names: Name[], card: Card): Name[] {
 
   // Apply from/until filters if present (alphabetical range)
   if (card.from && card.until) {
-    console.log(filtered)
     filtered = filtered.filter(
       (name) =>
         name.name.localeCompare(card.from!, 'el') >= 0 &&

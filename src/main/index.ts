@@ -690,13 +690,16 @@ function registerGlobalShortcuts(): void {
   globalShortcut.register('CommandOrControl+P', () => {
     // Check if audible names is enabled and we're on a names slide
     if (data.config.audibleNames.enabled) {
-      const currentCard = data.cards[data.state.currentSlideIndex]
-      if (
-        currentCard &&
-        (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
-      ) {
-        // Send message to renderer to toggle audio
-        mainWindow?.webContents.send('toggle-audio-playback')
+      // Check bounds before accessing the card
+      if (data.cards.length > 0 && data.state.currentSlideIndex < data.cards.length) {
+        const currentCard = data.cards[data.state.currentSlideIndex]
+        if (
+          currentCard &&
+          (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
+        ) {
+          // Send message to renderer to toggle audio
+          mainWindow?.webContents.send('toggle-audio-playback')
+        }
       }
     }
   })
