@@ -196,8 +196,12 @@
                     "
                     class="btn !px-2 !py-1 min-w-18 justify-center items-center disabled:opacity-50 disabled:pointer-events-none relative overflow-hidden"
                     :title="
-                      audioStatus.isPlaying
-                        ? 'Stop audible names playback'
+                      audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
+                        ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
+                          ? 'Resume audible names playback'
+                          : config.audibleNames.continuousPlayback
+                            ? 'Stop audible names playback'
+                            : 'Pause audible names playback'
                         : 'Play audible names for current slide'
                     "
                     @click="toggleAudibleNames"
@@ -206,17 +210,23 @@
                     <div
                       class="absolute inset-0 bg-slate-500"
                       :class="{
-                        'transition-all duration-[3s] ease-out': audioStatus.isPlaying
+                        'transition-all duration-[3s] ease-out':
+                          audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
                       }"
                       :style="{
-                        width: `${audioStatus.isPlaying ? Math.ceil(((audioStatus.currentIndex + 1) / audioStatus.totalNames) * 100) : 0}%`
+                        width: `${audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames ? Math.ceil(((audioStatus.currentIndex + 1) / audioStatus.totalNames) * 100) : 0}%`
                       }"
                     ></div>
 
                     <!-- Button content -->
                     <div class="relative z-10 flex items-center">
                       <svg
-                        v-if="!audioStatus.isPlaying"
+                        v-if="
+                          !(
+                            audioStatus.isPlaying &&
+                            audioStatus.currentIndex < audioStatus.totalNames
+                          )
+                        "
                         xmlns="http://www.w3.org/2000/svg"
                         class="h-5 w-5 mr-1"
                         viewBox="0 0 20 20"
@@ -241,12 +251,92 @@
                           clip-rule="evenodd"
                         />
                       </svg>
-                      <span>{{ audioStatus.isPlaying ? 'Stop' : 'Play' }}</span>
+                      <span>{{
+                        audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
+                          ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
+                            ? 'Resume'
+                            : config.audibleNames.continuousPlayback
+                              ? 'Stop'
+                              : 'Pause'
+                          : 'Play'
+                      }}</span>
                     </div>
                   </button>
                 </div>
               </div>
             </h2>
+
+            <!-- Status indicator showing current position and total - on its own line -->
+            <div
+              v-if="config.audibleNames.enabled"
+              class="text-xs text-gray-400 flex items-center justify-between mb-4 bg-gray-900/80 px-3 py-2 rounded min-h-10"
+            >
+              <div class="flex items-center space-x-2">
+                <span>🔊</span>
+                <div
+                  v-if="audioStatus.isPlaying || audioStatus.isPaused"
+                  class="flex items-center space-x-2"
+                >
+                  <span v-if="audioStatus.currentIndex < audioStatus.totalNames">
+                    {{ audioStatus.currentIndex + 1 }}/{{ audioStatus.totalNames }}
+                  </span>
+                  <span v-else> Not playing </span>
+                  <span
+                    v-if="
+                      audioStatus.currentName && audioStatus.currentIndex < audioStatus.totalNames
+                    "
+                    class="text-gray-300"
+                  >
+                    {{ audioStatus.currentName }}
+                  </span>
+                  <span
+                    v-if="audioStatus.isPaused && audioStatus.currentIndex < audioStatus.totalNames"
+                    class="text-yellow-400"
+                    >(Paused)</span
+                  >
+                </div>
+                <span v-else class="text-gray-400">Not playing</span>
+              </div>
+
+              <!-- Navigation buttons - only show when continuous playback is disabled and audio is active -->
+              <div
+                v-if="
+                  !config.audibleNames.continuousPlayback &&
+                  (audioStatus.isPlaying || audioStatus.isPaused) &&
+                  audioStatus.totalNames > 1
+                "
+                class="flex items-center space-x-1"
+              >
+                <button
+                  @click="goToPreviousName"
+                  :disabled="audioStatus.currentIndex <= 0"
+                  class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Previous name"
+                >
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <button
+                  @click="goToNextName"
+                  :disabled="audioStatus.currentIndex >= audioStatus.totalNames - 1"
+                  class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Next name"
+                >
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
             <div class="mb-4">
               <label class="block text-sm font-medium mb-1 text-gray-300">Main Screen</label>
@@ -613,7 +703,8 @@ const config = ref<Config>({
     enabled: false,
     delayBeforePlayback: 1000,
     gapBetweenNames: 500,
-    autoPlayback: true
+    autoPlayback: true,
+    continuousPlayback: true
   },
   namesPrecedence: 0
 })
@@ -635,8 +726,10 @@ const audioPlaybackTimeout = ref<NodeJS.Timeout | null>(null)
 // Audio status for audible names
 const audioStatus = ref({
   isPlaying: false,
+  isPaused: false,
   currentIndex: 0,
-  totalNames: 0
+  totalNames: 0,
+  currentName: null as string | null
 })
 
 // Current time display
@@ -1112,11 +1205,26 @@ const updateConfig = (newConfig: Config) => {
 
 // Audio control methods for audible names
 const toggleAudibleNames = () => {
-  if (audioStatus.value.isPlaying) {
-    // If playing, stop the audio
-    stopAudibleNames()
+  // Check if we're actively playing and not completed all names
+  const isActivelyPlaying =
+    audioStatus.value.isPlaying && audioStatus.value.currentIndex < audioStatus.value.totalNames
+
+  if (isActivelyPlaying) {
+    if (config.value.audibleNames.continuousPlayback) {
+      // If continuous playback is enabled, stop the audio completely
+      stopAudibleNames()
+    } else {
+      // If continuous playback is disabled, pause/resume
+      if (audioStatus.value.isPaused) {
+        // Resume playback
+        window.electron.ipcRenderer.send('audio-resume')
+      } else {
+        // Pause playback
+        window.electron.ipcRenderer.send('audio-pause')
+      }
+    }
   } else {
-    // If not playing, start playing
+    // Always start playing from current slide
     playAudibleNames()
   }
 }
@@ -1161,11 +1269,19 @@ const playAudibleNames = () => {
   }
 }
 
-const stopAudibleNames = () => {
+const stopAudibleNames = (): void => {
   window.electron.ipcRenderer.send('audio-stop')
 }
 
-const updateAudioStatus = async () => {
+const goToNextName = (): void => {
+  window.electron.ipcRenderer.send('audio-next')
+}
+
+const goToPreviousName = (): void => {
+  window.electron.ipcRenderer.send('audio-previous')
+}
+
+const updateAudioStatus = async (): Promise<void> => {
   const status = await window.electron.ipcRenderer.invoke('audio-get-status')
   audioStatus.value = status
 }

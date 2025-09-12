@@ -55,7 +55,8 @@ if (data.config.audibleNames === undefined) {
     enabled: false,
     delayBeforePlayback: 1000,
     gapBetweenNames: 500,
-    autoPlayback: true
+    autoPlayback: true,
+    continuousPlayback: true
   }
 }
 
@@ -1308,7 +1309,8 @@ app.whenReady().then(() => {
       audioManager.setConfiguration(
         0, // No delay for manual playback
         data.config.audibleNames.gapBetweenNames,
-        voiceoverFolder
+        voiceoverFolder,
+        data.config.audibleNames.continuousPlayback
       )
       audioManager.playNamesSequence(names)
     }
@@ -1316,6 +1318,22 @@ app.whenReady().then(() => {
 
   ipcMain.on('audio-stop', () => {
     audioManager.stopPlayback()
+  })
+
+  ipcMain.on('audio-pause', () => {
+    audioManager.pausePlayback()
+  })
+
+  ipcMain.on('audio-resume', () => {
+    audioManager.resumePlayback()
+  })
+
+  ipcMain.on('audio-next', () => {
+    audioManager.goToNext()
+  })
+
+  ipcMain.on('audio-previous', () => {
+    audioManager.goToPrevious()
   })
 
   ipcMain.handle('audio-get-status', () => {

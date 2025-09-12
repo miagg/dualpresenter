@@ -19,6 +19,7 @@ export interface Config {
     delayBeforePlayback: number
     gapBetweenNames: number
     autoPlayback: boolean
+    continuousPlayback: boolean
   }
   namesPrecedence: number
 }

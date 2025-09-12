@@ -9,6 +9,9 @@ const config = new Store({
       store.set('config.audibleNames.delayBeforePlayback', 200)
       store.set('config.audibleNames.gapBetweenNames', 200)
       store.set('config.audibleNames.autoPlayback', true)
+    },
+    '1.2.0': (store): void => {
+      store.set('config.audibleNames.continuousPlayback', true)
     }
   }
 })
