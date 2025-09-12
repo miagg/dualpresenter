@@ -5,6 +5,7 @@ import { Name } from '../models/Name'
 
 export class AudioManager {
   private isPlaying: boolean = false
+  private isPaused: boolean = false
   private currentAudio: ChildProcess | null = null
   private playbackQueue: Name[] = []
   private currentIndex: number = 0
@@ -13,6 +14,7 @@ export class AudioManager {
   private voiceoverFolder: string = ''
   private playbackTimer: NodeJS.Timeout | null = null
   private isIntentionallyStopped: boolean = false
+  private continuousPlayback: boolean = true
 
   constructor() {
     // Initialize audio player reference
@@ -22,17 +24,20 @@ export class AudioManager {
   setConfiguration(
     delayBeforePlayback: number,
     gapBetweenNames: number,
-    voiceoverFolder: string
+    voiceoverFolder: string,
+    continuousPlayback: boolean = true
   ): void {
     this.delayBeforePlayback = delayBeforePlayback
     this.gapBetweenNames = gapBetweenNames
     this.voiceoverFolder = voiceoverFolder
+    this.continuousPlayback = continuousPlayback
   }
 
   async playNamesSequence(names: Name[]): Promise<void> {
     this.playbackQueue = names
     this.currentIndex = 0
     this.isPlaying = true
+    this.isPaused = false
     this.isIntentionallyStopped = false // Reset flag when starting new playback
 
     // Wait for the initial delay before starting playback
@@ -54,15 +59,44 @@ export class AudioManager {
       try {
         await this.playAudioFile(audioPath)
 
-        // After audio finishes, wait for gap and play next
+        // Increment index immediately after audio finishes
+        this.currentIndex++
+
+        // Check if we've reached the end of the playlist
+        if (this.currentIndex >= this.playbackQueue.length) {
+          this.isPlaying = false
+          this.isPaused = false
+          return
+        }
+
+        // If continuous playback is disabled, pause here
+        if (!this.continuousPlayback) {
+          this.isPaused = true
+          // Don't automatically play next name - wait for manual trigger
+          return
+        }
+
+        // For continuous playback, wait for gap and play next
         this.playbackTimer = setTimeout(() => {
-          this.currentIndex++
           this.playNextName()
         }, this.gapBetweenNames)
       } catch (error) {
         console.error(`Error playing audio for "${currentName.name}":`, error)
         // Skip to next name on error
         this.currentIndex++
+
+        // Check if we've reached the end of the playlist
+        if (this.currentIndex >= this.playbackQueue.length) {
+          this.isPlaying = false
+          this.isPaused = false
+          return
+        }
+
+        if (!this.continuousPlayback) {
+          this.isPaused = true
+          return
+        }
+
         this.playNextName()
       }
     } else {
@@ -76,6 +110,19 @@ export class AudioManager {
       )
       // Skip to next name if audio file doesn't exist
       this.currentIndex++
+
+      // Check if we've reached the end of the playlist
+      if (this.currentIndex >= this.playbackQueue.length) {
+        this.isPlaying = false
+        this.isPaused = false
+        return
+      }
+
+      if (!this.continuousPlayback) {
+        this.isPaused = true
+        return
+      }
+
       this.playNextName()
     }
   }
@@ -196,6 +243,7 @@ export class AudioManager {
 
   stopPlayback(): void {
     this.isPlaying = false
+    this.isPaused = false
 
     // Clear any pending timeout first
     if (this.playbackTimer) {
@@ -221,15 +269,116 @@ export class AudioManager {
     this.playbackQueue = []
   }
 
+  pausePlayback(): void {
+    if (this.isPlaying && !this.isPaused) {
+      this.isPaused = true
+
+      // Clear any pending timeout
+      if (this.playbackTimer) {
+        clearTimeout(this.playbackTimer)
+        this.playbackTimer = null
+      }
+
+      // Stop current audio if playing
+      if (this.currentAudio) {
+        try {
+          this.isIntentionallyStopped = true
+          this.currentAudio.kill('SIGINT')
+        } catch (error) {
+          console.error('Error pausing audio:', error)
+          this.isIntentionallyStopped = false
+        }
+        this.currentAudio = null
+      }
+    }
+  }
+
+  resumePlayback(): void {
+    if (this.isPlaying && this.isPaused) {
+      this.isPaused = false
+
+      // Continue with next name if we have more to play
+      if (this.currentIndex < this.playbackQueue.length) {
+        this.playNextName()
+      } else {
+        // We've reached the end
+        this.isPlaying = false
+      }
+    }
+  }
+
+  goToNext(): void {
+    if (this.playbackQueue.length === 0) return
+
+    // Stop current audio
+    if (this.currentAudio) {
+      this.isIntentionallyStopped = true
+      this.currentAudio.kill('SIGINT')
+      this.currentAudio = null
+    }
+
+    // Clear any pending timer
+    if (this.playbackTimer) {
+      clearTimeout(this.playbackTimer)
+      this.playbackTimer = null
+    }
+
+    // Move to next index if not at the end
+    if (this.currentIndex < this.playbackQueue.length - 1) {
+      this.currentIndex++
+
+      // If we're in continuous mode and playing, continue playing
+      if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+        this.playNextName()
+      }
+    }
+  }
+
+  goToPrevious(): void {
+    if (this.playbackQueue.length === 0) return
+
+    // Stop current audio
+    if (this.currentAudio) {
+      this.isIntentionallyStopped = true
+      this.currentAudio.kill('SIGINT')
+      this.currentAudio = null
+    }
+
+    // Clear any pending timer
+    if (this.playbackTimer) {
+      clearTimeout(this.playbackTimer)
+      this.playbackTimer = null
+    }
+
+    // Move to previous index if not at the beginning
+    if (this.currentIndex > 0) {
+      this.currentIndex--
+
+      // If we're in continuous mode and playing, continue playing
+      if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+        this.playNextName()
+      }
+    }
+  }
+
   getPlaybackStatus(): {
     isPlaying: boolean
+    isPaused: boolean
     currentIndex: number
     totalNames: number
+    currentName: string | null
   } {
+    const currentName =
+      this.currentIndex < this.playbackQueue.length && this.currentIndex >= 0
+        ? this.playbackQueue[this.currentIndex]?.name || null
+        : null
+
     return {
       isPlaying: this.isPlaying,
+      isPaused: this.isPaused,
       currentIndex: this.currentIndex,
-      totalNames: this.playbackQueue.length
+      totalNames: this.playbackQueue.length,
+      currentName
     }
   }
 }

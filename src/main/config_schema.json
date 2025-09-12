@@ -82,6 +82,10 @@
           "autoPlayback": {
             "type": "boolean",
             "default": true
+          },
+          "continuousPlayback": {
+            "type": "boolean",
+            "default": true
           }
         },
         "default": {}

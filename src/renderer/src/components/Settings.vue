@@ -458,20 +458,42 @@
               </div>
             </div>
 
-            <div class="input-group">
-              <div class="checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  id="autoPlayback"
-                  v-model="settings.audibleNames.autoPlayback"
-                  class="checkbox-input"
-                  @change="settingsChanged"
-                />
-                <label for="autoPlayback" class="checkbox-label"> Auto Playback </label>
+            <!-- Playback Options in a grid layout -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="input-group">
+                <div class="checkbox-wrapper">
+                  <input
+                    type="checkbox"
+                    id="autoPlayback"
+                    v-model="settings.audibleNames.autoPlayback"
+                    class="checkbox-input"
+                    @change="settingsChanged"
+                  />
+                  <label for="autoPlayback" class="checkbox-label"> Auto Playback </label>
+                </div>
+                <p class="input-description">
+                  Automatically start playback when a names slide is displayed
+                </p>
               </div>
-              <p class="input-description">
-                Automatically start playback when a names slide is displayed
-              </p>
+
+              <div class="input-group">
+                <div class="checkbox-wrapper">
+                  <input
+                    type="checkbox"
+                    id="continuousPlayback"
+                    v-model="settings.audibleNames.continuousPlayback"
+                    class="checkbox-input"
+                    @change="settingsChanged"
+                  />
+                  <label for="continuousPlayback" class="checkbox-label">
+                    Continuous Playback
+                  </label>
+                </div>
+                <p class="input-description">
+                  Play names continuously without pausing between each name. When disabled, playback
+                  pauses after each name until manually resumed
+                </p>
+              </div>
             </div>
 
             <!-- Setup Instructions -->
@@ -748,7 +770,8 @@ const settings = reactive<Config>({
     enabled: false,
     delayBeforePlayback: 200,
     gapBetweenNames: 200,
-    autoPlayback: true
+    autoPlayback: true,
+    continuousPlayback: true
   },
   namesPrecedence: 0
 })
@@ -802,6 +825,10 @@ onMounted(() => {
       settings.audibleNames.gapBetweenNames = config.audibleNames?.gapBetweenNames ?? 200
       settings.audibleNames.autoPlayback =
         config.audibleNames?.autoPlayback !== undefined ? config.audibleNames.autoPlayback : true
+      settings.audibleNames.continuousPlayback =
+        config.audibleNames?.continuousPlayback !== undefined
+          ? config.audibleNames.continuousPlayback
+          : true
 
       settings.namesPrecedence = config.namesPrecedence || 0
 
@@ -840,6 +867,10 @@ const initializeSettings = (): void => {
   settings.audibleNames.autoPlayback =
     props.config.audibleNames?.autoPlayback !== undefined
       ? props.config.audibleNames.autoPlayback
+      : true
+  settings.audibleNames.continuousPlayback =
+    props.config.audibleNames?.continuousPlayback !== undefined
+      ? props.config.audibleNames.continuousPlayback
       : true
 
   settings.namesPrecedence = props.config.namesPrecedence || 0
@@ -950,6 +981,10 @@ watch(
       newConfig.audibleNames?.autoPlayback !== undefined
         ? newConfig.audibleNames.autoPlayback
         : true
+    settings.audibleNames.continuousPlayback =
+      newConfig.audibleNames?.continuousPlayback !== undefined
+        ? newConfig.audibleNames.continuousPlayback
+        : true
 
     // Load image previews when config changes
     loadImagePreviews()
@@ -981,7 +1016,8 @@ const settingsChanged = async (): Promise<void> => {
       enabled: settings.audibleNames.enabled,
       delayBeforePlayback: settings.audibleNames.delayBeforePlayback,
       gapBetweenNames: settings.audibleNames.gapBetweenNames,
-      autoPlayback: settings.audibleNames.autoPlayback
+      autoPlayback: settings.audibleNames.autoPlayback,
+      continuousPlayback: settings.audibleNames.continuousPlayback
     },
     namesPrecedence: settings.namesPrecedence
   }
