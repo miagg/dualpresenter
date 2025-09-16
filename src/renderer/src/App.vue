@@ -269,7 +269,7 @@
             <!-- Status indicator showing current position and total - on its own line -->
             <div
               v-if="config.audibleNames.enabled"
-              class="text-xs text-gray-400 flex items-center justify-between mb-4 bg-gray-900/80 px-3 py-2 rounded min-h-10"
+              class="text-sm text-gray-400 flex items-center justify-between mb-4 bg-gray-700/50 px-3 py-2 rounded min-h-10"
             >
               <div class="flex items-center space-x-2">
                 <span>🔊</span>
