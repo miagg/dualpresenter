@@ -537,8 +537,8 @@
 
             <div
               class="slide-thumbnail w-40 mr-4 relative"
-              @mouseenter="startHoverTimer(index)"
-              @mouseleave="clearHoverTimer()"
+              @mouseenter="handleMouseEnter(index)"
+              @mouseleave="handleMouseLeave()"
             >
               <Card
                 :zoom="0.08333333"
@@ -560,7 +560,7 @@
                     top: '-20px'
                   }"
                   @mouseenter="keepLargeThumbnail()"
-                  @mouseleave="clearHoverTimer()"
+                  @mouseleave="handleMouseLeave()"
                 >
                   <div class="bg-gray-800 border border-gray-600 p-2 rounded shadow-xl">
                     <div class="w-[455px] xl:w-[640px]">
@@ -991,6 +991,10 @@ onMounted(() => {
   // Add keyboard event listeners for navigation
   window.addEventListener('keydown', handleKeyDown)
 
+  // Add keyboard event listeners for Ctrl/Cmd key detection
+  window.addEventListener('keydown', handleKeyboardEvent)
+  window.addEventListener('keyup', handleKeyboardEvent)
+
   // Add click outside listener for search popup
   document.addEventListener('click', handleClickOutside)
 
@@ -1005,6 +1009,8 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('flip-screens')
   window.electron.ipcRenderer.removeAllListeners('scroll-to-current')
   window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keydown', handleKeyboardEvent)
+  window.removeEventListener('keyup', handleKeyboardEvent)
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('keydown', handleSearchShortcut)
 })
@@ -1289,27 +1295,40 @@ const updateAudioStatus = async (): Promise<void> => {
 // Hover functionality for large thumbnail preview
 const hoveredSlideIndex = ref<number | null>(null)
 const showLargeThumbnail = ref(false)
-let hoverTimer: number | null = null
+const isCtrlKeyPressed = ref(false)
 
-const startHoverTimer = (index: number) => {
-  clearHoverTimer()
-  hoverTimer = window.setTimeout(() => {
-    hoveredSlideIndex.value = index
+const handleMouseEnter = (index: number) => {
+  hoveredSlideIndex.value = index
+  if (isCtrlKeyPressed.value) {
     showLargeThumbnail.value = true
-  }, 1000) // 1 second delay
+  }
 }
 
-const clearHoverTimer = () => {
-  if (hoverTimer) {
-    clearTimeout(hoverTimer)
-    hoverTimer = null
-  }
+const handleMouseLeave = () => {
   showLargeThumbnail.value = false
   hoveredSlideIndex.value = null
 }
 
 const keepLargeThumbnail = () => {
-  clearHoverTimer()
+  // Keep the thumbnail visible while hovering over it
+}
+
+// Handle keyboard events for Ctrl/Cmd key detection
+const handleKeyboardEvent = (event: KeyboardEvent) => {
+  const isModifierPressed = (isMac && event.metaKey) || (!isMac && event.ctrlKey)
+
+  if (isModifierPressed !== isCtrlKeyPressed.value) {
+    isCtrlKeyPressed.value = isModifierPressed
+
+    // If modifier key is pressed and we're hovering over a slide, show thumbnail
+    if (isModifierPressed && hoveredSlideIndex.value !== null) {
+      showLargeThumbnail.value = true
+    }
+    // If modifier key is released, hide thumbnail
+    else if (!isModifierPressed) {
+      showLargeThumbnail.value = false
+    }
+  }
 }
 
 const flipScreens = () => {
@@ -1466,11 +1485,16 @@ const getSideScreen = (index: number): CardInterface | undefined => {
 }
 
 /* Fade transition for the large thumbnail preview */
-.fade-enter-active,
-.fade-leave-active {
+.fade-enter-active {
   transition: opacity 0.3s ease;
   opacity: 1 !important;
   /* Force 100% opacity during transitions */
+}
+
+.fade-leave-active {
+  transition: none;
+  /* Remove transition for immediate hide */
+  opacity: 0 !important;
 }
 
 .fade-enter-from,
