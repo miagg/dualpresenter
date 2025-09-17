@@ -123,7 +123,11 @@
 
       <div
         class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
-        :class="{ 'justify-center': unattendedNames.length < linesPerColumn }"
+        :class="{
+          'justify-center': unattendedNames.length < linesPerColumn,
+          'pb-20': unattendedNames.length !== linesPerColumn + 1,
+          'pb-40': unattendedNames.length === linesPerColumn + 1
+        }"
       >
         <div v-for="name in unattendedNames" :key="name.id">
           {{ name.name }}

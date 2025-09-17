@@ -995,6 +995,9 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeyboardEvent)
   window.addEventListener('keyup', handleKeyboardEvent)
 
+  // Add window focus listener to reset key state when app regains focus
+  window.addEventListener('focus', handleWindowFocus)
+
   // Add click outside listener for search popup
   document.addEventListener('click', handleClickOutside)
 
@@ -1011,6 +1014,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keydown', handleKeyboardEvent)
   window.removeEventListener('keyup', handleKeyboardEvent)
+  window.removeEventListener('focus', handleWindowFocus)
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('keydown', handleSearchShortcut)
 })
@@ -1328,6 +1332,15 @@ const handleKeyboardEvent = (event: KeyboardEvent) => {
     else if (!isModifierPressed) {
       showLargeThumbnail.value = false
     }
+  }
+}
+
+// Handle window focus/blur events to reset key state
+const handleWindowFocus = () => {
+  // Reset key state when window regains focus to prevent stuck modifier keys
+  if (isCtrlKeyPressed.value) {
+    isCtrlKeyPressed.value = false
+    showLargeThumbnail.value = false
   }
 }
 
