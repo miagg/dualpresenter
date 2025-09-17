@@ -78,8 +78,12 @@
       />
 
       <div
-        class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 pb-20 z-10"
-        :class="{ 'justify-center': filteredNames.length < 8 }"
+        class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 z-10"
+        :class="{
+          'justify-center': filteredNames.length < linesPerColumn,
+          'pb-20': filteredNames.length !== linesPerColumn + 1,
+          'pb-40': filteredNames.length === linesPerColumn + 1
+        }"
       >
         <div
           v-if="card.subtitle || (card.group && card.title)"
@@ -119,7 +123,7 @@
 
       <div
         class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
-        :class="{ 'justify-center': unattendedNames.length < 8 }"
+        :class="{ 'justify-center': unattendedNames.length < linesPerColumn }"
       >
         <div v-for="name in unattendedNames" :key="name.id">
           {{ name.name }}
@@ -159,6 +163,7 @@ import defaultLogoWhite from '../../../../resources/logo_white.png'
 
 // Reference to the card DOM element
 const cardElement = ref<HTMLElement | null>(null)
+const linesPerColumn = 8
 
 // Reactive refs to store loaded image data URLs
 const backgroundImageDataUrl = ref<string | null>(null)
