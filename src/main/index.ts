@@ -1129,6 +1129,18 @@ app.whenReady().then(() => {
     }
   })
 
+  // Add handlers for state management
+  ipcMain.handle('get-state', () => {
+    return config.get('state')
+  })
+
+  ipcMain.handle('update-state', (_, stateUpdate) => {
+    const currentState = config.get('state') || {}
+    const newState = { ...currentState, ...stateUpdate }
+    config.set('state', newState)
+    return newState
+  })
+
   // Add handler for loading image files as data URLs
   ipcMain.handle('get-image-data', async (_, filePath) => {
     try {

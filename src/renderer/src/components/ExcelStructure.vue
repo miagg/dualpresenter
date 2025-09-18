@@ -4,10 +4,7 @@
   >
     <div v-if="isMacOs" class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold">Excel File Structure</h2>
-      <button
-        @click="closeWindow"
-        class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 cursor-pointer"
-      >
+      <button @click="closeWindow" class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-gray-200">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-6 w-6"
@@ -42,7 +39,7 @@
         <div class="mt-6 flex justify-center gap-4">
           <button
             @click="saveTemplate"
-            class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded flex items-center cursor-pointer"
+            class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded flex items-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +57,7 @@
           </button>
           <button
             @click="saveClientTemplate"
-            class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded flex items-center cursor-pointer"
+            class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded flex items-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

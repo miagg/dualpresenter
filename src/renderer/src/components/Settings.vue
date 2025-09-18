@@ -224,6 +224,54 @@
             </div>
           </div>
         </div>
+
+        <!-- Logo Settings Section -->
+        <div class="settings-section">
+          <div class="section-header">
+            <h3 class="section-title">Logo Display</h3>
+            <p class="section-description">Configure logo appearance on blank cards</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="input-group">
+              <label class="input-label">Maximum Logo Size</label>
+              <div class="range-input-wrapper">
+                <input
+                  v-model.number="settings.assets.maxLogoSize"
+                  type="range"
+                  min="10"
+                  max="100"
+                  step="5"
+                  class="range-input"
+                  @input="settingsChanged"
+                />
+                <div class="range-value">{{ settings.assets.maxLogoSize }}%</div>
+              </div>
+              <p class="input-description">
+                Controls the maximum width and height of the logo on blank cards
+              </p>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Vertical Position Offset</label>
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="settings.assets.logoVerticalPosition"
+                  type="number"
+                  min="-200"
+                  max="200"
+                  step="1"
+                  class="number-input"
+                  @change="settingsChanged"
+                />
+                <span class="number-input-unit">px</span>
+              </div>
+              <p class="input-description">
+                Adjusts the vertical position of the logo on blank cards (positive moves down,
+                negative moves up)
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Assets Tab -->
@@ -737,7 +785,10 @@ const props = defineProps({
         background: '',
         backgroundNames: '',
         logo: '',
-        logoInverted: ''
+        logoInverted: '',
+        useDefaultAssets: true,
+        maxLogoSize: 60,
+        logoVerticalPosition: 0
       },
       fonts: {
         slidesFont: 'TheWaveSans'
@@ -760,7 +811,9 @@ const settings = reactive<Config>({
     backgroundNames: '',
     logo: '',
     logoInverted: '',
-    useDefaultAssets: true
+    useDefaultAssets: true,
+    maxLogoSize: 60,
+    logoVerticalPosition: 0
   },
   fonts: {
     slidesFont: 'TheWaveSans',
@@ -784,6 +837,30 @@ const imagePreviews = reactive({
   logoInverted: ''
 })
 
+// Tab persistence functions
+const loadLastOpenedTab = async (): Promise<void> => {
+  try {
+    const state = await window.electron.ipcRenderer.invoke('get-state')
+    if (state?.lastOpenedTab) {
+      activeTab.value = state.lastOpenedTab
+    }
+  } catch (error) {
+    console.error('Failed to load last opened tab:', error)
+    // Fall back to default tab if loading fails
+    activeTab.value = 'appearance'
+  }
+}
+
+const saveCurrentTab = async (): Promise<void> => {
+  try {
+    await window.electron.ipcRenderer.invoke('update-state', {
+      lastOpenedTab: activeTab.value
+    })
+  } catch (error) {
+    console.error('Failed to save current tab:', error)
+  }
+}
+
 // Handle Escape keypress
 const handleKeyDown = (e: KeyboardEvent): void => {
   if (e.key === 'Escape') {
@@ -794,6 +871,9 @@ const handleKeyDown = (e: KeyboardEvent): void => {
 onMounted(() => {
   // Initialize with provided config
   initializeSettings()
+
+  // Load the last opened tab from state
+  loadLastOpenedTab()
 
   // Load image previews
   loadImagePreviews()
@@ -815,6 +895,8 @@ onMounted(() => {
       settings.assets.logoInverted = config.assets.logoInverted || ''
       settings.assets.useDefaultAssets =
         config.assets.useDefaultAssets !== undefined ? config.assets.useDefaultAssets : true
+      settings.assets.maxLogoSize = config.assets.maxLogoSize ?? 60
+      settings.assets.logoVerticalPosition = config.assets.logoVerticalPosition ?? 0
 
       settings.fonts.slidesFont = config.fonts?.slidesFont || 'TheWaveSans'
       settings.fonts.useBoldTitles =
@@ -856,6 +938,8 @@ const initializeSettings = (): void => {
   settings.assets.logoInverted = props.config.assets.logoInverted || ''
   settings.assets.useDefaultAssets =
     props.config.assets.useDefaultAssets !== undefined ? props.config.assets.useDefaultAssets : true
+  settings.assets.maxLogoSize = props.config.assets.maxLogoSize ?? 60
+  settings.assets.logoVerticalPosition = props.config.assets.logoVerticalPosition ?? 0
 
   settings.fonts.slidesFont = props.config.fonts?.slidesFont || 'TheWaveSans'
   settings.fonts.useBoldTitles =
@@ -971,8 +1055,12 @@ watch(
     settings.assets.backgroundNames = newConfig.assets.backgroundNames || ''
     settings.assets.logo = newConfig.assets.logo || ''
     settings.assets.logoInverted = newConfig.assets.logoInverted || ''
+    settings.assets.useDefaultAssets = newConfig.assets.useDefaultAssets ?? true
+    settings.assets.maxLogoSize = newConfig.assets.maxLogoSize ?? 60
+    settings.assets.logoVerticalPosition = newConfig.assets.logoVerticalPosition ?? 0
 
     settings.fonts.slidesFont = newConfig.fonts?.slidesFont || 'TheWaveSans'
+    settings.fonts.useBoldTitles = newConfig.fonts?.useBoldTitles ?? false
 
     settings.audibleNames.enabled = newConfig.audibleNames?.enabled || false
     settings.audibleNames.delayBeforePlayback = newConfig.audibleNames?.delayBeforePlayback ?? 200
@@ -986,11 +1074,18 @@ watch(
         ? newConfig.audibleNames.continuousPlayback
         : true
 
+    settings.namesPrecedence = newConfig.namesPrecedence ?? 2
+
     // Load image previews when config changes
     loadImagePreviews()
   },
   { deep: true, immediate: true }
 )
+
+// Watch for active tab changes and save to state
+watch(activeTab, () => {
+  saveCurrentTab()
+})
 
 const settingsChanged = async (): Promise<void> => {
   // Create a complete deep copy to ensure we're working with a new object
@@ -1006,7 +1101,9 @@ const settingsChanged = async (): Promise<void> => {
       backgroundNames: settings.assets.backgroundNames,
       logo: settings.assets.logo,
       logoInverted: settings.assets.logoInverted,
-      useDefaultAssets: settings.assets.useDefaultAssets
+      useDefaultAssets: settings.assets.useDefaultAssets,
+      maxLogoSize: settings.assets.maxLogoSize,
+      logoVerticalPosition: settings.assets.logoVerticalPosition
     },
     fonts: {
       slidesFont: settings.fonts.slidesFont,
@@ -1128,7 +1225,6 @@ const closeSettings = (): void => {
   border: none;
   border-radius: 0.5rem;
   background: transparent;
-  cursor: pointer;
   padding: 0;
   outline: none;
 }
@@ -1199,6 +1295,62 @@ const closeSettings = (): void => {
   font-weight: 500;
 }
 
+/* Range Input Styling */
+.range-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.range-input {
+  flex: 1;
+  height: 0.5rem;
+  background: rgb(55, 65, 81);
+  border-radius: 0.25rem;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: rgb(59, 130, 246);
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  background: rgb(96, 165, 250);
+}
+
+.range-input::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  background: rgb(59, 130, 246);
+  border-radius: 50%;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.range-input::-moz-range-thumb:hover {
+  background: rgb(96, 165, 250);
+}
+
+.range-value {
+  min-width: 3rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(209, 213, 219);
+  padding: 0.25rem 0.5rem;
+  background: rgb(55, 65, 81);
+  border: 1px solid rgb(75, 85, 99);
+  border-radius: 0.25rem;
+}
+
 /* Checkbox Styling */
 .checkbox-wrapper {
   display: flex;
@@ -1225,7 +1377,6 @@ const closeSettings = (): void => {
   font-size: 0.875rem;
   font-weight: 500;
   color: rgb(209, 213, 219);
-  cursor: pointer;
 }
 
 /* Asset Input Styling */
@@ -1288,7 +1439,6 @@ const closeSettings = (): void => {
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 
@@ -1304,7 +1454,6 @@ const closeSettings = (): void => {
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 

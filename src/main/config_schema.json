@@ -46,6 +46,14 @@
           "useDefaultAssets": {
             "type": "boolean",
             "default": true
+          },
+          "maxLogoSize": {
+            "type": "number",
+            "default": 60
+          },
+          "logoVerticalPosition": {
+            "type": "number",
+            "default": 0
           }
         },
         "default": {}
@@ -151,6 +159,10 @@
       "isMaximized": {
         "type": "boolean",
         "default": false
+      },
+      "lastOpenedTab": {
+        "type": "string",
+        "default": "appearance"
       }
     },
     "default": {}

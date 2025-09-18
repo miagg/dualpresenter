@@ -13,4 +13,5 @@ export interface State {
     height: number
   }
   isMaximized?: boolean
+  lastOpenedTab?: string
 }

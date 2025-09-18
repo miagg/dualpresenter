@@ -10,8 +10,13 @@ const config = new Store({
       store.set('config.audibleNames.gapBetweenNames', 200)
       store.set('config.audibleNames.autoPlayback', true)
     },
-    '1.2.0': (store): void => {
+    '1.1.2': (store): void => {
       store.set('config.audibleNames.continuousPlayback', true)
+    },
+    '1.1.3': (store): void => {
+      store.set('config.assets.maxLogoSize', 60)
+      store.set('config.assets.logoVerticalPosition', 0)
+      store.set('state.lastOpenedTab', 'appearance')
     }
   }
 })

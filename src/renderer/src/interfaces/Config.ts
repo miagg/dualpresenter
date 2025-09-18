@@ -11,6 +11,8 @@ export interface Config {
     logo: string
     logoInverted: string
     useDefaultAssets: boolean
+    maxLogoSize: number
+    logoVerticalPosition: number
   }
   fonts: {
     slidesFont: string

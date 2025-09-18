@@ -22,7 +22,7 @@
         class="absolute inset-0 object-cover w-full h-full"
       />
       <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="max-h-3/5 max-w-3/5 z-10" />
+      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="z-10" :style="blankCardLogoStyles" />
     </div>
 
     <!-- Title Card -->
@@ -283,6 +283,18 @@ const slideStyles = computed(() => {
     fontFamily: fontName,
     // Apply with !important to override any other styles
     fontFamilyImportant: `${fontName} !important`
+  }
+})
+
+// Computed properties for logo styling on blank cards
+const blankCardLogoStyles = computed(() => {
+  const maxSize = props.config?.assets?.maxLogoSize ?? 60
+  const verticalOffset = props.config?.assets?.logoVerticalPosition ?? 0
+
+  return {
+    maxHeight: `${maxSize}%`,
+    maxWidth: `${maxSize}%`,
+    transform: `translateY(${verticalOffset}px)`
   }
 })
 

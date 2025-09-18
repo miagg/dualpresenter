@@ -131,7 +131,7 @@
               <div class="flex space-x-2">
                 <button
                   @click="blackOutScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-cente disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-cente disabled:opacity-50 disabled:pointer-events-none"
                   :class="{ '!bg-red-800 animate-pulse': state.blackOutScreens }"
                   title="Black out all screens"
                   :disabled="!state.isExcelLoaded"
@@ -153,7 +153,7 @@
                 </button>
                 <button
                   @click="flipScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center cursor-pointer"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
                   title="Flip main screen with side screen"
                 >
                   <svg
@@ -172,7 +172,7 @@
                 <!-- Audio Settings Toggle Buttons -->
                 <button
                   v-if="config.audibleNames.enabled"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center cursor-pointer"
+                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
                   :title="
                     config.audibleNames.autoPlayback
                       ? 'Disable auto playback (manual mode)'
@@ -397,7 +397,7 @@
             <div class="flex items-center bg-gray-800 rounded-lg px-2 py-1">
               <button
                 @click="prevSlide"
-                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer disabled:pointer-events-none"
+                class="text-gray-400 hover:text-white p-1 focus:outline-none disabled:pointer-events-none"
                 :class="{ 'opacity-50 cursor-not-allowed': state.currentSlideIndex <= 0 }"
                 :disabled="state.currentSlideIndex <= 0"
               >
@@ -421,7 +421,7 @@
               >
               <button
                 @click="nextSlide"
-                class="text-gray-400 hover:text-white p-1 focus:outline-none cursor-pointer disabled:pointer-events-none"
+                class="text-gray-400 hover:text-white p-1 focus:outline-none disabled:pointer-events-none"
                 :class="{
                   'opacity-50 cursor-not-allowed': state.currentSlideIndex >= cards.length - 1
                 }"
@@ -475,7 +475,7 @@
               <div
                 v-for="(result, index) in filteredSearchResults"
                 :key="result.id"
-                class="p-2 hover:bg-gray-700 cursor-pointer flex items-center"
+                class="p-2 hover:bg-gray-700 flex items-center"
                 :class="{ 'bg-blue-900': index === selectedSearchIndex }"
                 @click="selectSearchResult(index)"
                 @mouseover="selectedSearchIndex = index"
@@ -514,7 +514,7 @@
           <div
             v-for="(card, index) in cards"
             :key="card.id"
-            class="slide-item p-3 border rounded flex hover:bg-gray-800 cursor-pointer bg-gray-850 border-gray-700 outline-none transition relative"
+            class="slide-item p-3 border rounded flex hover:bg-gray-800 bg-gray-850 border-gray-700 outline-none transition relative"
             :class="{
               '!bg-blue-900/70 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
                 index === state.currentSlideIndex,
@@ -1461,7 +1461,6 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   background-color: #334155;
   color: white;
   border-radius: 0.25rem;
-  cursor: pointer;
 }
 
 .btn:hover {
@@ -1475,7 +1474,6 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   background-color: #374151;
   color: white;
   border-radius: 0.25rem;
-  cursor: pointer;
 }
 
 .nav-btn:hover {

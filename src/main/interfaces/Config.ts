@@ -10,6 +10,8 @@ export interface Config {
     backgroundNames: string
     logo: string
     logoInverted: string
+    maxLogoSize: number
+    logoVerticalPosition: number
   }
   fonts: {
     slidesFont: string
