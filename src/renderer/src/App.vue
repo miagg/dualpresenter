@@ -526,7 +526,7 @@
           <div
             v-for="(card, index) in cards"
             :key="card.id"
-            class="slide-item p-3 border rounded flex hover:bg-gray-800 bg-gray-850 border-gray-700 outline-none transition relative"
+            class="slide-item p-3 border rounded flex bg-gray-850 border-gray-700 outline-none transition relative"
             :class="{
               '!bg-blue-900/70 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
                 index === state.currentSlideIndex,
@@ -888,12 +888,7 @@ const closeSearchAndClear = () => {
   searchQuery.value = '' // Clear the search input when dismissing with escape
   showSearchResults.value = false
   selectedSearchIndex.value = -1
-  // Keep the input focused so user can search again immediately
-  nextTick(() => {
-    if (searchInputRef.value) {
-      searchInputRef.value.focus()
-    }
-  })
+  focusSlidesList()
 }
 
 // Focus back to slides list for arrow key navigation
