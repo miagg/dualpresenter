@@ -259,7 +259,7 @@
                   type="number"
                   min="-200"
                   max="200"
-                  step="1"
+                  step="10"
                   class="number-input"
                   @change="settingsChanged"
                 />
@@ -675,6 +675,12 @@
                 <div class="shortcut-item">
                   <span class="shortcut-label">Close Excel File</span>
                   <kbd class="shortcut-key">Ctrl+W</kbd>
+                </div>
+                <div class="shortcut-item inline-flex">
+                  <span class="shortcut-label"
+                    >Display large preview (while hovering thumbnail)</span
+                  >
+                  <kbd class="shortcut-key">Ctrl</kbd>
                 </div>
               </div>
             </div>

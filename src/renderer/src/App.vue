@@ -94,8 +94,37 @@
       <!-- Left Sidebar - Current and Next Slide -->
       <div class="sidebar-left shrink-0 w-1/3 max-w-[500px] bg-gray-800 flex flex-col">
         <div class="sidebar-content overflow-y-auto h-full p-4">
-          <h2 class="text-lg font-bold mb-2 text-gray-200">Main Screen</h2>
-          <div class="card-preview mb-4" ref="mainPreview">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-bold text-gray-200">Main Screen</h2>
+            <div class="flex items-center space-x-2 bg-gray-700 rounded-sm px-2 py-1">
+              <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM1 17a1 1 0 011-1h16a1 1 0 110 2H2a1 1 0 01-1-1z"
+                />
+              </svg>
+              <select
+                v-model="mainScreen"
+                @change="focusSlidesList"
+                class="p-1 text-xs border rounded-sm bg-gray-700 text-gray-200 border-gray-700 min-w-[90px] focus:outline-none"
+              >
+                <option :value="null" class="text-gray-400">None</option>
+                <option
+                  v-for="monitor in monitors.filter(
+                    (m) => !m.isPrimary && m.id.toString() !== sideScreen
+                  )"
+                  :key="monitor.id"
+                  :value="monitor.id.toString()"
+                  class="text-gray-200"
+                >
+                  {{ monitor.label || `Display ${monitor.id}` }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div
+            class="card-preview mb-4 border border-gray-600/90 rounded-md overflow-hidden"
+            ref="mainPreview"
+          >
             <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
               :zoom="$refs.mainPreview.clientWidth / 1920"
@@ -105,16 +134,43 @@
             />
             <div
               v-else
-              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400"
+              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400 rounded-md"
             >
               No slide available
             </div>
           </div>
 
-          <h2 class="text-lg font-bold mb-2 text-gray-200">
-            Side Screen<span class="ml-2 text-yellow-600">⏺︎</span>
-          </h2>
-          <div class="card-preview" ref="sidePreview">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-bold text-gray-200">Side Screen</h2>
+            <div class="flex items-center space-x-2 bg-gray-700 rounded-sm px-2 py-1">
+              <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM1 17a1 1 0 011-1h16a1 1 0 110 2H2a1 1 0 01-1-1z"
+                />
+              </svg>
+              <select
+                v-model="sideScreen"
+                @change="focusSlidesList"
+                class="p-1 text-xs border rounded-sm bg-gray-700 text-gray-200 border-gray-700 min-w-[90px] focus:outline-none"
+              >
+                <option :value="null" class="text-gray-400">None</option>
+                <option
+                  v-for="monitor in monitors.filter(
+                    (m) => !m.isPrimary && m.id.toString() !== mainScreen
+                  )"
+                  :key="monitor.id"
+                  :value="monitor.id.toString()"
+                  class="text-gray-200"
+                >
+                  {{ monitor.label || `Display ${monitor.id}` }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div
+            class="card-preview border border-gray-600/90 rounded-md overflow-hidden"
+            ref="sidePreview"
+          >
             <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
               :zoom="$refs.sidePreview.clientWidth / 1920"
@@ -337,50 +393,6 @@
                 </button>
               </div>
             </div>
-
-            <div class="mb-4">
-              <label class="block text-sm font-medium mb-1 text-gray-300">Main Screen</label>
-              <select
-                v-model="mainScreen"
-                class="w-full p-2 border rounded bg-gray-700 text-gray-200 border-gray-600"
-              >
-                <option :value="null">None</option>
-                <option
-                  v-for="monitor in monitors.filter(
-                    (m) => !m.isPrimary && m.id.toString() !== sideScreen
-                  )"
-                  :key="monitor.id"
-                  :value="monitor.id.toString()"
-                >
-                  {{
-                    monitor.label ||
-                    `Display ${monitor.id} (${monitor.size.width}x${monitor.size.height})`
-                  }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-sm font-medium mb-1 text-gray-300">Side Screen</label>
-              <select
-                v-model="sideScreen"
-                class="w-full p-2 border rounded bg-gray-700 text-gray-200 border-gray-600"
-              >
-                <option :value="null">None</option>
-                <option
-                  v-for="monitor in monitors.filter(
-                    (m) => !m.isPrimary && m.id.toString() !== mainScreen
-                  )"
-                  :key="monitor.id"
-                  :value="monitor.id.toString()"
-                >
-                  {{
-                    monitor.label ||
-                    `Display ${monitor.id} (${monitor.size.width}x${monitor.size.height})`
-                  }}
-                </option>
-              </select>
-            </div>
           </div>
         </div>
       </div>
@@ -457,7 +469,7 @@
                 @keydown.down.prevent="navigateSearchResults('down')"
                 @keydown.up.prevent="navigateSearchResults('up')"
                 @keydown.enter.prevent="selectSearchResult(selectedSearchIndex)"
-                @keydown.escape="closeSearch()"
+                @keydown.escape="closeSearchAndClear()"
                 ref="searchInputRef"
               />
               <div
@@ -622,7 +634,7 @@
 
     <!-- Navigation Buttons -->
     <div class="navigation-buttons bg-gray-800 p-3 flex items-center justify-center space-x-6">
-      <button @click="prevSlide" class="nav-btn" :disabled="state.currentSlideIndex <= 0">
+      <button class="nav-btn" @click="prevSlide" :disabled="state.currentSlideIndex <= 0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-6 w-6"
@@ -645,8 +657,8 @@
       </div>
 
       <button
-        @click="nextSlide"
         class="nav-btn"
+        @click="nextSlide"
         :disabled="state.currentSlideIndex >= cards.length - 1"
       >
         Next
@@ -693,7 +705,9 @@ const config = ref<Config>({
     backgroundNames: '',
     logo: '',
     logoInverted: '',
-    useDefaultAssets: true
+    useDefaultAssets: true,
+    maxLogoSize: 60,
+    logoVerticalPosition: 0
   },
   fonts: {
     slidesFont: 'TheWaveSans',
@@ -869,6 +883,35 @@ const closeSearch = () => {
   selectedSearchIndex.value = -1
   // No longer clearing the search query here as it's now handled in selectSearchResult
 }
+
+const closeSearchAndClear = () => {
+  searchQuery.value = '' // Clear the search input when dismissing with escape
+  showSearchResults.value = false
+  selectedSearchIndex.value = -1
+  // Keep the input focused so user can search again immediately
+  nextTick(() => {
+    if (searchInputRef.value) {
+      searchInputRef.value.focus()
+    }
+  })
+}
+
+// Focus back to slides list for arrow key navigation
+const focusSlidesList = () => {
+  nextTick(() => {
+    if (slidesListRef.value) {
+      slidesListRef.value.focus()
+    }
+  })
+}
+
+// Watch search query to show results when user types
+watch(searchQuery, (newQuery) => {
+  if (newQuery.trim() && document.activeElement === searchInputRef.value) {
+    showSearchResults.value = true
+    selectedSearchIndex.value = 0 // Reset to first result when typing
+  }
+})
 
 // Watch currentSlideIndex and always center selected slide
 watch(
