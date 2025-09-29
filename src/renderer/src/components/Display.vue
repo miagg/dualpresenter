@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import Card from '../components/Card.vue'
-import { CardType } from '../interfaces/Card'
+import { CardType, DisplayType } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
 import { useRoute } from 'vue-router'
@@ -43,9 +43,11 @@ onMounted(() => {
             card.precedence !== null ? card.precedence : data.config.namesPrecedence
           return (
             card.type === CardType.Names &&
-            card.main_only !== true &&
+            card.display !== DisplayType.MainOnly &&
             data.currentSlideIndex + namesPrecedence >= card.id - 1 &&
-            (namesPrecedence === 0 || card.main_only === false
+            (namesPrecedence === 0 ||
+            card.display === DisplayType.Both ||
+            card.display === DisplayType.SideOnly
               ? data.currentSlideIndex < card.id
               : data.currentSlideIndex < card.id - 1)
           )

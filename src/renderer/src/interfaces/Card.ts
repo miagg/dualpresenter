@@ -7,6 +7,13 @@ export enum CardType {
   Image = 'Image'
 }
 
+export enum DisplayType {
+  Auto = 'Auto',
+  MainOnly = 'Main Only',
+  SideOnly = 'Side Only',
+  Both = 'Both'
+}
+
 export interface Card {
   id: number
   type: CardType
@@ -15,6 +22,6 @@ export interface Card {
   group: string | null
   from: string | null
   until: string | null
-  main_only: boolean
+  display: DisplayType
   precedence: number | null
 }

@@ -536,13 +536,14 @@
           >
             <div
               v-if="
-                getSideScreen(index) || (card.type === CardType.Names && card.main_only !== true)
+                getSideScreen(index) ||
+                (card.type === CardType.Names && card.display !== DisplayType.MainOnly)
               "
               class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-600"
               :class="{
                 '!bg-yellow-700/30':
                   card.type === CardType.Names &&
-                  card.main_only !== false &&
+                  (card.display === DisplayType.MainOnly || card.display === DisplayType.Auto) &&
                   (card.precedence !== null ? card.precedence : config.namesPrecedence) > 0
               }"
             ></div>
@@ -685,7 +686,7 @@ import ExcelStructure from './components/ExcelStructure.vue'
 import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
-import { CardType } from './interfaces/Card'
+import { CardType, DisplayType } from './interfaces/Card'
 import { normalizeForSearch } from './utils/textUtils'
 import { filterNamesForCard, filterUnattendedNames } from '../../shared/nameFilters'
 import Card from './components/Card.vue'
@@ -1421,9 +1422,13 @@ const getSideScreen = (index: number): CardInterface | undefined => {
     let namesPrecedence = card.precedence !== null ? card.precedence : config.value.namesPrecedence
     return (
       card.type === CardType.Names &&
-      card.main_only !== true &&
+      card.display !== DisplayType.MainOnly &&
       index + namesPrecedence >= card.id - 1 &&
-      (namesPrecedence === 0 || card.main_only === false ? index < card.id : index < card.id - 1)
+      (namesPrecedence === 0 ||
+      card.display === DisplayType.Both ||
+      card.display === DisplayType.SideOnly
+        ? index < card.id
+        : index < card.id - 1)
     )
   })
 }
