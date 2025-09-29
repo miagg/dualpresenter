@@ -126,11 +126,15 @@
             ref="mainPreview"
           >
             <Card
-              v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+              v-if="mainScreenCard"
               :zoom="$refs.mainPreview.clientWidth / 1920"
-              :card="cards[state.currentSlideIndex]"
+              :card="mainScreenCard"
               :names="names"
               :config="config"
+              :audio-status="audioStatus"
+              :last-spoken-name="previewSpokenName"
+              :is-main-screen="true"
+              :is-from-side-only-names-card="isMainScreenFromSideOnlyNamesCard"
             />
             <div
               v-else
@@ -177,6 +181,10 @@
               :card="sideScreenCard"
               :names="names"
               :config="config"
+              :audio-status="audioStatus"
+              :last-spoken-name="lastSpokenName"
+              :is-main-screen="false"
+              :is-from-side-only-names-card="false"
             />
           </div>
 
@@ -339,11 +347,11 @@
                   <span v-else> Not playing </span>
                   <span
                     v-if="
-                      audioStatus.currentName && audioStatus.currentIndex < audioStatus.totalNames
+                      audioStatus.queuedName && audioStatus.currentIndex < audioStatus.totalNames
                     "
                     class="text-gray-300"
                   >
-                    {{ audioStatus.currentName }}
+                    {{ audioStatus.queuedName }}
                   </span>
                   <span
                     v-if="audioStatus.isPaused && audioStatus.currentIndex < audioStatus.totalNames"
@@ -744,8 +752,12 @@ const audioStatus = ref({
   isPaused: false,
   currentIndex: 0,
   totalNames: 0,
-  currentName: null as string | null
+  currentName: null as string | null,
+  queuedName: null as string | null,
+  lastSpokenName: null as string | null
 })
+const lastSpokenName = ref<string | null>(null)
+const previewSpokenName = ref<string | null>(null)
 
 // Current time display
 const currentTime = ref('')
@@ -916,6 +928,9 @@ watch(
     nextTick(() => {
       scrollSelectedSlideIntoView(true)
 
+      // Clear last spoken name when slide changes
+      lastSpokenName.value = null
+
       // Stop any existing audible names playback
       if (config.value.audibleNames.enabled) {
         stopAudibleNames()
@@ -1020,7 +1035,7 @@ onMounted(() => {
     if (config.value.audibleNames.enabled) {
       updateAudioStatus()
     }
-  }, 500) // Update every 500ms
+  }, 5)
 
   // Clean up interval on unmount
   onUnmounted(() => {
@@ -1127,8 +1142,49 @@ const sideScreenCard = computed(() => {
   if (namesCard) {
     return namesCard
   } else {
-    return { type: CardType.Blank }
+    return {
+      id: -1,
+      type: CardType.Blank,
+      title: null,
+      subtitle: null,
+      group: null,
+      from: null,
+      until: null,
+      display: DisplayType.Both,
+      precedence: null
+    }
   }
+})
+
+const mainScreenCard = computed(() => {
+  if (cards.value.length > 0 && state.currentSlideIndex < cards.value.length) {
+    const card = cards.value[state.currentSlideIndex]
+    // If card is set as "Side Only" display, show a blank card instead
+    if (card.display === DisplayType.SideOnly) {
+      return {
+        id: -1,
+        type: CardType.Blank,
+        title: null,
+        subtitle: null,
+        group: null,
+        from: null,
+        until: null,
+        display: DisplayType.Both,
+        precedence: null
+      }
+    } else {
+      return card
+    }
+  }
+  return null
+})
+
+const isMainScreenFromSideOnlyNamesCard = computed(() => {
+  if (cards.value.length > 0 && state.currentSlideIndex < cards.value.length) {
+    const card = cards.value[state.currentSlideIndex]
+    return card.display === DisplayType.SideOnly && card.type === CardType.Names
+  }
+  return false
 })
 
 // Computed property to check if current slide has audible names
@@ -1197,12 +1253,14 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 const nextSlide = () => {
   if (state.currentSlideIndex < cards.value.length - 1) {
+    lastSpokenName.value = null // Clear last spoken name when changing slides
     window.electron.ipcRenderer.send('next-slide')
   }
 }
 
 const prevSlide = () => {
   if (state.currentSlideIndex > 0) {
+    lastSpokenName.value = null // Clear last spoken name when changing slides
     window.electron.ipcRenderer.send('prev-slide')
   }
 }
@@ -1216,6 +1274,7 @@ const scrollSelectedSlideIntoView = (smooth: boolean = true) => {
 }
 
 const goToSlide = (index: number) => {
+  lastSpokenName.value = null // Clear last spoken name when changing slides
   window.electron.ipcRenderer.send('goto-slide', index)
 }
 
@@ -1253,7 +1312,7 @@ const updateConfig = (newConfig: Config) => {
 }
 
 // Audio control methods for audible names
-const toggleAudibleNames = () => {
+const toggleAudibleNames = (): void => {
   // Check if we're actively playing and not completed all names
   const isActivelyPlaying =
     audioStatus.value.isPlaying && audioStatus.value.currentIndex < audioStatus.value.totalNames
@@ -1267,6 +1326,7 @@ const toggleAudibleNames = () => {
       if (audioStatus.value.isPaused) {
         // Resume playback
         window.electron.ipcRenderer.send('audio-resume')
+        // Don't update preview - it should only show actually spoken names
       } else {
         // Pause playback
         window.electron.ipcRenderer.send('audio-pause')
@@ -1284,7 +1344,7 @@ const toggleAutoPlayback = () => {
   updateConfig(newConfig)
 }
 
-const playAudibleNames = () => {
+const playAudibleNames = (): void => {
   const namesCard = currentNamesSlide.value
   if (namesCard) {
     // Use the same filtering logic as the Card component
@@ -1298,6 +1358,7 @@ const playAudibleNames = () => {
         attending: name.attending
       }))
       window.electron.ipcRenderer.send('audio-play-names', serializedNames)
+      // Don't update preview - it should only show actually spoken names
     }
   }
   // If Unattended card, play all unattended names
@@ -1314,24 +1375,36 @@ const playAudibleNames = () => {
         attending: name.attending
       }))
       window.electron.ipcRenderer.send('audio-play-names', serializedNames)
+      // Don't update preview - it should only show actually spoken names
     }
   }
 }
 
 const stopAudibleNames = (): void => {
   window.electron.ipcRenderer.send('audio-stop')
+  // Clear preview when audio stops
+  previewSpokenName.value = null
 }
 
 const goToNextName = (): void => {
   window.electron.ipcRenderer.send('audio-next')
+  // Don't update preview - it should only show actually spoken names
 }
 
 const goToPreviousName = (): void => {
   window.electron.ipcRenderer.send('audio-previous')
+  // Don't update preview - it should only show actually spoken names
 }
 
 const updateAudioStatus = async (): Promise<void> => {
   const status = await window.electron.ipcRenderer.invoke('audio-get-status')
+
+  // Use currentName for preview (shows last spoken in manual mode)
+  if (status.currentName) {
+    lastSpokenName.value = status.currentName
+    previewSpokenName.value = status.currentName
+  }
+
   audioStatus.value = status
 }
 

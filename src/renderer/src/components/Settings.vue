@@ -257,8 +257,8 @@
                 <input
                   v-model.number="settings.assets.logoVerticalPosition"
                   type="number"
-                  min="-200"
-                  max="200"
+                  min="-500"
+                  max="500"
                   step="10"
                   class="number-input"
                   @change="settingsChanged"
@@ -540,6 +540,24 @@
                 <p class="input-description">
                   Play names continuously without pausing between each name. When disabled, playback
                   pauses after each name until manually resumed
+                </p>
+              </div>
+
+              <div class="input-group">
+                <div class="checkbox-wrapper">
+                  <input
+                    type="checkbox"
+                    id="showNamesOnSideOnly"
+                    v-model="settings.audibleNames.showNamesOnSideOnly"
+                    class="checkbox-input"
+                    @change="settingsChanged"
+                  />
+                  <label for="showNamesOnSideOnly" class="checkbox-label">
+                    Show Names on "Side Only" Cards
+                  </label>
+                </div>
+                <p class="input-description">
+                  Display spoken names under the logo on "Side Only" cards during playback
                 </p>
               </div>
             </div>
@@ -830,7 +848,8 @@ const settings = reactive<Config>({
     delayBeforePlayback: 200,
     gapBetweenNames: 200,
     autoPlayback: true,
-    continuousPlayback: true
+    continuousPlayback: true,
+    showNamesOnSideOnly: true
   },
   namesPrecedence: 0
 })
@@ -917,6 +936,10 @@ onMounted(() => {
         config.audibleNames?.continuousPlayback !== undefined
           ? config.audibleNames.continuousPlayback
           : true
+      settings.audibleNames.showNamesOnSideOnly =
+        config.audibleNames?.showNamesOnSideOnly !== undefined
+          ? config.audibleNames.showNamesOnSideOnly
+          : true
 
       settings.namesPrecedence = config.namesPrecedence || 0
 
@@ -961,6 +984,10 @@ const initializeSettings = (): void => {
   settings.audibleNames.continuousPlayback =
     props.config.audibleNames?.continuousPlayback !== undefined
       ? props.config.audibleNames.continuousPlayback
+      : true
+  settings.audibleNames.showNamesOnSideOnly =
+    props.config.audibleNames?.showNamesOnSideOnly !== undefined
+      ? props.config.audibleNames.showNamesOnSideOnly
       : true
 
   settings.namesPrecedence = props.config.namesPrecedence || 0
@@ -1079,6 +1106,10 @@ watch(
       newConfig.audibleNames?.continuousPlayback !== undefined
         ? newConfig.audibleNames.continuousPlayback
         : true
+    settings.audibleNames.showNamesOnSideOnly =
+      newConfig.audibleNames?.showNamesOnSideOnly !== undefined
+        ? newConfig.audibleNames.showNamesOnSideOnly
+        : true
 
     settings.namesPrecedence = newConfig.namesPrecedence ?? 2
 
@@ -1120,7 +1151,8 @@ const settingsChanged = async (): Promise<void> => {
       delayBeforePlayback: settings.audibleNames.delayBeforePlayback,
       gapBetweenNames: settings.audibleNames.gapBetweenNames,
       autoPlayback: settings.audibleNames.autoPlayback,
-      continuousPlayback: settings.audibleNames.continuousPlayback
+      continuousPlayback: settings.audibleNames.continuousPlayback,
+      showNamesOnSideOnly: settings.audibleNames.showNamesOnSideOnly
     },
     namesPrecedence: settings.namesPrecedence
   }

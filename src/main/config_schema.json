@@ -94,6 +94,10 @@
           "continuousPlayback": {
             "type": "boolean",
             "default": true
+          },
+          "showNamesOnSideOnly": {
+            "type": "boolean",
+            "default": true
           }
         },
         "default": {}

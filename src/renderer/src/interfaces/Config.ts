@@ -24,6 +24,7 @@ export interface Config {
     gapBetweenNames: number
     autoPlayback: boolean
     continuousPlayback: boolean
+    showNamesOnSideOnly: boolean
   }
   namesPrecedence: number
 }

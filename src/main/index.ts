@@ -370,7 +370,8 @@ function updateMainDisplayWindow(): void {
           config: data.config,
           state: {
             blackOutScreens: data.state.blackOutScreens
-          }
+          },
+          audioStatus: audioManager.getPlaybackStatus()
         })
       }
     })
@@ -400,7 +401,8 @@ function updateMainDisplayWindow(): void {
       config: data.config,
       state: {
         blackOutScreens: data.state.blackOutScreens
-      }
+      },
+      audioStatus: audioManager.getPlaybackStatus()
     })
   }
 }
@@ -474,7 +476,8 @@ function updateSideDisplayWindow(): void {
           config: data.config,
           state: {
             blackOutScreens: data.state.blackOutScreens
-          }
+          },
+          audioStatus: audioManager.getPlaybackStatus()
         })
       }
     })
@@ -504,7 +507,8 @@ function updateSideDisplayWindow(): void {
       config: data.config,
       state: {
         blackOutScreens: data.state.blackOutScreens
-      }
+      },
+      audioStatus: audioManager.getPlaybackStatus()
     })
   }
 }
@@ -809,6 +813,11 @@ function saveWindowState(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Set up audio manager callback to update displays when audio status changes
+  audioManager.setStatusChangeCallback(() => {
+    updateDisplayWindows()
+  })
+
   // Get monitors
   updateMonitorList()
 
@@ -1325,27 +1334,39 @@ app.whenReady().then(() => {
         data.config.audibleNames.continuousPlayback
       )
       audioManager.playNamesSequence(names)
+      // Update displays to reflect new audio status
+      updateDisplayWindows()
     }
   })
 
   ipcMain.on('audio-stop', () => {
     audioManager.stopPlayback()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-pause', () => {
     audioManager.pausePlayback()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-resume', () => {
     audioManager.resumePlayback()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-next', () => {
     audioManager.goToNext()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-previous', () => {
     audioManager.goToPrevious()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.handle('audio-get-status', () => {

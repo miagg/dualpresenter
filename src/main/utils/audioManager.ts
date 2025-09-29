@@ -15,10 +15,22 @@ export class AudioManager {
   private playbackTimer: NodeJS.Timeout | null = null
   private isIntentionallyStopped: boolean = false
   private continuousPlayback: boolean = true
+  private onStatusChangeCallback: (() => void) | null = null
+  private lastSpokenName: string | null = null
 
   constructor() {
     // Initialize audio player reference
     this.currentAudio = null
+  }
+
+  setStatusChangeCallback(callback: (() => void) | null): void {
+    this.onStatusChangeCallback = callback
+  }
+
+  private notifyStatusChange(): void {
+    if (this.onStatusChangeCallback) {
+      this.onStatusChangeCallback()
+    }
   }
 
   setConfiguration(
@@ -57,9 +69,15 @@ export class AudioManager {
 
     if (fs.existsSync(audioPath)) {
       try {
+        // Set the last spoken name to the name that's about to be spoken
+        this.lastSpokenName = currentName.name
+
+        // Notify that audio status has changed (new name is about to play)
+        this.notifyStatusChange()
+
         await this.playAudioFile(audioPath)
 
-        // Increment index immediately after audio finishes
+        // Always increment index after audio finishes
         this.currentIndex++
 
         // Check if we've reached the end of the playlist
@@ -244,6 +262,7 @@ export class AudioManager {
   stopPlayback(): void {
     this.isPlaying = false
     this.isPaused = false
+    this.lastSpokenName = null
 
     // Clear any pending timeout first
     if (this.playbackTimer) {
@@ -267,6 +286,9 @@ export class AudioManager {
 
     this.currentIndex = 0
     this.playbackQueue = []
+
+    // Notify that audio status has changed
+    this.notifyStatusChange()
   }
 
   pausePlayback(): void {
@@ -290,6 +312,9 @@ export class AudioManager {
         }
         this.currentAudio = null
       }
+
+      // Notify that audio status has changed
+      this.notifyStatusChange()
     }
   }
 
@@ -367,19 +392,35 @@ export class AudioManager {
     currentIndex: number
     totalNames: number
     currentName: string | null
+    queuedName: string | null
+    lastSpokenName: string | null
   } {
-    const currentName =
-      this.currentIndex < this.playbackQueue.length && this.currentIndex >= 0
-        ? this.playbackQueue[this.currentIndex]?.name || null
-        : null
+    let currentName: string | null = null
+    let queuedName: string | null = null
 
-    return {
+    // queuedName always shows what's at the current index (what will play next)
+    if (this.currentIndex < this.playbackQueue.length && this.currentIndex >= 0) {
+      queuedName = this.playbackQueue[this.currentIndex]?.name || null
+    }
+
+    // currentName logic for preview (last spoken in manual mode when paused)
+    if (!this.continuousPlayback && this.isPaused && this.lastSpokenName) {
+      currentName = this.lastSpokenName
+    } else {
+      currentName = queuedName
+    }
+
+    const status = {
       isPlaying: this.isPlaying,
       isPaused: this.isPaused,
       currentIndex: this.currentIndex,
       totalNames: this.playbackQueue.length,
-      currentName
+      currentName,
+      queuedName,
+      lastSpokenName: this.lastSpokenName
     }
+
+    return status
   }
 }
 
