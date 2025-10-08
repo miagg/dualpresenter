@@ -186,6 +186,12 @@
               :is-main-screen="false"
               :is-from-side-only-names-card="false"
             />
+            <div
+              v-else
+              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400 rounded-md"
+            >
+              No slide available
+            </div>
           </div>
 
           <!-- Display Selection -->
