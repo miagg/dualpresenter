@@ -192,7 +192,7 @@ export class AudioManager {
         // Determine the audio player command based on platform
         if (process.platform === 'darwin') {
           // macOS: use afplay
-          audioProcess = spawn('afplay', [audioPath])
+          audioProcess = spawn('afplay', [audioPath], { detached: false })
         } else if (process.platform === 'win32') {
           // Windows: use PowerShell with SoundPlayer
           audioProcess = spawn('powershell', [
@@ -203,6 +203,10 @@ export class AudioManager {
           // Linux: use aplay or paplay
           audioProcess = spawn('aplay', [audioPath])
         }
+
+        audioProcess.stderr?.on('data', (data: Buffer) => {
+          console.error(`Audio playback error: ${data.toString()}`)
+        })
 
         audioProcess.on('close', (code: number | null, signal: string | null) => {
           // If we intentionally stopped the audio, don't treat it as an error
