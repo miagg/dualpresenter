@@ -140,9 +140,9 @@
                 <td class="px-4 py-3 text-sm">No</td>
               </tr>
               <tr class="border-b border-gray-700">
-                <td class="px-4 py-3 font-mono text-sm">main_only</td>
-                <td class="px-4 py-3 text-sm">Display only on main screen</td>
-                <td class="px-4 py-3 text-sm">Yes/No (Default: auto)</td>
+                <td class="px-4 py-3 font-mono text-sm">display</td>
+                <td class="px-4 py-3 text-sm">Target display for names slide</td>
+                <td class="px-4 py-3 text-sm">Auto, Main Only, Side Only, Both</td>
                 <td class="px-4 py-3 text-sm">No</td>
               </tr>
               <tr>
@@ -262,7 +262,7 @@
           <li>Globally through the app settings</li>
           <li>Per slide using the "precedence" field in the slide sheet</li>
           <li>
-            By marking slides as "main_only" to prevent them from appearing on the side screen
+            By setting display to "Main Only" to prevent them from appearing on the side screen
           </li>
         </ul>
       </div>
@@ -274,7 +274,9 @@
           <li>Always use a fresh template for a new project</li>
           <li>For image slides, use valid relative or absolute paths to the image files</li>
           <li>The Excel file is automatically monitored for changes and will reload when saved</li>
-          <li>Use the "main_only" option for slides that should not appear on the side screen</li>
+          <li>
+            Use the "display" option for slides that should only appear on main or side screen
+          </li>
           <li>
             When "from" and "until" fields are not specified, all names in the group will be
             displayed

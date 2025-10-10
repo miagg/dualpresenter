@@ -17,6 +17,9 @@ const config = new Store({
       store.set('config.assets.maxLogoSize', 60)
       store.set('config.assets.logoVerticalPosition', 0)
       store.set('state.lastOpenedTab', 'appearance')
+    },
+    '1.2.0': (store): void => {
+      store.set('config.audibleNames.showNamesOnSideOnly', true)
     }
   }
 })

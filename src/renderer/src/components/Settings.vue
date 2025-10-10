@@ -257,8 +257,8 @@
                 <input
                   v-model.number="settings.assets.logoVerticalPosition"
                   type="number"
-                  min="-200"
-                  max="200"
+                  min="-500"
+                  max="500"
                   step="10"
                   class="number-input"
                   @change="settingsChanged"
@@ -542,6 +542,24 @@
                   pauses after each name until manually resumed
                 </p>
               </div>
+
+              <div class="input-group">
+                <div class="checkbox-wrapper">
+                  <input
+                    type="checkbox"
+                    id="showNamesOnSideOnly"
+                    v-model="settings.audibleNames.showNamesOnSideOnly"
+                    class="checkbox-input"
+                    @change="settingsChanged"
+                  />
+                  <label for="showNamesOnSideOnly" class="checkbox-label">
+                    Show Names on "Side Only" Cards
+                  </label>
+                </div>
+                <p class="input-description">
+                  Display spoken names under the logo on "Side Only" cards during playback
+                </p>
+              </div>
             </div>
 
             <!-- Setup Instructions -->
@@ -559,14 +577,10 @@
               <ul class="info-card-list">
                 <li>Create a folder named "voiceover" in the same directory as your Excel file</li>
                 <li>
-                  Add audio files
-                  {{ isWindows ? '(WAV)' : '(MP3, WAV, M4A, AAC)' }}
-                  with names matching exactly the names in your Excel file.
+                  Add audio files (MP3, WAV, M4A, AAC) with names matching exactly the names in your
+                  Excel file.
                 </li>
-                <li>
-                  Example: For "John Doe", create
-                  {{ isWindows ? '"John Doe.wav"' : '"John Doe.mp3"' }}
-                </li>
+                <li>Example: For "John Doe", create "John Doe.mp3"</li>
                 <li>If an audio file is missing, that name will be skipped during playback</li>
               </ul>
             </div>
@@ -680,7 +694,7 @@
                   <span class="shortcut-label"
                     >Display large preview (while hovering thumbnail)</span
                   >
-                  <kbd class="shortcut-key">Ctrl</kbd>
+                  <kbd class="shortcut-key">/</kbd>
                 </div>
               </div>
             </div>
@@ -830,7 +844,8 @@ const settings = reactive<Config>({
     delayBeforePlayback: 200,
     gapBetweenNames: 200,
     autoPlayback: true,
-    continuousPlayback: true
+    continuousPlayback: true,
+    showNamesOnSideOnly: true
   },
   namesPrecedence: 0
 })
@@ -917,6 +932,10 @@ onMounted(() => {
         config.audibleNames?.continuousPlayback !== undefined
           ? config.audibleNames.continuousPlayback
           : true
+      settings.audibleNames.showNamesOnSideOnly =
+        config.audibleNames?.showNamesOnSideOnly !== undefined
+          ? config.audibleNames.showNamesOnSideOnly
+          : true
 
       settings.namesPrecedence = config.namesPrecedence || 0
 
@@ -961,6 +980,10 @@ const initializeSettings = (): void => {
   settings.audibleNames.continuousPlayback =
     props.config.audibleNames?.continuousPlayback !== undefined
       ? props.config.audibleNames.continuousPlayback
+      : true
+  settings.audibleNames.showNamesOnSideOnly =
+    props.config.audibleNames?.showNamesOnSideOnly !== undefined
+      ? props.config.audibleNames.showNamesOnSideOnly
       : true
 
   settings.namesPrecedence = props.config.namesPrecedence || 0
@@ -1079,6 +1102,10 @@ watch(
       newConfig.audibleNames?.continuousPlayback !== undefined
         ? newConfig.audibleNames.continuousPlayback
         : true
+    settings.audibleNames.showNamesOnSideOnly =
+      newConfig.audibleNames?.showNamesOnSideOnly !== undefined
+        ? newConfig.audibleNames.showNamesOnSideOnly
+        : true
 
     settings.namesPrecedence = newConfig.namesPrecedence ?? 2
 
@@ -1120,7 +1147,8 @@ const settingsChanged = async (): Promise<void> => {
       delayBeforePlayback: settings.audibleNames.delayBeforePlayback,
       gapBetweenNames: settings.audibleNames.gapBetweenNames,
       autoPlayback: settings.audibleNames.autoPlayback,
-      continuousPlayback: settings.audibleNames.continuousPlayback
+      continuousPlayback: settings.audibleNames.continuousPlayback,
+      showNamesOnSideOnly: settings.audibleNames.showNamesOnSideOnly
     },
     namesPrecedence: settings.namesPrecedence
   }

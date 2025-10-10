@@ -10,10 +10,7 @@
     ref="cardElement"
   >
     <!-- Blank Card -->
-    <div
-      v-if="card.type === CardType.Blank"
-      class="flex items-center justify-center h-full relative"
-    >
+    <div v-if="card.type === CardType.Blank" class="flex flex-col justify-center h-full relative">
       <!-- Background image -->
       <img
         v-if="backgroundImageSrc"
@@ -21,8 +18,28 @@
         alt="Background"
         class="absolute inset-0 object-cover w-full h-full"
       />
-      <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="z-10" :style="blankCardLogoStyles" />
+
+      <!-- Content container to prevent layout shift -->
+      <div class="flex flex-col items-center justify-center flex-1 z-10">
+        <!-- Logo based on background -->
+        <img v-if="logoSrc" :src="logoSrc" alt="Logo" :style="blankCardLogoStyles" />
+
+        <!-- Name display area (only for "Side Only" Names cards when setting is enabled) -->
+        <div
+          v-if="
+            props.isMainScreen &&
+            props.isFromSideOnlyNamesCard &&
+            props.config?.audibleNames?.showNamesOnSideOnly
+          "
+          class="mt-16 text-center min-h-[120px] flex items-center justify-center"
+        >
+          <Transition name="name-dissolve" mode="out-in">
+            <h2 v-if="displayName" :key="displayName" class="text-6xl font-bold text-white">
+              {{ displayName }}
+            </h2>
+          </Transition>
+        </div>
+      </div>
     </div>
 
     <!-- Title Card -->
@@ -47,7 +64,7 @@
       />
       <h2
         v-if="card.subtitle"
-        class="text-5xl mt-4 z-10"
+        class="text-5xl mt-4 z-10 leading-tight"
         v-html="card.subtitle.replaceAll('\n', '<br />')"
       />
     </div>
@@ -101,6 +118,18 @@
           {{ name.name }}
         </div>
       </div>
+
+      <!-- Spoken name overlay for "Side Only" Names cards -->
+      <div
+        v-if="card.display === DisplayType.SideOnly && displayName"
+        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20"
+      >
+        <Transition name="name-dissolve" mode="out-in">
+          <h2 :key="displayName" class="text-8xl font-bold text-white text-center">
+            {{ displayName }}
+          </h2>
+        </Transition>
+      </div>
     </div>
 
     <!-- Unattended Card -->
@@ -152,9 +181,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watchEffect, nextTick } from 'vue'
+import { computed, ref, onMounted, watchEffect } from 'vue'
 import type { PropType } from 'vue'
-import { CardType, type Card } from '../interfaces/Card'
+import { CardType, DisplayType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
 import { filterNamesForCard, filterUnattendedNames } from '../../../shared/nameFilters'
@@ -192,12 +221,71 @@ const props = defineProps({
   zoom: {
     type: Number,
     default: 1
+  },
+  audioStatus: {
+    type: Object,
+    default: () => ({
+      isPlaying: false,
+      isPaused: false,
+      currentIndex: 0,
+      totalNames: 0,
+      currentName: null
+    })
+  },
+  lastSpokenName: {
+    type: String,
+    default: null
+  },
+  isMainScreen: {
+    type: Boolean,
+    default: false
+  },
+  isFromSideOnlyNamesCard: {
+    type: Boolean,
+    default: false
   }
 })
 
 // Filter names based on the card group, from, and until properties
 const filteredNames = computed(() => {
   return filterNamesForCard(props.names, props.card)
+})
+
+// Compute the name to display on blank cards (main screen only)
+const displayName = computed(() => {
+  // Only show names on main screen AND only for "Side Only" Names cards converted to blank
+  // AND only when the setting is enabled
+  if (
+    !props.isMainScreen ||
+    !props.isFromSideOnlyNamesCard ||
+    !props.config?.audibleNames?.showNamesOnSideOnly
+  ) {
+    return null
+  }
+
+  // Only show names when there's an active audio session (totalNames > 0)
+  // This prevents names from showing when navigating back to slides with no active audio
+  if (props.audioStatus.totalNames === 0) {
+    return null
+  }
+
+  // If audio is currently playing, show the current name
+  if (props.audioStatus.isPlaying && props.audioStatus.currentName) {
+    return props.audioStatus.currentName
+  }
+
+  // If audio is paused and we have a last spoken name, keep showing it
+  if (props.audioStatus.isPaused && props.lastSpokenName) {
+    return props.lastSpokenName
+  }
+
+  // If audio has stopped but we have a last spoken name and there was an active session, keep showing it
+  // This covers the case when the last name finishes and audio stops completely
+  if (props.lastSpokenName) {
+    return props.lastSpokenName
+  }
+
+  return null
 })
 
 // Unattended names
@@ -294,7 +382,7 @@ const blankCardLogoStyles = computed(() => {
   return {
     maxHeight: `${maxSize}%`,
     maxWidth: `${maxSize}%`,
-    transform: `translateY(${verticalOffset}px)`
+    marginTop: `${verticalOffset}px`
   }
 })
 
@@ -415,3 +503,21 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* Dissolve animation for name changes */
+.name-dissolve-enter-active,
+.name-dissolve-leave-active {
+  transition: opacity 0.25s ease-in-out;
+}
+
+.name-dissolve-enter-from,
+.name-dissolve-leave-to {
+  opacity: 0;
+}
+
+.name-dissolve-enter-to,
+.name-dissolve-leave-from {
+  opacity: 1;
+}
+</style>

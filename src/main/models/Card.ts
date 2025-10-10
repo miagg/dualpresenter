@@ -1,4 +1,5 @@
 import { CardType } from '../enums/CardType'
+import { DisplayType } from '../enums/DisplayType'
 
 export class Card {
   constructor(
@@ -9,7 +10,7 @@ export class Card {
     public group: string | null,
     public from: string | null,
     public until: string | null,
-    public main_only: boolean | null,
+    public display: DisplayType,
     public precedence: number | null
   ) {}
 
@@ -22,7 +23,9 @@ export class Card {
       array[5] || null,
       array[6] || null,
       array[7] || null,
-      array[8] === 'Yes' ? true : array[8] === 'No' ? false : null,
+      array[8] === undefined
+        ? DisplayType.Auto
+        : Object.values(DisplayType).find((value) => value === array[8]) || DisplayType.Auto,
       parseInt(array[9]) >= 0 ? parseInt(array[9]) : null
     )
   }

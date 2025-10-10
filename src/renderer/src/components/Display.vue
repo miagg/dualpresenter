@@ -1,6 +1,15 @@
 <template>
   <div class="display-container">
-    <Card v-if="currentCard" :card="currentCard" :names="names" :config="config" />
+    <Card
+      v-if="currentCard"
+      :card="currentCard"
+      :names="names"
+      :config="config"
+      :audioStatus="audioStatus"
+      :lastSpokenName="lastSpokenName"
+      :isMainScreen="isMainScreen"
+      :isFromSideOnlyNamesCard="isFromSideOnlyNamesCard"
+    />
     <div v-if="blackOutActive" class="black-overlay" :class="{ 'fade-in': blackOutActive }"></div>
   </div>
 </template>
@@ -8,22 +17,49 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import Card from '../components/Card.vue'
-import { CardType } from '../interfaces/Card'
+import { CardType, DisplayType } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
+import type { Card as CardInterface } from '../interfaces/Card'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const currentCard = ref<object | null>(null)
+const currentCard = ref<CardInterface | null>(null)
 const names = ref<Name[]>([])
 const config = ref<Config | null>(null)
 const blackOutActive = ref(false)
+const audioStatus = ref({
+  isPlaying: false,
+  isPaused: false,
+  currentIndex: 0,
+  totalNames: 0,
+  currentName: null as string | null
+})
+const lastSpokenName = ref<string | null>(null)
+const isMainScreen = route.name === 'mainscreen'
+const isFromSideOnlyNamesCard = ref(false)
+const currentSlideIndex = ref(-1)
 
 onMounted(() => {
   window.electron.ipcRenderer.on('display-data', (_, data) => {
     if (data.cards && data.cards.length && data.currentSlideIndex >= 0) {
       names.value = data.names || []
       config.value = data.config
+
+      // Clear last spoken name when slide changes
+      if (currentSlideIndex.value !== data.currentSlideIndex) {
+        lastSpokenName.value = null
+        currentSlideIndex.value = data.currentSlideIndex
+      }
+
+      // Get audio status if provided
+      if (data.audioStatus) {
+        // Track last spoken name when audio is playing and there's a current name
+        if (data.audioStatus.isPlaying && data.audioStatus.currentName) {
+          lastSpokenName.value = data.audioStatus.currentName
+        }
+        audioStatus.value = data.audioStatus
+      }
 
       // Get black out state if provided
       if (data.state && data.state.blackOutScreens !== undefined) {
@@ -33,8 +69,27 @@ onMounted(() => {
       if (route.name === 'mainscreen') {
         // Check bounds before accessing the card
         if (data.cards && data.cards.length > 0 && data.currentSlideIndex < data.cards.length) {
-          currentCard.value = data.cards[data.currentSlideIndex]
+          const card = data.cards[data.currentSlideIndex]
+          // If card is set as "Side Only" display, show a blank card instead
+          if (card.display === DisplayType.SideOnly) {
+            isFromSideOnlyNamesCard.value = card.type === CardType.Names
+            currentCard.value = {
+              id: -1,
+              type: CardType.Blank,
+              title: null,
+              subtitle: null,
+              group: null,
+              from: null,
+              until: null,
+              display: DisplayType.Both,
+              precedence: null
+            }
+          } else {
+            isFromSideOnlyNamesCard.value = false
+            currentCard.value = card
+          }
         } else {
+          isFromSideOnlyNamesCard.value = false
           currentCard.value = null
         }
       } else {
@@ -43,17 +98,31 @@ onMounted(() => {
             card.precedence !== null ? card.precedence : data.config.namesPrecedence
           return (
             card.type === CardType.Names &&
-            card.main_only !== true &&
+            card.display !== DisplayType.MainOnly &&
             data.currentSlideIndex + namesPrecedence >= card.id - 1 &&
-            (namesPrecedence === 0 || card.main_only === false
+            (namesPrecedence === 0 ||
+            card.display === DisplayType.Both ||
+            card.display === DisplayType.SideOnly
               ? data.currentSlideIndex < card.id
               : data.currentSlideIndex < card.id - 1)
           )
         })
         if (namesCard) {
+          isFromSideOnlyNamesCard.value = namesCard.display === DisplayType.SideOnly
           currentCard.value = namesCard
         } else {
-          currentCard.value = { type: CardType.Blank }
+          isFromSideOnlyNamesCard.value = false
+          currentCard.value = {
+            id: -1,
+            type: CardType.Blank,
+            title: null,
+            subtitle: null,
+            group: null,
+            from: null,
+            until: null,
+            display: DisplayType.Both,
+            precedence: null
+          }
         }
       }
     }

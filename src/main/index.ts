@@ -29,6 +29,7 @@ let mainWindow: BrowserWindow | null = null
 let mainDisplayWindow: BrowserWindow | null = null
 let sideDisplayWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
+let audioWindow: BrowserWindow | null = null
 let watcher: fileWatcher.FSWatcher | null = null
 let lastModifiedTime: Date | null = null
 let fileCheckInterval: NodeJS.Timeout | null = null
@@ -175,6 +176,9 @@ function loadData(): void {
 
   sendData()
   updateDisplayWindows()
+
+  // Preload audio for the current card
+  preloadCurrentCardAudio()
 }
 
 // Function to close the currently open Excel file
@@ -370,7 +374,8 @@ function updateMainDisplayWindow(): void {
           config: data.config,
           state: {
             blackOutScreens: data.state.blackOutScreens
-          }
+          },
+          audioStatus: audioManager.getPlaybackStatus()
         })
       }
     })
@@ -400,7 +405,8 @@ function updateMainDisplayWindow(): void {
       config: data.config,
       state: {
         blackOutScreens: data.state.blackOutScreens
-      }
+      },
+      audioStatus: audioManager.getPlaybackStatus()
     })
   }
 }
@@ -474,7 +480,8 @@ function updateSideDisplayWindow(): void {
           config: data.config,
           state: {
             blackOutScreens: data.state.blackOutScreens
-          }
+          },
+          audioStatus: audioManager.getPlaybackStatus()
         })
       }
     })
@@ -504,7 +511,8 @@ function updateSideDisplayWindow(): void {
       config: data.config,
       state: {
         blackOutScreens: data.state.blackOutScreens
-      }
+      },
+      audioStatus: audioManager.getPlaybackStatus()
     })
   }
 }
@@ -780,6 +788,20 @@ function createWindow(): void {
     }
   })
 
+  // Handle main window closed - ensure app exits
+  mainWindow.on('closed', () => {
+    mainWindow = null
+    // Close all other windows and quit the app
+    if (audioWindow) {
+      audioWindow.close()
+    }
+    if (settingsWindow) {
+      settingsWindow.close()
+    }
+    // Force quit the app
+    app.quit()
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -791,6 +813,86 @@ function createWindow(): void {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+}
+
+// Function to create the hidden audio window
+function createAudioWindow(): void {
+  audioWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    show: false, // Hidden window
+    webPreferences: {
+      preload: join(__dirname, '../preload/audio.mjs'),
+      sandbox: false,
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  })
+
+  // Load the audio player HTML file
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    // In development, load from src
+    audioWindow.loadFile(join(__dirname, '../../src/audio/audio-player.html'))
+  } else {
+    // In production, load from build output
+    audioWindow.loadFile(join(__dirname, '../audio/audio-player.html'))
+  }
+
+  // Set up the audio manager with this window
+  audioManager.setAudioWindow(audioWindow)
+
+  audioWindow.webContents.on('did-fail-load', (_, errorCode, errorDescription) => {
+    console.error('Audio window failed to load:', errorCode, errorDescription)
+  })
+
+  audioWindow.on('closed', () => {
+    audioWindow = null
+  })
+}
+
+// Function to preload audio for the current card
+function preloadCurrentCardAudio(): void {
+  if (!data.state.excelPath || !data.config.audibleNames.enabled) {
+    return
+  }
+
+  const currentCard = data.cards[data.state.currentSlideIndex]
+  if (!currentCard) {
+    return
+  }
+
+  const voiceoverFolder = path.join(path.dirname(data.state.excelPath), 'voiceover')
+
+  // Check if voiceover folder exists
+  if (!fs.existsSync(voiceoverFolder)) {
+    return
+  }
+
+  // Set the audio manager configuration with the correct voiceover folder
+  audioManager.setConfiguration(
+    data.config.audibleNames.delayBeforePlayback,
+    data.config.audibleNames.gapBetweenNames,
+    voiceoverFolder,
+    data.config.audibleNames.continuousPlayback
+  )
+
+  // Get names for the current card
+  let namesToPreload: any[] = []
+
+  if (currentCard.type === CardType.Names) {
+    // For names cards, use the filterNamesForCard function to get the relevant names
+    const filteredNames = filterNamesForCard(data.names, currentCard)
+    namesToPreload = filteredNames.map((name) => ({ name: name.name }))
+  } else if (currentCard.type === CardType.Unattended) {
+    // For unattended cards, preload all unattended names
+    namesToPreload = data.names
+      .filter((name) => !name.attending)
+      .map((name) => ({ name: name.name }))
+  }
+
+  if (namesToPreload.length > 0) {
+    audioManager.preloadCardAudio(namesToPreload)
   }
 }
 
@@ -809,6 +911,11 @@ function saveWindowState(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Set up audio manager callback to update displays when audio status changes
+  audioManager.setStatusChangeCallback(() => {
+    updateDisplayWindows()
+  })
+
   // Get monitors
   updateMonitorList()
 
@@ -957,6 +1064,7 @@ app.whenReady().then(() => {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      preloadCurrentCardAudio()
     }
   })
 
@@ -966,6 +1074,7 @@ app.whenReady().then(() => {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      preloadCurrentCardAudio()
     }
   })
 
@@ -975,6 +1084,7 @@ app.whenReady().then(() => {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      preloadCurrentCardAudio()
       // Send message to scroll to current slide in the UI
       mainWindow?.webContents.send('scroll-to-current')
     }
@@ -1325,31 +1435,77 @@ app.whenReady().then(() => {
         data.config.audibleNames.continuousPlayback
       )
       audioManager.playNamesSequence(names)
+      // Update displays to reflect new audio status
+      updateDisplayWindows()
     }
   })
 
   ipcMain.on('audio-stop', () => {
     audioManager.stopPlayback()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
+  })
+
+  // Add audio file handling IPC
+  ipcMain.handle('audio-check-file-exists', async (_, filePath: string) => {
+    try {
+      await fs.promises.access(filePath, fs.constants.F_OK)
+      return true
+    } catch {
+      return false
+    }
+  })
+
+  ipcMain.handle('audio-get-file-url', async (_, filePath: string) => {
+    try {
+      await fs.promises.access(filePath, fs.constants.F_OK)
+      // Convert to proper file URL for the current platform
+      const fileUrl = new URL(`file://${filePath}`).href
+      return fileUrl
+    } catch (error) {
+      console.warn(`Audio file not found: ${filePath}`)
+      return null
+    }
   })
 
   ipcMain.on('audio-pause', () => {
     audioManager.pausePlayback()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-resume', () => {
     audioManager.resumePlayback()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-next', () => {
     audioManager.goToNext()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.on('audio-previous', () => {
     audioManager.goToPrevious()
+    // Update displays to reflect new audio status
+    updateDisplayWindows()
   })
 
   ipcMain.handle('audio-get-status', () => {
     return audioManager.getPlaybackStatus()
+  })
+
+  // Handle audio status updates from the audio window
+  ipcMain.on('audio-status', (_, type: string, data: any) => {
+    if (type === 'status-update') {
+      // Update the audio manager's internal state
+      audioManager.updateStatus(data)
+      // Update displays to reflect new audio status
+      updateDisplayWindows()
+    } else if (type === 'preload-complete') {
+      // Audio preloading completed successfully
+    }
   })
 
   // Set Dark mode
@@ -1360,6 +1516,7 @@ app.whenReady().then(() => {
 
   loadData()
   createWindow()
+  createAudioWindow()
   createApplicationMenu(
     data,
     mainWindow,

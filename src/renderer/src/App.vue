@@ -126,11 +126,15 @@
             ref="mainPreview"
           >
             <Card
-              v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+              v-if="mainScreenCard"
               :zoom="$refs.mainPreview.clientWidth / 1920"
-              :card="cards[state.currentSlideIndex]"
+              :card="mainScreenCard"
               :names="names"
               :config="config"
+              :audio-status="audioStatus"
+              :last-spoken-name="previewSpokenName"
+              :is-main-screen="true"
+              :is-from-side-only-names-card="isMainScreenFromSideOnlyNamesCard"
             />
             <div
               v-else
@@ -177,7 +181,17 @@
               :card="sideScreenCard"
               :names="names"
               :config="config"
+              :audio-status="audioStatus"
+              :last-spoken-name="lastSpokenName"
+              :is-main-screen="false"
+              :is-from-side-only-names-card="false"
             />
+            <div
+              v-else
+              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400 rounded-md"
+            >
+              No slide available
+            </div>
           </div>
 
           <!-- Display Selection -->
@@ -339,11 +353,11 @@
                   <span v-else> Not playing </span>
                   <span
                     v-if="
-                      audioStatus.currentName && audioStatus.currentIndex < audioStatus.totalNames
+                      audioStatus.queuedName && audioStatus.currentIndex < audioStatus.totalNames
                     "
                     class="text-gray-300"
                   >
-                    {{ audioStatus.currentName }}
+                    {{ audioStatus.queuedName }}
                   </span>
                   <span
                     v-if="audioStatus.isPaused && audioStatus.currentIndex < audioStatus.totalNames"
@@ -536,13 +550,14 @@
           >
             <div
               v-if="
-                getSideScreen(index) || (card.type === CardType.Names && card.main_only !== true)
+                getSideScreen(index) ||
+                (card.type === CardType.Names && card.display !== DisplayType.MainOnly)
               "
               class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-600"
               :class="{
                 '!bg-yellow-700/30':
                   card.type === CardType.Names &&
-                  card.main_only !== false &&
+                  (card.display === DisplayType.MainOnly || card.display === DisplayType.Auto) &&
                   (card.precedence !== null ? card.precedence : config.namesPrecedence) > 0
               }"
             ></div>
@@ -685,7 +700,7 @@ import ExcelStructure from './components/ExcelStructure.vue'
 import type { Card as CardInterface } from './interfaces/Card'
 import type { Name } from './interfaces/Name'
 import type { Config } from './interfaces/Config'
-import { CardType } from './interfaces/Card'
+import { CardType, DisplayType } from './interfaces/Card'
 import { normalizeForSearch } from './utils/textUtils'
 import { filterNamesForCard, filterUnattendedNames } from '../../shared/nameFilters'
 import Card from './components/Card.vue'
@@ -743,8 +758,12 @@ const audioStatus = ref({
   isPaused: false,
   currentIndex: 0,
   totalNames: 0,
-  currentName: null as string | null
+  currentName: null as string | null,
+  queuedName: null as string | null,
+  lastSpokenName: null as string | null
 })
+const lastSpokenName = ref<string | null>(null)
+const previewSpokenName = ref<string | null>(null)
 
 // Current time display
 const currentTime = ref('')
@@ -915,6 +934,9 @@ watch(
     nextTick(() => {
       scrollSelectedSlideIntoView(true)
 
+      // Clear last spoken name when slide changes
+      lastSpokenName.value = null
+
       // Stop any existing audible names playback
       if (config.value.audibleNames.enabled) {
         stopAudibleNames()
@@ -1019,7 +1041,7 @@ onMounted(() => {
     if (config.value.audibleNames.enabled) {
       updateAudioStatus()
     }
-  }, 500) // Update every 500ms
+  }, 5)
 
   // Clean up interval on unmount
   onUnmounted(() => {
@@ -1126,8 +1148,49 @@ const sideScreenCard = computed(() => {
   if (namesCard) {
     return namesCard
   } else {
-    return { type: CardType.Blank }
+    return {
+      id: -1,
+      type: CardType.Blank,
+      title: null,
+      subtitle: null,
+      group: null,
+      from: null,
+      until: null,
+      display: DisplayType.Both,
+      precedence: null
+    }
   }
+})
+
+const mainScreenCard = computed(() => {
+  if (cards.value.length > 0 && state.currentSlideIndex < cards.value.length) {
+    const card = cards.value[state.currentSlideIndex]
+    // If card is set as "Side Only" display, show a blank card instead
+    if (card.display === DisplayType.SideOnly) {
+      return {
+        id: -1,
+        type: CardType.Blank,
+        title: null,
+        subtitle: null,
+        group: null,
+        from: null,
+        until: null,
+        display: DisplayType.Both,
+        precedence: null
+      }
+    } else {
+      return card
+    }
+  }
+  return null
+})
+
+const isMainScreenFromSideOnlyNamesCard = computed(() => {
+  if (cards.value.length > 0 && state.currentSlideIndex < cards.value.length) {
+    const card = cards.value[state.currentSlideIndex]
+    return card.display === DisplayType.SideOnly && card.type === CardType.Names
+  }
+  return false
 })
 
 // Computed property to check if current slide has audible names
@@ -1196,12 +1259,14 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 const nextSlide = () => {
   if (state.currentSlideIndex < cards.value.length - 1) {
+    lastSpokenName.value = null // Clear last spoken name when changing slides
     window.electron.ipcRenderer.send('next-slide')
   }
 }
 
 const prevSlide = () => {
   if (state.currentSlideIndex > 0) {
+    lastSpokenName.value = null // Clear last spoken name when changing slides
     window.electron.ipcRenderer.send('prev-slide')
   }
 }
@@ -1215,6 +1280,7 @@ const scrollSelectedSlideIntoView = (smooth: boolean = true) => {
 }
 
 const goToSlide = (index: number) => {
+  lastSpokenName.value = null // Clear last spoken name when changing slides
   window.electron.ipcRenderer.send('goto-slide', index)
 }
 
@@ -1252,7 +1318,7 @@ const updateConfig = (newConfig: Config) => {
 }
 
 // Audio control methods for audible names
-const toggleAudibleNames = () => {
+const toggleAudibleNames = (): void => {
   // Check if we're actively playing and not completed all names
   const isActivelyPlaying =
     audioStatus.value.isPlaying && audioStatus.value.currentIndex < audioStatus.value.totalNames
@@ -1266,6 +1332,7 @@ const toggleAudibleNames = () => {
       if (audioStatus.value.isPaused) {
         // Resume playback
         window.electron.ipcRenderer.send('audio-resume')
+        // Don't update preview - it should only show actually spoken names
       } else {
         // Pause playback
         window.electron.ipcRenderer.send('audio-pause')
@@ -1283,7 +1350,7 @@ const toggleAutoPlayback = () => {
   updateConfig(newConfig)
 }
 
-const playAudibleNames = () => {
+const playAudibleNames = (): void => {
   const namesCard = currentNamesSlide.value
   if (namesCard) {
     // Use the same filtering logic as the Card component
@@ -1297,6 +1364,7 @@ const playAudibleNames = () => {
         attending: name.attending
       }))
       window.electron.ipcRenderer.send('audio-play-names', serializedNames)
+      // Don't update preview - it should only show actually spoken names
     }
   }
   // If Unattended card, play all unattended names
@@ -1313,35 +1381,47 @@ const playAudibleNames = () => {
         attending: name.attending
       }))
       window.electron.ipcRenderer.send('audio-play-names', serializedNames)
+      // Don't update preview - it should only show actually spoken names
     }
   }
 }
 
 const stopAudibleNames = (): void => {
   window.electron.ipcRenderer.send('audio-stop')
+  // Clear preview when audio stops
+  previewSpokenName.value = null
 }
 
 const goToNextName = (): void => {
   window.electron.ipcRenderer.send('audio-next')
+  // Don't update preview - it should only show actually spoken names
 }
 
 const goToPreviousName = (): void => {
   window.electron.ipcRenderer.send('audio-previous')
+  // Don't update preview - it should only show actually spoken names
 }
 
 const updateAudioStatus = async (): Promise<void> => {
   const status = await window.electron.ipcRenderer.invoke('audio-get-status')
+
+  // Use currentName for preview (shows last spoken in manual mode)
+  if (status.currentName) {
+    lastSpokenName.value = status.currentName
+    previewSpokenName.value = status.currentName
+  }
+
   audioStatus.value = status
 }
 
 // Hover functionality for large thumbnail preview
 const hoveredSlideIndex = ref<number | null>(null)
 const showLargeThumbnail = ref(false)
-const isCtrlKeyPressed = ref(false)
+const isSlashKeyPressed = ref(false)
 
 const handleMouseEnter = (index: number) => {
   hoveredSlideIndex.value = index
-  if (isCtrlKeyPressed.value) {
+  if (isSlashKeyPressed.value) {
     showLargeThumbnail.value = true
   }
 }
@@ -1355,29 +1435,34 @@ const keepLargeThumbnail = () => {
   // Keep the thumbnail visible while hovering over it
 }
 
-// Handle keyboard events for Ctrl/Cmd key detection
+// Handle keyboard events for slash key detection
 const handleKeyboardEvent = (event: KeyboardEvent) => {
-  const isModifierPressed = (isMac && event.metaKey) || (!isMac && event.ctrlKey)
+  // Check for '/' key (keyCode 191 on standard keyboards)
+  const isSlashPressed = event.key === '/' || event.keyCode === 191
 
-  if (isModifierPressed !== isCtrlKeyPressed.value) {
-    isCtrlKeyPressed.value = isModifierPressed
+  // Only handle keydown events for slash key
+  if (event.type === 'keydown' && isSlashPressed) {
+    if (!isSlashKeyPressed.value) {
+      isSlashKeyPressed.value = true
 
-    // If modifier key is pressed and we're hovering over a slide, show thumbnail
-    if (isModifierPressed && hoveredSlideIndex.value !== null) {
-      showLargeThumbnail.value = true
+      // If slash key is pressed and we're hovering over a slide, show thumbnail
+      if (hoveredSlideIndex.value !== null) {
+        showLargeThumbnail.value = true
+      }
     }
-    // If modifier key is released, hide thumbnail
-    else if (!isModifierPressed) {
-      showLargeThumbnail.value = false
-    }
+  }
+  // Handle keyup events for slash key
+  else if (event.type === 'keyup' && isSlashPressed) {
+    isSlashKeyPressed.value = false
+    showLargeThumbnail.value = false
   }
 }
 
 // Handle window focus/blur events to reset key state
 const handleWindowFocus = () => {
   // Reset key state when window regains focus to prevent stuck modifier keys
-  if (isCtrlKeyPressed.value) {
-    isCtrlKeyPressed.value = false
+  if (isSlashKeyPressed.value) {
+    isSlashKeyPressed.value = false
     showLargeThumbnail.value = false
   }
 }
@@ -1421,9 +1506,13 @@ const getSideScreen = (index: number): CardInterface | undefined => {
     let namesPrecedence = card.precedence !== null ? card.precedence : config.value.namesPrecedence
     return (
       card.type === CardType.Names &&
-      card.main_only !== true &&
+      card.display !== DisplayType.MainOnly &&
       index + namesPrecedence >= card.id - 1 &&
-      (namesPrecedence === 0 || card.main_only === false ? index < card.id : index < card.id - 1)
+      (namesPrecedence === 0 ||
+      card.display === DisplayType.Both ||
+      card.display === DisplayType.SideOnly
+        ? index < card.id
+        : index < card.id - 1)
     )
   })
 }
