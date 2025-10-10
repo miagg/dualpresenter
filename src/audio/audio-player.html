@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Player</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      display: none;
+      /* Hidden window */
+    }
+  </style>
+</head>
+<body>
+  <!-- Audio elements will be dynamically created here -->
+  <script>
+    class AudioPlayerManager {
+      constructor() {
+        this.audioElements = new Map(); // Map of filename -> audio element
+        this.nameToFileMap = new Map(); // Map of original name -> fileName used for preloading
+        this.playbackQueue = [];
+        this.currentIndex = 0;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.continuousPlayback = true;
+        this.gapBetweenNames = 500;
+        this.delayBeforePlayback = 1000;
+        this.lastSpokenName = null;
+        this.playbackTimer = null;
+        this.preloadedCard = null; // Track which card is currently preloaded
+
+        this.setupIPC();
+      }
+
+      setupIPC() {
+        if (!window.electronAPI) {
+          console.error('electronAPI not available! Preload script may have failed.');
+          return;
+        }
+
+        if (!window.electronAPI.onAudioCommand) {
+          console.error('onAudioCommand method not available!');
+          return;
+        }
+
+        // Listen for IPC messages from main process
+        window.electronAPI.onAudioCommand((command, data) => {
+          switch (command) {
+            case 'preload-card':
+              this.preloadCardAudio(data.names, data.voiceoverFolder);
+              break;
+            case 'play-names':
+              this.playNamesSequence(data.names, data.config);
+              break;
+            case 'stop':
+              this.stopPlayback();
+              break;
+            case 'pause':
+              this.pausePlayback();
+              break;
+            case 'resume':
+              this.resumePlayback();
+              break;
+            case 'next':
+              this.goToNext();
+              break;
+            case 'previous':
+              this.goToPrevious();
+              break;
+            case 'get-status':
+              this.sendStatus();
+              break;
+          }
+        });
+      }
+
+      sanitizeName(name) {
+        let sanitized = name.trim();
+        sanitized = sanitized.replace(/\s+/g, ' ');
+        sanitized = sanitized.replace(/[<>:"/\\|?*]/g, '');
+        sanitized = sanitized.replace(/^\.+|\.+$/g, '');
+        return sanitized.trim();
+      }
+
+      async getAudioFileName(name, voiceoverFolder) {
+        const sanitizedName = this.sanitizeName(name);
+        const extensions = ['.mp3', '.wav', '.m4a', '.aac'];
+
+        // Try each extension to find an existing file
+        for (const ext of extensions) {
+          const fileName = `${sanitizedName}${ext}`;
+          const filePath = `${voiceoverFolder}/${fileName}`;
+
+          // Check if file exists using main process
+          const exists = await window.electronAPI.checkFileExists(filePath);
+          if (exists) {
+            // Get proper file URL from main process
+            const fileUrl = await window.electronAPI.getFileUrl(filePath);
+            if (fileUrl) {
+              return {
+                fileName,
+                filePath: fileUrl,
+                sanitizedName
+              };
+            }
+          }
+        }
+
+        // Default to .mp3 if no file found (will fail gracefully)
+        const fileName = `${sanitizedName}.mp3`;
+        const filePath = `${voiceoverFolder}/${fileName}`;
+        const fileUrl = await window.electronAPI.getFileUrl(filePath);
+
+        return {
+          fileName,
+          filePath: fileUrl || `file://${filePath}`, // Fallback to original approach
+          sanitizedName
+        };
+      }
+
+      async preloadCardAudio(names, voiceoverFolder) {
+        // Clear existing audio elements if this is a new card
+        if (this.preloadedCard !== voiceoverFolder) {
+          this.clearPreloadedAudio();
+          this.preloadedCard = voiceoverFolder;
+        }
+
+        const preloadPromises = names.map(async (nameObj) => {
+          const {
+            fileName,
+            filePath
+          } = await this.getAudioFileName(nameObj.name, voiceoverFolder);
+
+          // Store the mapping from original name to filename
+          this.nameToFileMap.set(nameObj.name, fileName);
+
+          if (!this.audioElements.has(fileName)) {
+            // Since we already checked file existence, try to load directly
+            const success = await this.tryLoadAudio(fileName, filePath);
+
+            if (!success) {
+              console.warn(`Failed to load verified file: ${fileName}`);
+            }
+          } else {
+            // Already preloaded
+          }
+        });
+
+        await Promise.all(preloadPromises);
+
+        // Notify main process that preloading is complete
+        window.electronAPI.audioStatus('preload-complete', {
+          count: this.audioElements.size
+        });
+      }
+
+      async tryLoadAudio(fileName, filePath) {
+        return new Promise((resolve) => {
+          const audio = new Audio();
+          audio.preload = 'auto';
+          audio.src = filePath;
+
+          const onLoad = () => {
+            this.audioElements.set(fileName, audio);
+            resolve(true);
+          };
+
+          const onError = (error) => {
+            console.warn(`❌ Failed to preload: ${fileName} at ${filePath}`, error);
+            resolve(false);
+          };
+
+          audio.addEventListener('canplaythrough', onLoad, {
+            once: true
+          });
+          audio.addEventListener('error', onError, {
+            once: true
+          });
+
+          // Fallback timeout
+          setTimeout(() => {
+            if (!this.audioElements.has(fileName)) {
+              onError();
+            }
+          }, 3000);
+        });
+      }
+
+      clearPreloadedAudio() {
+        this.audioElements.forEach((audio) => {
+          this.removeAudioEventListeners(audio);
+          audio.pause();
+          audio.src = '';
+        });
+        this.audioElements.clear();
+        this.nameToFileMap.clear();
+      }
+
+      async playNamesSequence(names, config) {
+        this.playbackQueue = names;
+        this.currentIndex = 0;
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.continuousPlayback = config.continuousPlayback;
+        this.gapBetweenNames = config.gapBetweenNames;
+        this.delayBeforePlayback = config.delayBeforePlayback;
+
+        // Clear any existing timer
+        if (this.playbackTimer) {
+          clearTimeout(this.playbackTimer);
+        }
+
+        // Check if we have any audio files for the names in the current queue
+        let hasAnyAudioFiles = false;
+        for (const nameObj of names) {
+          // Use the stored mapping from preloading
+          const fileName = this.nameToFileMap.get(nameObj.name);
+          if (fileName && this.audioElements.has(fileName)) {
+            hasAnyAudioFiles = true;
+            break;
+          }
+        }
+
+        if (!hasAnyAudioFiles) {
+          console.warn('No audio files available for any names in the queue, stopping playback immediately');
+          this.isPlaying = false;
+          this.isPaused = false;
+          this.sendStatus();
+          return;
+        }
+
+        this.sendStatus();
+
+        // Wait for initial delay before starting
+        this.playbackTimer = setTimeout(() => {
+          this.playNextName();
+        }, this.delayBeforePlayback);
+      }
+
+      async playNextName() {
+        if (!this.isPlaying || this.currentIndex >= this.playbackQueue.length) {
+          this.isPlaying = false;
+          this.sendStatus();
+          return;
+        }
+
+        const currentName = this.playbackQueue[this.currentIndex];
+
+        // Use the stored mapping from preloading
+        let fileName = this.nameToFileMap.get(currentName.name);
+
+        // Fallback: if no mapping exists, try to resolve the filename
+        if (!fileName) {
+          console.warn(`No preload mapping found for "${currentName.name}", attempting to resolve filename`);
+          const result = await this.getAudioFileName(currentName.name, this.preloadedCard);
+          fileName = result.fileName;
+        }
+
+        const audio = this.audioElements.get(fileName);
+
+        if (audio) {
+          try {
+            this.lastSpokenName = currentName.name;
+            this.sendStatus();
+
+            // Clean up any existing event listeners first
+            this.removeAudioEventListeners(audio);
+
+            // Reset audio to beginning and play
+            audio.currentTime = 0;
+            await audio.play();
+
+            // Set up event listeners for this playback session
+            this.setupAudioEventListeners(audio, currentName.name);
+
+          } catch (error) {
+            console.error(`Error playing audio for "${currentName.name}":`, error);
+            this.advanceToNextName();
+          }
+        } else {
+          console.warn(`Audio file not found for "${currentName.name}": ${fileName}`);
+          this.advanceToNextName();
+        }
+      }
+
+      setupAudioEventListeners(audio, nameName) {
+        const onEnded = () => {
+          this.removeAudioEventListeners(audio);
+          console.log(`Audio ended for "${nameName}"`);
+          this.handleAudioEnd();
+        };
+
+        const onError = () => {
+          this.removeAudioEventListeners(audio);
+          console.error(`Error playing audio for "${nameName}"`);
+          this.handleAudioEnd();
+        };
+
+        // Store references to the listeners so we can remove them later
+        audio._endedListener = onEnded;
+        audio._errorListener = onError;
+
+        audio.addEventListener('ended', onEnded);
+        audio.addEventListener('error', onError);
+      }
+
+      removeAudioEventListeners(audio) {
+        if (audio._endedListener) {
+          audio.removeEventListener('ended', audio._endedListener);
+          delete audio._endedListener;
+        }
+        if (audio._errorListener) {
+          audio.removeEventListener('error', audio._errorListener);
+          delete audio._errorListener;
+        }
+      }
+
+      handleAudioEnd() {
+        // Only advance if we're still playing and not paused
+        if (this.isPlaying && !this.isPaused) {
+          this.currentIndex++;
+
+          // Check if we should stop playback
+          if (this.currentIndex >= this.playbackQueue.length) {
+            this.isPlaying = false;
+            this.isPaused = false;
+            this.sendStatus();
+            return;
+          }
+
+          // Check if we should pause (non-continuous mode)
+          if (!this.continuousPlayback) {
+            this.isPaused = true;
+            this.sendStatus();
+            return;
+          }
+
+          // Continue automatically in continuous mode
+          if (this.continuousPlayback) {
+            this.playbackTimer = setTimeout(() => {
+              this.playNextName();
+            }, this.gapBetweenNames);
+          }
+        }
+
+        this.sendStatus();
+      }
+
+      advanceToNextName() {
+        this.currentIndex++;
+
+        if (this.currentIndex >= this.playbackQueue.length) {
+          this.isPlaying = false;
+          this.isPaused = false;
+          this.sendStatus();
+          return;
+        }
+
+        if (!this.continuousPlayback) {
+          this.isPaused = true;
+          this.sendStatus();
+          return;
+        }
+
+        if (this.isPlaying && !this.isPaused) {
+          this.playNextName();
+        }
+      }
+
+      stopPlayback() {
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.lastSpokenName = null;
+        this.currentIndex = 0;
+        this.playbackQueue = [];
+
+        if (this.playbackTimer) {
+          clearTimeout(this.playbackTimer);
+          this.playbackTimer = null;
+        }
+
+        // Stop all audio elements and clean up event listeners
+        this.audioElements.forEach((audio) => {
+          this.removeAudioEventListeners(audio);
+          audio.pause();
+          audio.currentTime = 0;
+        });
+
+        this.sendStatus();
+      }
+
+      goToNext() {
+        if (this.playbackQueue.length === 0) return;
+
+        // Stop current audio and clean up listeners
+        this.audioElements.forEach((audio) => {
+          this.removeAudioEventListeners(audio);
+          audio.pause();
+          audio.currentTime = 0;
+        });
+
+        if (this.playbackTimer) {
+          clearTimeout(this.playbackTimer);
+          this.playbackTimer = null;
+        }
+
+        if (this.currentIndex < this.playbackQueue.length - 1) {
+          this.currentIndex++;
+
+          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+            this.playNextName();
+          }
+        }
+
+        this.sendStatus();
+        console.log(`Moved to next: ${this.currentIndex}`);
+      }
+
+      goToPrevious() {
+        if (this.playbackQueue.length === 0) return;
+
+        // Stop current audio and clean up listeners
+        this.audioElements.forEach((audio) => {
+          this.removeAudioEventListeners(audio);
+          audio.pause();
+          audio.currentTime = 0;
+        });
+
+        if (this.playbackTimer) {
+          clearTimeout(this.playbackTimer);
+          this.playbackTimer = null;
+        }
+
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+
+          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+            this.playNextName();
+          }
+        }
+
+        this.sendStatus();
+        console.log(`Moved to previous: ${this.currentIndex}`);
+      }
+
+      pausePlayback() {
+        if (this.isPlaying && !this.isPaused) {
+          this.isPaused = true;
+
+          if (this.playbackTimer) {
+            clearTimeout(this.playbackTimer);
+            this.playbackTimer = null;
+          }
+
+          // Pause current audio
+          this.audioElements.forEach((audio) => {
+            if (!audio.paused) {
+              audio.pause();
+            }
+          });
+
+          this.sendStatus();
+          console.log('Playback paused');
+        }
+      }
+
+      resumePlayback() {
+        if (this.isPlaying && this.isPaused) {
+          this.isPaused = false;
+
+          // Check if there's a currently paused audio element that should be resumed
+          let resumedAudio = false;
+          const currentName = this.playbackQueue[this.currentIndex];
+
+          if (currentName) {
+            const fileName = this.nameToFileMap.get(currentName.name);
+            const audio = this.audioElements.get(fileName);
+
+            if (audio && audio.paused && audio.currentTime > 0 && audio.currentTime < audio.duration) {
+              // Resume the paused audio (event listeners should still be attached)
+              audio.play().then(() => {
+                console.log('Resumed paused audio');
+              }).catch(error => {
+                console.error('Error resuming audio:', error);
+                // If resume fails, start playing from the current index
+                this.playNextName();
+              });
+              resumedAudio = true;
+            }
+          }
+
+          // If no audio was resumed, start playing from current index
+          if (!resumedAudio && this.currentIndex < this.playbackQueue.length) {
+            this.playNextName();
+          } else if (this.currentIndex >= this.playbackQueue.length) {
+            this.isPlaying = false;
+          }
+
+          this.sendStatus();
+          console.log('Playback resumed');
+        }
+      }
+
+      goToNext() {
+        if (this.playbackQueue.length === 0) return;
+
+        // Stop current audio
+        this.audioElements.forEach((audio) => {
+          audio.pause();
+          audio.currentTime = 0;
+        });
+
+        if (this.playbackTimer) {
+          clearTimeout(this.playbackTimer);
+          this.playbackTimer = null;
+        }
+
+        if (this.currentIndex < this.playbackQueue.length - 1) {
+          this.currentIndex++;
+
+          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+            this.playNextName();
+          }
+        }
+
+        this.sendStatus();
+        console.log(`Moved to next: ${this.currentIndex}`);
+      }
+
+      goToPrevious() {
+        if (this.playbackQueue.length === 0) return;
+
+        // Stop current audio
+        this.audioElements.forEach((audio) => {
+          audio.pause();
+          audio.currentTime = 0;
+        });
+
+        if (this.playbackTimer) {
+          clearTimeout(this.playbackTimer);
+          this.playbackTimer = null;
+        }
+
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+
+          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+            this.playNextName();
+          }
+        }
+
+        this.sendStatus();
+        console.log(`Moved to previous: ${this.currentIndex}`);
+      }
+
+      sendStatus() {
+        let currentName = null;
+        let queuedName = null;
+
+        if (this.currentIndex < this.playbackQueue.length && this.currentIndex >= 0) {
+          queuedName = this.playbackQueue[this.currentIndex]?.name || null;
+        }
+
+        if (!this.continuousPlayback && this.isPaused && this.lastSpokenName) {
+          currentName = this.lastSpokenName;
+        } else {
+          currentName = queuedName;
+        }
+
+        const status = {
+          isPlaying: this.isPlaying,
+          isPaused: this.isPaused,
+          currentIndex: this.currentIndex,
+          totalNames: this.playbackQueue.length,
+          currentName,
+          queuedName,
+          lastSpokenName: this.lastSpokenName
+        };
+
+        console.log('Sending status update:', status);
+        window.electronAPI.audioStatus('status-update', status);
+      }
+    }
+
+    // Initialize the audio player manager when the page loads
+    const audioPlayerManager = new AudioPlayerManager();
+
+    // Make it globally available for debugging
+    window.audioPlayerManager = audioPlayerManager;
+  </script>
+</body>
+</html>
