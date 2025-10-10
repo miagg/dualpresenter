@@ -238,7 +238,8 @@ function closeExcelFile(): void {
     updateDisplayWindows,
     sendData,
     config,
-    autoUpdater
+    autoUpdater,
+    preloadCurrentCardAudio
   )
 }
 
@@ -638,6 +639,7 @@ function registerGlobalShortcuts(): void {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      preloadCurrentCardAudio()
       // Send message to scroll to current slide in the UI
       mainWindow?.webContents.send('scroll-to-current')
     }
@@ -650,6 +652,7 @@ function registerGlobalShortcuts(): void {
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
       sendData()
       updateDisplayWindows()
+      preloadCurrentCardAudio()
       // Send message to scroll to current slide in the UI
       mainWindow?.webContents.send('scroll-to-current')
     }
@@ -1166,7 +1169,8 @@ app.whenReady().then(() => {
         updateDisplayWindows,
         sendData,
         config,
-        autoUpdater
+        autoUpdater,
+        preloadCurrentCardAudio
       )
     }
   })
@@ -1527,7 +1531,8 @@ app.whenReady().then(() => {
     updateDisplayWindows,
     sendData,
     config,
-    autoUpdater
+    autoUpdater,
+    preloadCurrentCardAudio
   )
 
   // Prevent sleeping while the app is running

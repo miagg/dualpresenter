@@ -81,7 +81,8 @@ export function createApplicationMenu(
   updateDisplayWindows: () => void,
   sendData: () => void,
   config: any,
-  autoUpdater: any
+  autoUpdater: any,
+  preloadCurrentCardAudio: () => void
 ): void {
   // Get the default application menu first
   const defaultMenu = Menu.getApplicationMenu() || Menu.buildFromTemplate([])
@@ -120,7 +121,8 @@ export function createApplicationMenu(
               updateDisplayWindows,
               sendData,
               config,
-              autoUpdater
+              autoUpdater,
+              preloadCurrentCardAudio
             )
           }
         }
@@ -298,6 +300,7 @@ export function createApplicationMenu(
             config.set('state.currentSlideIndex', data.state.currentSlideIndex)
             sendData()
             updateDisplayWindows()
+            preloadCurrentCardAudio()
           }
         }
       },
@@ -310,6 +313,7 @@ export function createApplicationMenu(
             config.set('state.currentSlideIndex', data.state.currentSlideIndex)
             sendData()
             updateDisplayWindows()
+            preloadCurrentCardAudio()
           }
         }
       }
