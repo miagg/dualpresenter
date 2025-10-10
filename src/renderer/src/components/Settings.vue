@@ -577,14 +577,10 @@
               <ul class="info-card-list">
                 <li>Create a folder named "voiceover" in the same directory as your Excel file</li>
                 <li>
-                  Add audio files
-                  {{ isWindows ? '(WAV)' : '(MP3, WAV, M4A, AAC)' }}
-                  with names matching exactly the names in your Excel file.
+                  Add audio files (MP3, WAV, M4A, AAC) with names matching exactly the names in your
+                  Excel file.
                 </li>
-                <li>
-                  Example: For "John Doe", create
-                  {{ isWindows ? '"John Doe.wav"' : '"John Doe.mp3"' }}
-                </li>
+                <li>Example: For "John Doe", create "John Doe.mp3"</li>
                 <li>If an audio file is missing, that name will be skipped during playback</li>
               </ul>
             </div>
@@ -698,7 +694,7 @@
                   <span class="shortcut-label"
                     >Display large preview (while hovering thumbnail)</span
                   >
-                  <kbd class="shortcut-key">Ctrl</kbd>
+                  <kbd class="shortcut-key">/</kbd>
                 </div>
               </div>
             </div>

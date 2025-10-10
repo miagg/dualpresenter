@@ -1417,11 +1417,11 @@ const updateAudioStatus = async (): Promise<void> => {
 // Hover functionality for large thumbnail preview
 const hoveredSlideIndex = ref<number | null>(null)
 const showLargeThumbnail = ref(false)
-const isCtrlKeyPressed = ref(false)
+const isSlashKeyPressed = ref(false)
 
 const handleMouseEnter = (index: number) => {
   hoveredSlideIndex.value = index
-  if (isCtrlKeyPressed.value) {
+  if (isSlashKeyPressed.value) {
     showLargeThumbnail.value = true
   }
 }
@@ -1435,29 +1435,34 @@ const keepLargeThumbnail = () => {
   // Keep the thumbnail visible while hovering over it
 }
 
-// Handle keyboard events for Ctrl/Cmd key detection
+// Handle keyboard events for slash key detection
 const handleKeyboardEvent = (event: KeyboardEvent) => {
-  const isModifierPressed = (isMac && event.metaKey) || (!isMac && event.ctrlKey)
+  // Check for '/' key (keyCode 191 on standard keyboards)
+  const isSlashPressed = event.key === '/' || event.keyCode === 191
 
-  if (isModifierPressed !== isCtrlKeyPressed.value) {
-    isCtrlKeyPressed.value = isModifierPressed
+  // Only handle keydown events for slash key
+  if (event.type === 'keydown' && isSlashPressed) {
+    if (!isSlashKeyPressed.value) {
+      isSlashKeyPressed.value = true
 
-    // If modifier key is pressed and we're hovering over a slide, show thumbnail
-    if (isModifierPressed && hoveredSlideIndex.value !== null) {
-      showLargeThumbnail.value = true
+      // If slash key is pressed and we're hovering over a slide, show thumbnail
+      if (hoveredSlideIndex.value !== null) {
+        showLargeThumbnail.value = true
+      }
     }
-    // If modifier key is released, hide thumbnail
-    else if (!isModifierPressed) {
-      showLargeThumbnail.value = false
-    }
+  }
+  // Handle keyup events for slash key
+  else if (event.type === 'keyup' && isSlashPressed) {
+    isSlashKeyPressed.value = false
+    showLargeThumbnail.value = false
   }
 }
 
 // Handle window focus/blur events to reset key state
 const handleWindowFocus = () => {
   // Reset key state when window regains focus to prevent stuck modifier keys
-  if (isCtrlKeyPressed.value) {
-    isCtrlKeyPressed.value = false
+  if (isSlashKeyPressed.value) {
+    isSlashKeyPressed.value = false
     showLargeThumbnail.value = false
   }
 }
