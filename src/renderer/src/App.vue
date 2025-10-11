@@ -92,7 +92,11 @@
     <!-- Main Content Area -->
     <div class="main-content flex-grow flex">
       <!-- Left Sidebar - Current and Next Slide -->
-      <div class="sidebar-left shrink-0 w-1/3 max-w-[500px] bg-gray-800 flex flex-col">
+      <div
+        class="sidebar-left shrink-0 bg-gray-800 flex flex-col relative"
+        :class="{ 'transition-all duration-200': !isResizing }"
+        :style="{ width: sidebarWidth + 'px' }"
+      >
         <div class="sidebar-content overflow-y-auto h-full p-4">
           <div class="flex items-center justify-between mb-2">
             <h2 class="text-lg font-bold text-gray-200">Main Screen</h2>
@@ -409,11 +413,21 @@
             </div>
           </div>
         </div>
+
+        <!-- Resize handle -->
+        <div
+          class="resize-handle absolute top-0 right-0 bottom-0 w-px bg-gray-700 hover:bg-blue-500 cursor-col-resize group"
+          @mousedown="startResize"
+        >
+          <div
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-8 bg-gray-500 group-hover:bg-blue-400 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+          ></div>
+        </div>
       </div>
 
       <!-- Main Content - Slide List -->
       <div
-        class="content-main flex-grow flex flex-col overflow-hidden bg-gray-900 border-l border-y border-gray-700"
+        class="content-main flex-grow flex flex-col overflow-hidden bg-gray-900 border-y border-gray-700"
       >
         <div class="flex justify-between items-center p-4 pr-4.5">
           <div class="flex items-center">
@@ -733,7 +747,8 @@ const config = ref<Config>({
     delayBeforePlayback: 1000,
     gapBetweenNames: 500,
     autoPlayback: true,
-    continuousPlayback: true
+    continuousPlayback: true,
+    showNamesOnSideOnly: false
   },
   namesPrecedence: 0
 })
@@ -751,6 +766,10 @@ const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flippi
 const initialLoadComplete = ref(false) // Flag to track initial load
 const showExcelStructure = ref(false) // Controls visibility of Excel structure modal
 const audioPlaybackTimeout = ref<NodeJS.Timeout | null>(null)
+
+// Sidebar resize functionality
+const sidebarWidth = ref(parseInt(localStorage.getItem('sidebarWidth') || '400')) // Default width with persistence
+const isResizing = ref(false)
 
 // Audio status for audible names
 const audioStatus = ref({
@@ -1306,6 +1325,36 @@ const openExcelStructure = () => {
   showExcelStructure.value = true
 }
 
+// Sidebar resize functionality
+const startResize = (event: MouseEvent): void => {
+  isResizing.value = true
+  document.body.classList.add('resizing')
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+  event.preventDefault()
+}
+
+const handleResize = (event: MouseEvent): void => {
+  if (!isResizing.value) return
+
+  const newWidth = event.clientX
+
+  // Constrain width between 300px and 600px
+  if (newWidth >= 300 && newWidth <= 600) {
+    sidebarWidth.value = newWidth
+  }
+}
+
+const stopResize = (): void => {
+  isResizing.value = false
+  document.body.classList.remove('resizing')
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+
+  // Save the sidebar width to localStorage for persistence
+  localStorage.setItem('sidebarWidth', sidebarWidth.value.toString())
+}
+
 const updateConfig = (newConfig: Config) => {
   // Create a deep copy to ensure we're not dealing with reference issues
   const configCopy = JSON.parse(JSON.stringify(newConfig))
@@ -1545,22 +1594,14 @@ const getSideScreen = (index: number): CardInterface | undefined => {
 }
 
 .sidebar-content {
-  scrollbar-width: thin;
-  scrollbar-gutter: 20px;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 
 .sidebar-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sidebar-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-content::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-  border-radius: 3px;
+  width: 0; /* WebKit browsers */
+  height: 0;
+  display: none;
 }
 
 .slides-list {
@@ -1648,5 +1689,34 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   to {
     opacity: 1;
   }
+}
+
+/* Resize handle styles */
+.resize-handle {
+  z-index: 10;
+  transition:
+    background-color 0.2s ease,
+    width 0.2s ease;
+}
+
+.resize-handle:hover {
+  background-color: rgb(59 130 246) !important;
+  width: 3px;
+}
+
+.resize-handle:active {
+  background-color: rgb(37 99 235) !important;
+  width: 4px;
+}
+
+/* Add visual feedback when resizing */
+body.resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 </style>
