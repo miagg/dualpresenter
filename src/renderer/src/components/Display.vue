@@ -100,9 +100,7 @@ onMounted(() => {
             card.type === CardType.Names &&
             card.display !== DisplayType.MainOnly &&
             data.currentSlideIndex + namesPrecedence >= card.id - 1 &&
-            (namesPrecedence === 0 ||
-            card.display === DisplayType.Both ||
-            card.display === DisplayType.SideOnly
+            (namesPrecedence === 0 || card.display === DisplayType.Both
               ? data.currentSlideIndex < card.id
               : data.currentSlideIndex < card.id - 1)
           )

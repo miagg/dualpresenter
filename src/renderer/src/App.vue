@@ -571,7 +571,9 @@
               :class="{
                 '!bg-yellow-700/30':
                   card.type === CardType.Names &&
-                  (card.display === DisplayType.MainOnly || card.display === DisplayType.Auto) &&
+                  (card.display === DisplayType.MainOnly ||
+                    card.display === DisplayType.Auto ||
+                    card.display === DisplayType.SideOnly) &&
                   (card.precedence !== null ? card.precedence : config.namesPrecedence) > 0
               }"
             ></div>
@@ -1557,9 +1559,7 @@ const getSideScreen = (index: number): CardInterface | undefined => {
       card.type === CardType.Names &&
       card.display !== DisplayType.MainOnly &&
       index + namesPrecedence >= card.id - 1 &&
-      (namesPrecedence === 0 ||
-      card.display === DisplayType.Both ||
-      card.display === DisplayType.SideOnly
+      (namesPrecedence === 0 || card.display === DisplayType.Both
         ? index < card.id
         : index < card.id - 1)
     )
