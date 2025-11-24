@@ -60,7 +60,7 @@
         v-if="card.title"
         class="text-7xl z-10"
         :class="{ 'font-bold': props.config.fonts.useBoldTitles }"
-        v-text="card.title.replaceAll('\n', '<br />')"
+        v-html="card.title.replaceAll('\n', '<br />')"
       />
       <h2
         v-if="card.subtitle"
