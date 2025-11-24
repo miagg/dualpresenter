@@ -131,6 +131,7 @@
           >
             <Card
               v-if="mainScreenCard"
+              ref="mainCardRef"
               :zoom="$refs.mainPreview.clientWidth / 1920"
               :card="mainScreenCard"
               :names="names"
@@ -139,6 +140,8 @@
               :last-spoken-name="previewSpokenName"
               :is-main-screen="true"
               :is-from-side-only-names-card="isMainScreenFromSideOnlyNamesCard"
+              :current-names-page="currentMainNamesPage"
+              :current-unattended-page="currentMainUnattendedPage"
             />
             <div
               v-else
@@ -146,6 +149,54 @@
             >
               No slide available
             </div>
+          </div>
+
+          <!-- Pagination controls for Main Screen Names -->
+          <div
+            v-if="mainCardRef?.totalNamesPages > 1 && mainScreenCard?.type === CardType.Names"
+            class="flex gap-2 mb-4 justify-center"
+          >
+            <button
+              @click="prevMainNamesPage"
+              :disabled="currentMainNamesPage === 0"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ‹
+            </button>
+            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
+              {{ currentMainNamesPage + 1 }} / {{ mainCardRef.totalNamesPages }}
+            </span>
+            <button
+              @click="nextMainNamesPage"
+              :disabled="currentMainNamesPage === mainCardRef.totalNamesPages - 1"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ›
+            </button>
+          </div>
+
+          <!-- Pagination controls for Main Screen Unattended -->
+          <div
+            v-if="mainCardRef?.totalUnattendedPages > 1 && mainScreenCard?.type === CardType.Unattended"
+            class="flex gap-2 mb-4 justify-center"
+          >
+            <button
+              @click="prevMainUnattendedPage"
+              :disabled="currentMainUnattendedPage === 0"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ‹
+            </button>
+            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
+              {{ currentMainUnattendedPage + 1 }} / {{ mainCardRef.totalUnattendedPages }}
+            </span>
+            <button
+              @click="nextMainUnattendedPage"
+              :disabled="currentMainUnattendedPage === mainCardRef.totalUnattendedPages - 1"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ›
+            </button>
           </div>
 
           <div class="flex items-center justify-between mb-2">
@@ -181,6 +232,7 @@
           >
             <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+              ref="sideCardRef"
               :zoom="$refs.sidePreview.clientWidth / 1920"
               :card="sideScreenCard"
               :names="names"
@@ -189,6 +241,8 @@
               :last-spoken-name="lastSpokenName"
               :is-main-screen="false"
               :is-from-side-only-names-card="false"
+              :current-names-page="currentSideNamesPage"
+              :current-unattended-page="currentSideUnattendedPage"
             />
             <div
               v-else
@@ -196,6 +250,54 @@
             >
               No slide available
             </div>
+          </div>
+
+          <!-- Pagination controls for Side Screen Names -->
+          <div
+            v-if="sideCardRef?.totalNamesPages > 1 && sideScreenCard?.type === CardType.Names"
+            class="flex gap-2 mt-4 mb-4 justify-center"
+          >
+            <button
+              @click="prevSideNamesPage"
+              :disabled="currentSideNamesPage === 0"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ‹
+            </button>
+            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
+              {{ currentSideNamesPage + 1 }} / {{ sideCardRef.totalNamesPages }}
+            </span>
+            <button
+              @click="nextSideNamesPage"
+              :disabled="currentSideNamesPage === sideCardRef.totalNamesPages - 1"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ›
+            </button>
+          </div>
+
+          <!-- Pagination controls for Side Screen Unattended -->
+          <div
+            v-if="sideCardRef?.totalUnattendedPages > 1 && sideScreenCard?.type === CardType.Unattended"
+            class="flex gap-2 mt-4 mb-4 justify-center"
+          >
+            <button
+              @click="prevSideUnattendedPage"
+              :disabled="currentSideUnattendedPage === 0"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ‹
+            </button>
+            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
+              {{ currentSideUnattendedPage + 1 }} / {{ sideCardRef.totalUnattendedPages }}
+            </span>
+            <button
+              @click="nextSideUnattendedPage"
+              :disabled="currentSideUnattendedPage === sideCardRef.totalUnattendedPages - 1"
+              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ›
+            </button>
           </div>
 
           <!-- Display Selection -->
@@ -786,6 +888,14 @@ const audioStatus = ref({
 const lastSpokenName = ref<string | null>(null)
 const previewSpokenName = ref<string | null>(null)
 
+// Pagination state for names cards
+const currentMainNamesPage = ref(0)
+const currentMainUnattendedPage = ref(0)
+const currentSideNamesPage = ref(0)
+const currentSideUnattendedPage = ref(0)
+const mainCardRef = ref(null)
+const sideCardRef = ref(null)
+
 // Current time display
 const currentTime = ref('')
 const updateCurrentTime = () => {
@@ -1003,6 +1113,12 @@ onMounted(() => {
     mainScreen.value = data.state.mainScreen
     sideScreen.value = data.state.sideScreen
 
+    // Update pagination state from data
+    currentMainNamesPage.value = data.state.currentMainNamesPage ?? 0
+    currentMainUnattendedPage.value = data.state.currentMainUnattendedPage ?? 0
+    currentSideNamesPage.value = data.state.currentSideNamesPage ?? 0
+    currentSideUnattendedPage.value = data.state.currentSideUnattendedPage ?? 0
+
     // Set isExcelLoaded based on whether we have cards data
     state.isExcelLoaded = Array.isArray(data.cards) && data.cards.length > 0
 
@@ -1161,6 +1277,26 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
     const newConfig = JSON.parse(JSON.stringify(config.value))
     newConfig.namesPrecedence = newConfig.namesPrecedence + 1
     updateConfig(newConfig)
+    return
+  }
+
+  // Handle audio navigation shortcuts: [ for previous name, ] for next name (without modifier keys)
+  if (event.key === '[' || event.key === ']') {
+    // Only work if audible names is enabled and we're on a Names/Unattended card
+    const currentCard = cards.value[state.currentSlideIndex]
+    const isNamesCard = currentCard && (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
+    
+    if (config.value.audibleNames.enabled && isNamesCard) {
+      event.preventDefault()
+      event.stopPropagation()
+      
+      if (event.key === '[') {
+        goToPreviousName()
+      } else if (event.key === ']') {
+        goToNextName()
+      }
+    }
+    return
   }
 }
 
@@ -1254,6 +1390,33 @@ const handleKeyDown = (event: KeyboardEvent) => {
   // Get the slides list element
   const slidesList = document.querySelector('.slides-list') as HTMLElement
 
+  // Handle pagination shortcuts: - for previous page, = for next page
+  if (event.key === '-' || event.key === '=' || event.key === '+' || event.key === '_') {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    // Determine which card is currently displayed and paginate accordingly
+    const currentCard = cards.value[state.currentSlideIndex]
+    if (!currentCard) return
+
+    if (event.key === '-' || event.key === '_') {
+      // Previous page
+      if (currentCard.type === CardType.Names) {
+        prevMainNamesPage()
+      } else if (currentCard.type === CardType.Unattended) {
+        prevMainUnattendedPage()
+      }
+    } else if (event.key === '=' || event.key === '+') {
+      // Next page
+      if (currentCard.type === CardType.Names) {
+        nextMainNamesPage()
+      } else if (currentCard.type === CardType.Unattended) {
+        nextMainUnattendedPage()
+      }
+    }
+    return
+  }
+
   if (
     event.key === 'ArrowLeft' ||
     event.key === 'ArrowUp' ||
@@ -1289,6 +1452,72 @@ const prevSlide = () => {
   if (state.currentSlideIndex > 0) {
     lastSpokenName.value = null // Clear last spoken name when changing slides
     window.electron.ipcRenderer.send('prev-slide')
+  }
+}
+
+// Pagination functions
+const sendPaginationUpdate = () => {
+  window.electron.ipcRenderer.send('update-pagination', {
+    currentMainNamesPage: currentMainNamesPage.value,
+    currentMainUnattendedPage: currentMainUnattendedPage.value,
+    currentSideNamesPage: currentSideNamesPage.value,
+    currentSideUnattendedPage: currentSideUnattendedPage.value
+  })
+}
+
+const nextMainNamesPage = () => {
+  if (mainCardRef.value && currentMainNamesPage.value < mainCardRef.value.totalNamesPages - 1) {
+    currentMainNamesPage.value++
+    sendPaginationUpdate()
+  }
+}
+
+const prevMainNamesPage = () => {
+  if (currentMainNamesPage.value > 0) {
+    currentMainNamesPage.value--
+    sendPaginationUpdate()
+  }
+}
+
+const nextMainUnattendedPage = () => {
+  if (mainCardRef.value && currentMainUnattendedPage.value < mainCardRef.value.totalUnattendedPages - 1) {
+    currentMainUnattendedPage.value++
+    sendPaginationUpdate()
+  }
+}
+
+const prevMainUnattendedPage = () => {
+  if (currentMainUnattendedPage.value > 0) {
+    currentMainUnattendedPage.value--
+    sendPaginationUpdate()
+  }
+}
+
+const nextSideNamesPage = () => {
+  if (sideCardRef.value && currentSideNamesPage.value < sideCardRef.value.totalNamesPages - 1) {
+    currentSideNamesPage.value++
+    sendPaginationUpdate()
+  }
+}
+
+const prevSideNamesPage = () => {
+  if (currentSideNamesPage.value > 0) {
+    currentSideNamesPage.value--
+    sendPaginationUpdate()
+  }
+}
+
+const nextSideUnattendedPage = () => {
+  if (sideCardRef.value && currentSideUnattendedPage.value < sideCardRef.value.totalUnattendedPages - 1) {
+    currentSideUnattendedPage.value++
+    sendPaginationUpdate()
+  }
+}
+
+const prevSideUnattendedPage = () => {
+  if (currentSideUnattendedPage.value > 0) {
+    currentSideUnattendedPage.value--
+    sendPaginationUpdate()
   }
 }
 
@@ -1445,12 +1674,10 @@ const stopAudibleNames = (): void => {
 
 const goToNextName = (): void => {
   window.electron.ipcRenderer.send('audio-next')
-  // Don't update preview - it should only show actually spoken names
 }
 
 const goToPreviousName = (): void => {
   window.electron.ipcRenderer.send('audio-previous')
-  // Don't update preview - it should only show actually spoken names
 }
 
 const updateAudioStatus = async (): Promise<void> => {

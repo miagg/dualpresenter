@@ -22,6 +22,7 @@
         this.audioElements = new Map(); // Map of filename -> audio element
         this.nameToFileMap = new Map(); // Map of original name -> fileName used for preloading
         this.playbackQueue = [];
+        this.preloadedNames = []; // Store preloaded names for navigation without playing
         this.currentIndex = 0;
         this.isPlaying = false;
         this.isPaused = false;
@@ -127,6 +128,9 @@
           this.clearPreloadedAudio();
           this.preloadedCard = voiceoverFolder;
         }
+
+        // Store the names for navigation without playing
+        this.preloadedNames = names;
 
         const preloadPromises = names.map(async (nameObj) => {
           const {
@@ -393,7 +397,20 @@
       }
 
       goToNext() {
+        // Initialize playback queue in paused mode if not already initialized
+        if (this.playbackQueue.length === 0 && this.preloadedNames.length > 0) {
+          this.playbackQueue = this.preloadedNames;
+          this.currentIndex = 0;
+          this.isPlaying = true;
+          this.isPaused = true;
+          this.sendStatus();
+          return;
+        }
+
         if (this.playbackQueue.length === 0) return;
+
+        // Store the playing state before stopping audio
+        const wasPlaying = this.isPlaying && !this.isPaused;
 
         // Stop current audio and clean up listeners
         this.audioElements.forEach((audio) => {
@@ -410,7 +427,8 @@
         if (this.currentIndex < this.playbackQueue.length - 1) {
           this.currentIndex++;
 
-          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+          // If we were playing, continue playing at the new position
+          if (wasPlaying) {
             this.playNextName();
           }
         }
@@ -420,7 +438,20 @@
       }
 
       goToPrevious() {
+        // Initialize playback queue in paused mode if not already initialized
+        if (this.playbackQueue.length === 0 && this.preloadedNames.length > 0) {
+          this.playbackQueue = this.preloadedNames;
+          this.currentIndex = 0;
+          this.isPlaying = true;
+          this.isPaused = true;
+          this.sendStatus();
+          return;
+        }
+
         if (this.playbackQueue.length === 0) return;
+
+        // Store the playing state before stopping audio
+        const wasPlaying = this.isPlaying && !this.isPaused;
 
         // Stop current audio and clean up listeners
         this.audioElements.forEach((audio) => {
@@ -437,7 +468,8 @@
         if (this.currentIndex > 0) {
           this.currentIndex--;
 
-          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
+          // If we were playing, continue playing at the new position
+          if (wasPlaying) {
             this.playNextName();
           }
         }
@@ -502,58 +534,6 @@
           this.sendStatus();
           console.log('Playback resumed');
         }
-      }
-
-      goToNext() {
-        if (this.playbackQueue.length === 0) return;
-
-        // Stop current audio
-        this.audioElements.forEach((audio) => {
-          audio.pause();
-          audio.currentTime = 0;
-        });
-
-        if (this.playbackTimer) {
-          clearTimeout(this.playbackTimer);
-          this.playbackTimer = null;
-        }
-
-        if (this.currentIndex < this.playbackQueue.length - 1) {
-          this.currentIndex++;
-
-          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
-            this.playNextName();
-          }
-        }
-
-        this.sendStatus();
-        console.log(`Moved to next: ${this.currentIndex}`);
-      }
-
-      goToPrevious() {
-        if (this.playbackQueue.length === 0) return;
-
-        // Stop current audio
-        this.audioElements.forEach((audio) => {
-          audio.pause();
-          audio.currentTime = 0;
-        });
-
-        if (this.playbackTimer) {
-          clearTimeout(this.playbackTimer);
-          this.playbackTimer = null;
-        }
-
-        if (this.currentIndex > 0) {
-          this.currentIndex--;
-
-          if (this.continuousPlayback && this.isPlaying && !this.isPaused) {
-            this.playNextName();
-          }
-        }
-
-        this.sendStatus();
-        console.log(`Moved to previous: ${this.currentIndex}`);
       }
 
       sendStatus() {

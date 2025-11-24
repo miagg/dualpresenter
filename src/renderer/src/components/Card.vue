@@ -97,9 +97,9 @@
       <div
         class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 z-10"
         :class="{
-          'justify-center': filteredNames.length < linesPerColumn,
-          'pb-20': filteredNames.length !== linesPerColumn + 1,
-          'pb-40': filteredNames.length === linesPerColumn + 1
+          'justify-center': paginatedNames.length < linesPerColumn,
+          'pb-20': paginatedNames.length !== linesPerColumn + 1,
+          'pb-40': paginatedNames.length === linesPerColumn + 1
         }"
       >
         <div
@@ -114,7 +114,7 @@
             'mt-10': card.title?.split('\n')?.length > 6
           }"
         />
-        <div v-for="name in filteredNames" :key="name.id">
+        <div v-for="name in paginatedNames" :key="name.id">
           {{ name.name }}
         </div>
       </div>
@@ -153,12 +153,12 @@
       <div
         class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
         :class="{
-          'justify-center': unattendedNames.length < linesPerColumn,
-          'pb-20': unattendedNames.length !== linesPerColumn + 1,
-          'pb-40': unattendedNames.length === linesPerColumn + 1
+          'justify-center': paginatedUnattendedNames.length < linesPerColumn,
+          'pb-20': paginatedUnattendedNames.length !== linesPerColumn + 1,
+          'pb-40': paginatedUnattendedNames.length === linesPerColumn + 1
         }"
       >
-        <div v-for="name in unattendedNames" :key="name.id">
+        <div v-for="name in paginatedUnattendedNames" :key="name.id">
           {{ name.name }}
         </div>
       </div>
@@ -197,6 +197,7 @@ import defaultLogoWhite from '../../../../resources/logo_white.png'
 // Reference to the card DOM element
 const cardElement = ref<HTMLElement | null>(null)
 const linesPerColumn = 8
+const namesPerPage = 16
 
 // Reactive refs to store loaded image data URLs
 const backgroundImageDataUrl = ref<string | null>(null)
@@ -243,12 +244,32 @@ const props = defineProps({
   isFromSideOnlyNamesCard: {
     type: Boolean,
     default: false
+  },
+  currentNamesPage: {
+    type: Number,
+    default: 0
+  },
+  currentUnattendedPage: {
+    type: Number,
+    default: 0
   }
 })
 
 // Filter names based on the card group, from, and until properties
 const filteredNames = computed(() => {
   return filterNamesForCard(props.names, props.card)
+})
+
+// Paginated names for display
+const paginatedNames = computed(() => {
+  const start = props.currentNamesPage * namesPerPage
+  const end = start + namesPerPage
+  return filteredNames.value.slice(start, end)
+})
+
+// Total pages for names
+const totalNamesPages = computed(() => {
+  return Math.ceil(filteredNames.value.length / namesPerPage)
 })
 
 // Compute the name to display on blank cards (main screen only)
@@ -291,6 +312,18 @@ const displayName = computed(() => {
 // Unattended names
 const unattendedNames = computed(() => {
   return filterUnattendedNames(props.names)
+})
+
+// Paginated unattended names for display
+const paginatedUnattendedNames = computed(() => {
+  const start = props.currentUnattendedPage * namesPerPage
+  const end = start + namesPerPage
+  return unattendedNames.value.slice(start, end)
+})
+
+// Total pages for unattended names
+const totalUnattendedPages = computed(() => {
+  return Math.ceil(unattendedNames.value.length / namesPerPage)
 })
 
 // Determine background color based on card type
@@ -468,6 +501,12 @@ watchEffect(() => {
   if (props.card.type === CardType.Image) {
     loadImageCardImage()
   }
+})
+
+// Expose total pages to parent component
+defineExpose({
+  totalNamesPages,
+  totalUnattendedPages
 })
 
 // Also load images on mount to ensure they're loaded immediately

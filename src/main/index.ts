@@ -49,6 +49,10 @@ if (data.config.namesPrecedence === undefined) data.config.namesPrecedence = 0
 if (data.state.freezeMonitors === undefined) data.state.freezeMonitors = false
 if (data.state.blackOutScreens === undefined) data.state.blackOutScreens = false
 if (data.state.frozenSlideIndex === undefined) data.state.frozenSlideIndex = null
+if (data.state.currentMainNamesPage === undefined) data.state.currentMainNamesPage = 0
+if (data.state.currentMainUnattendedPage === undefined) data.state.currentMainUnattendedPage = 0
+if (data.state.currentSideNamesPage === undefined) data.state.currentSideNamesPage = 0
+if (data.state.currentSideUnattendedPage === undefined) data.state.currentSideUnattendedPage = 0
 
 // Initialize audible names config if needed
 if (data.config.audibleNames === undefined) {
@@ -249,6 +253,18 @@ function getFileNameWithoutExtension(filePath: string): string {
   return path.basename(filePath, path.extname(filePath))
 }
 
+// Helper function to reset pagination state
+function resetPaginationState(): void {
+  data.state.currentMainNamesPage = 0
+  data.state.currentMainUnattendedPage = 0
+  data.state.currentSideNamesPage = 0
+  data.state.currentSideUnattendedPage = 0
+  config.set('state.currentMainNamesPage', 0)
+  config.set('state.currentMainUnattendedPage', 0)
+  config.set('state.currentSideNamesPage', 0)
+  config.set('state.currentSideUnattendedPage', 0)
+}
+
 function sendData(): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.webContents.isLoading()) {
@@ -374,7 +390,9 @@ function updateMainDisplayWindow(): void {
           names: data.names,
           config: data.config,
           state: {
-            blackOutScreens: data.state.blackOutScreens
+            blackOutScreens: data.state.blackOutScreens,
+            currentMainNamesPage: data.state.currentMainNamesPage,
+            currentMainUnattendedPage: data.state.currentMainUnattendedPage
           },
           audioStatus: audioManager.getPlaybackStatus()
         })
@@ -405,7 +423,9 @@ function updateMainDisplayWindow(): void {
       names: data.names,
       config: data.config,
       state: {
-        blackOutScreens: data.state.blackOutScreens
+        blackOutScreens: data.state.blackOutScreens,
+        currentMainNamesPage: data.state.currentMainNamesPage,
+        currentMainUnattendedPage: data.state.currentMainUnattendedPage
       },
       audioStatus: audioManager.getPlaybackStatus()
     })
@@ -480,7 +500,9 @@ function updateSideDisplayWindow(): void {
           names: data.names,
           config: data.config,
           state: {
-            blackOutScreens: data.state.blackOutScreens
+            blackOutScreens: data.state.blackOutScreens,
+            currentSideNamesPage: data.state.currentSideNamesPage,
+            currentSideUnattendedPage: data.state.currentSideUnattendedPage
           },
           audioStatus: audioManager.getPlaybackStatus()
         })
@@ -511,7 +533,9 @@ function updateSideDisplayWindow(): void {
       names: data.names,
       config: data.config,
       state: {
-        blackOutScreens: data.state.blackOutScreens
+        blackOutScreens: data.state.blackOutScreens,
+        currentSideNamesPage: data.state.currentSideNamesPage,
+        currentSideUnattendedPage: data.state.currentSideUnattendedPage
       },
       audioStatus: audioManager.getPlaybackStatus()
     })
@@ -1065,6 +1089,7 @@ app.whenReady().then(() => {
     if (data.state.currentSlideIndex < data.cards.length - 1) {
       data.state.currentSlideIndex++
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
+      resetPaginationState()
       sendData()
       updateDisplayWindows()
       preloadCurrentCardAudio()
@@ -1075,6 +1100,7 @@ app.whenReady().then(() => {
     if (data.state.currentSlideIndex > 0) {
       data.state.currentSlideIndex--
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
+      resetPaginationState()
       sendData()
       updateDisplayWindows()
       preloadCurrentCardAudio()
@@ -1085,6 +1111,7 @@ app.whenReady().then(() => {
     if (index >= 0 && index < data.cards.length) {
       data.state.currentSlideIndex = index
       config.set('state.currentSlideIndex', data.state.currentSlideIndex)
+      resetPaginationState()
       sendData()
       updateDisplayWindows()
       preloadCurrentCardAudio()
@@ -1136,6 +1163,25 @@ app.whenReady().then(() => {
 
     sendData()
 
+    if (!data.state.freezeMonitors) {
+      updateDisplayWindows()
+    }
+  })
+
+  // Pagination handlers
+  ipcMain.on('update-pagination', (_, paginationState) => {
+    data.state.currentMainNamesPage = paginationState.currentMainNamesPage
+    data.state.currentMainUnattendedPage = paginationState.currentMainUnattendedPage
+    data.state.currentSideNamesPage = paginationState.currentSideNamesPage
+    data.state.currentSideUnattendedPage = paginationState.currentSideUnattendedPage
+    
+    config.set('state.currentMainNamesPage', paginationState.currentMainNamesPage)
+    config.set('state.currentMainUnattendedPage', paginationState.currentMainUnattendedPage)
+    config.set('state.currentSideNamesPage', paginationState.currentSideNamesPage)
+    config.set('state.currentSideUnattendedPage', paginationState.currentSideUnattendedPage)
+
+    sendData()
+    
     if (!data.state.freezeMonitors) {
       updateDisplayWindows()
     }
@@ -1486,13 +1532,11 @@ app.whenReady().then(() => {
 
   ipcMain.on('audio-next', () => {
     audioManager.goToNext()
-    // Update displays to reflect new audio status
     updateDisplayWindows()
   })
 
   ipcMain.on('audio-previous', () => {
     audioManager.goToPrevious()
-    // Update displays to reflect new audio status
     updateDisplayWindows()
   })
 

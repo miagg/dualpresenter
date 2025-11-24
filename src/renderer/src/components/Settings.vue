@@ -620,6 +620,21 @@
               </div>
             </div>
 
+            <!-- Pagination shortcuts -->
+            <div class="shortcuts-group">
+              <h4 class="shortcuts-group-title text-cyan-400">Pagination</h4>
+              <div class="shortcuts-list">
+                <div class="shortcut-item">
+                  <span class="shortcut-label">Previous Page (Names/Unattended)</span>
+                  <kbd class="shortcut-key">-</kbd>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-label">Next Page (Names/Unattended)</span>
+                  <kbd class="shortcut-key">=</kbd>
+                </div>
+              </div>
+            </div>
+
             <!-- Display shortcuts -->
             <div class="shortcuts-group">
               <h4 class="shortcuts-group-title text-green-400">Display Controls</h4>
@@ -677,6 +692,14 @@
                 <div class="shortcut-item">
                   <span class="shortcut-label">Play/Stop Audible Names</span>
                   <kbd class="shortcut-key">Ctrl+P</kbd>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-label">Previous Name</span>
+                  <kbd class="shortcut-key">[</kbd>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-label">Next Name</span>
+                  <kbd class="shortcut-key">]</kbd>
                 </div>
                 <div class="shortcut-item">
                   <span class="shortcut-label">Toggle Auto Playback</span>

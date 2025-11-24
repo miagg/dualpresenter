@@ -9,6 +9,8 @@
       :lastSpokenName="lastSpokenName"
       :isMainScreen="isMainScreen"
       :isFromSideOnlyNamesCard="isFromSideOnlyNamesCard"
+      :currentNamesPage="currentNamesPage"
+      :currentUnattendedPage="currentUnattendedPage"
     />
     <div v-if="blackOutActive" class="black-overlay" :class="{ 'fade-in': blackOutActive }"></div>
   </div>
@@ -39,6 +41,8 @@ const lastSpokenName = ref<string | null>(null)
 const isMainScreen = route.name === 'mainscreen'
 const isFromSideOnlyNamesCard = ref(false)
 const currentSlideIndex = ref(-1)
+const currentNamesPage = ref(0)
+const currentUnattendedPage = ref(0)
 
 onMounted(() => {
   window.electron.ipcRenderer.on('display-data', (_, data) => {
@@ -64,6 +68,17 @@ onMounted(() => {
       // Get black out state if provided
       if (data.state && data.state.blackOutScreens !== undefined) {
         blackOutActive.value = data.state.blackOutScreens
+      }
+
+      // Get pagination state if provided
+      if (data.state) {
+        if (route.name === 'mainscreen') {
+          currentNamesPage.value = data.state.currentMainNamesPage ?? 0
+          currentUnattendedPage.value = data.state.currentMainUnattendedPage ?? 0
+        } else {
+          currentNamesPage.value = data.state.currentSideNamesPage ?? 0
+          currentUnattendedPage.value = data.state.currentSideUnattendedPage ?? 0
+        }
       }
 
       if (route.name === 'mainscreen') {

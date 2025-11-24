@@ -6,6 +6,10 @@ export interface State {
   freezeMonitors: boolean
   blackOutScreens: boolean
   frozenSlideIndex: number | null
+  currentMainNamesPage?: number
+  currentMainUnattendedPage?: number
+  currentSideNamesPage?: number
+  currentSideUnattendedPage?: number
   windowBounds?: {
     x: number
     y: number

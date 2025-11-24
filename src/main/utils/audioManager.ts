@@ -156,9 +156,6 @@ export class AudioManager {
       return
     }
 
-    if (this.playbackQueue.length === 0) return
-
-    // Send next command to audio window
     this.audioWindow.webContents.send('audio-command', 'next')
   }
 
@@ -168,9 +165,6 @@ export class AudioManager {
       return
     }
 
-    if (this.playbackQueue.length === 0) return
-
-    // Send previous command to audio window
     this.audioWindow.webContents.send('audio-command', 'previous')
   }
 
