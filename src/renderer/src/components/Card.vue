@@ -19,25 +19,28 @@
         class="absolute inset-0 object-cover w-full h-full"
       />
 
-      <!-- Content container to prevent layout shift -->
-      <div class="flex flex-col items-center justify-center flex-1 z-10">
-        <!-- Logo based on background -->
-        <img v-if="logoSrc" :src="logoSrc" alt="Logo" :style="blankCardLogoStyles" />
+      <div class="flex items-center justify-center z-10">
+        <div class="flex flex-col flex-1 items-center justify-center relative">
+          <!-- Logo based on background -->
+          <img
+            v-if="logoSrc"
+            :src="logoSrc"
+            alt="Logo"
+            :style="blankCardLogoStyles"
+            class="transition-all duration-500 ease-in-out"
+          />
 
-        <!-- Name display area (only for "Side Only" Names cards when setting is enabled) -->
-        <div
-          v-if="
-            props.isMainScreen &&
-            props.isFromSideOnlyNamesCard &&
-            props.config?.audibleNames?.showNamesOnSideOnly
-          "
-          class="mt-16 text-center min-h-[120px] flex items-center justify-center"
-        >
-          <Transition name="name-dissolve" mode="out-in">
-            <h2 v-if="displayName" :key="displayName" class="text-6xl font-bold text-white">
-              {{ displayName }}
-            </h2>
-          </Transition>
+          <!-- Name display area (only for "Side Only" Names cards when setting is enabled) -->
+          <div
+            v-if="props.config?.audibleNames?.showNamesOnSideOnly"
+            class="absolute top-full mt-20 text-center flex items-center justify-center transition-opacity duration-500 px-14"
+          >
+            <Transition name="name-dissolve" mode="out-in">
+              <h2 v-if="displayName" :key="displayName" class="text-6xl font-bold text-white">
+                {{ displayName }}
+              </h2>
+            </Transition>
+          </div>
         </div>
       </div>
     </div>
