@@ -5,6 +5,7 @@
       :card="currentCard"
       :names="names"
       :config="config"
+      :all-cards="allCards"
       :audioStatus="audioStatus"
       :lastSpokenName="lastSpokenName"
       :isMainScreen="isMainScreen"
@@ -28,6 +29,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const currentCard = ref<CardInterface | null>(null)
 const names = ref<Name[]>([])
+const allCards = ref<CardInterface[]>([])
 const config = ref<Config | null>(null)
 const blackOutActive = ref(false)
 const audioStatus = ref({
@@ -48,6 +50,7 @@ onMounted(() => {
   window.electron.ipcRenderer.on('display-data', (_, data) => {
     if (data.cards && data.cards.length && data.currentSlideIndex >= 0) {
       names.value = data.names || []
+      allCards.value = data.cards || []
       config.value = data.config
 
       // Clear last spoken name when slide changes

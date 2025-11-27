@@ -437,6 +437,31 @@
             </p>
           </div>
         </div>
+
+        <!-- Distributed Names Setting -->
+        <div class="settings-section">
+          <div class="section-header">
+            <h3 class="section-title">Names Distribution</h3>
+            <p class="section-description">Automatically distribute names across cards</p>
+          </div>
+          <div class="input-group">
+            <div class="checkbox-wrapper">
+              <input
+                type="checkbox"
+                id="distributeNames"
+                v-model="settings.distributeNames"
+                class="checkbox-input"
+                @change="settingsChanged"
+              />
+              <label for="distributeNames" class="checkbox-label">
+                Distribute names automatically
+              </label>
+            </div>
+            <p class="input-description">
+              When enabled, names will be distributed equally across all no-range names cards of the same group. Cards with ranges (from/to) will claim their names first, then remaining names are split across cards without ranges.
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Audio Tab -->
@@ -767,7 +792,7 @@ const tabs = ref([
   },
   {
     id: 'display',
-    name: 'Display',
+    name: 'Preferences',
     icon: 'display'
   },
   {
@@ -870,7 +895,8 @@ const settings = reactive<Config>({
     continuousPlayback: true,
     showNamesOnSideOnly: true
   },
-  namesPrecedence: 0
+  namesPrecedence: 0,
+  distributeNames: true
 })
 
 // Store image previews as data URLs
@@ -961,6 +987,7 @@ onMounted(() => {
           : true
 
       settings.namesPrecedence = config.namesPrecedence || 0
+      settings.distributeNames = config.distributeNames !== undefined ? config.distributeNames : true
 
       // Load image previews after settings are updated
       loadImagePreviews()
@@ -1010,6 +1037,7 @@ const initializeSettings = (): void => {
       : true
 
   settings.namesPrecedence = props.config.namesPrecedence || 0
+  settings.distributeNames = props.config.distributeNames !== undefined ? props.config.distributeNames : true
 }
 
 // Load image previews using the IPC API
@@ -1173,7 +1201,8 @@ const settingsChanged = async (): Promise<void> => {
       continuousPlayback: settings.audibleNames.continuousPlayback,
       showNamesOnSideOnly: settings.audibleNames.showNamesOnSideOnly
     },
-    namesPrecedence: settings.namesPrecedence
+    namesPrecedence: settings.namesPrecedence,
+    distributeNames: settings.distributeNames
   }
 
   // Stop audio playback if audible names are disabled

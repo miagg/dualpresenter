@@ -252,12 +252,17 @@ const props = defineProps({
   currentUnattendedPage: {
     type: Number,
     default: 0
+  },
+  allCards: {
+    type: Array as PropType<Card[]>,
+    default: () => []
   }
 })
 
 // Filter names based on the card group, from, and until properties
 const filteredNames = computed(() => {
-  return filterNamesForCard(props.names, props.card)
+  const distributeNames = props.config?.distributeNames ?? false
+  return filterNamesForCard(props.names, props.card, props.allCards, distributeNames)
 })
 
 // Paginated names for display

@@ -132,10 +132,11 @@
             <Card
               v-if="mainScreenCard"
               ref="mainCardRef"
-              :zoom="$refs.mainPreview.clientWidth / 1920"
+              :zoom="Math.round(($refs.mainPreview.clientWidth / 1920) * 100) / 100"
               :card="mainScreenCard"
               :names="names"
               :config="config"
+              :all-cards="cards"
               :audio-status="audioStatus"
               :last-spoken-name="previewSpokenName"
               :is-main-screen="true"
@@ -177,7 +178,9 @@
 
           <!-- Pagination controls for Main Screen Unattended -->
           <div
-            v-if="mainCardRef?.totalUnattendedPages > 1 && mainScreenCard?.type === CardType.Unattended"
+            v-if="
+              mainCardRef?.totalUnattendedPages > 1 && mainScreenCard?.type === CardType.Unattended
+            "
             class="flex gap-2 mb-4 justify-center"
           >
             <button
@@ -233,10 +236,11 @@
             <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
               ref="sideCardRef"
-              :zoom="$refs.sidePreview.clientWidth / 1920"
+              :zoom="Math.round(($refs.sidePreview.clientWidth / 1920) * 100) / 100"
               :card="sideScreenCard"
               :names="names"
               :config="config"
+              :all-cards="cards"
               :audio-status="audioStatus"
               :last-spoken-name="lastSpokenName"
               :is-main-screen="false"
@@ -278,7 +282,9 @@
 
           <!-- Pagination controls for Side Screen Unattended -->
           <div
-            v-if="sideCardRef?.totalUnattendedPages > 1 && sideScreenCard?.type === CardType.Unattended"
+            v-if="
+              sideCardRef?.totalUnattendedPages > 1 && sideScreenCard?.type === CardType.Unattended
+            "
             class="flex gap-2 mt-4 mb-4 justify-center"
           >
             <button
@@ -686,10 +692,11 @@
               @mouseleave="handleMouseLeave()"
             >
               <Card
-                :zoom="0.08333333"
+                :zoom="0.0834"
                 :card="card"
                 :names="names"
                 :config="config"
+                :all-cards="cards"
                 :class="{
                   'opacity-50': index < state.currentSlideIndex
                 }"
@@ -710,10 +717,11 @@
                   <div class="bg-gray-800 border border-gray-600 p-2 rounded shadow-xl">
                     <div class="w-[455px] xl:w-[640px]">
                       <Card
-                        :zoom="$el.clientWidth >= 1280 ? 0.33333333 : 0.23697917"
+                        :zoom="$el.clientWidth >= 1280 ? 0.33333333 : 0.237"
                         :card="card"
                         :names="names"
                         :config="config"
+                        :all-cards="cards"
                       />
                     </div>
                   </div>
@@ -1284,12 +1292,14 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
   if (event.key === '[' || event.key === ']') {
     // Only work if audible names is enabled and we're on a Names/Unattended card
     const currentCard = cards.value[state.currentSlideIndex]
-    const isNamesCard = currentCard && (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
-    
+    const isNamesCard =
+      currentCard &&
+      (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
+
     if (config.value.audibleNames.enabled && isNamesCard) {
       event.preventDefault()
       event.stopPropagation()
-      
+
       if (event.key === '[') {
         goToPreviousName()
       } else if (event.key === ']') {
@@ -1394,7 +1404,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === '-' || event.key === '=' || event.key === '+' || event.key === '_') {
     event.preventDefault()
     event.stopPropagation()
-    
+
     // Determine which card is currently displayed and paginate accordingly
     const currentCard = cards.value[state.currentSlideIndex]
     if (!currentCard) return
@@ -1480,7 +1490,10 @@ const prevMainNamesPage = () => {
 }
 
 const nextMainUnattendedPage = () => {
-  if (mainCardRef.value && currentMainUnattendedPage.value < mainCardRef.value.totalUnattendedPages - 1) {
+  if (
+    mainCardRef.value &&
+    currentMainUnattendedPage.value < mainCardRef.value.totalUnattendedPages - 1
+  ) {
     currentMainUnattendedPage.value++
     sendPaginationUpdate()
   }
@@ -1508,7 +1521,10 @@ const prevSideNamesPage = () => {
 }
 
 const nextSideUnattendedPage = () => {
-  if (sideCardRef.value && currentSideUnattendedPage.value < sideCardRef.value.totalUnattendedPages - 1) {
+  if (
+    sideCardRef.value &&
+    currentSideUnattendedPage.value < sideCardRef.value.totalUnattendedPages - 1
+  ) {
     currentSideUnattendedPage.value++
     sendPaginationUpdate()
   }
@@ -1634,7 +1650,8 @@ const playAudibleNames = (): void => {
   const namesCard = currentNamesSlide.value
   if (namesCard) {
     // Use the same filtering logic as the Card component
-    const namesToPlay = filterNamesForCard(names.value, namesCard)
+    const distributeNames = config.value.distributeNames ?? false
+    const namesToPlay = filterNamesForCard(names.value, namesCard, cards.value, distributeNames)
 
     if (namesToPlay.length > 0) {
       // Convert to plain objects to avoid cloning issues with Vue reactive objects

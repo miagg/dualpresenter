@@ -65,6 +65,12 @@ if (data.config.audibleNames === undefined) {
   }
 }
 
+// Initialize distributed names config if needed
+if (data.config.distributeNames === undefined) {
+  data.config.distributeNames = true
+  config.set('config.distributeNames', true)
+}
+
 // Debounce function to prevent multiple rapid reloads
 function debounce(func: Function, delay: number): () => void {
   return function () {
