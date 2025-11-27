@@ -132,7 +132,7 @@
             <Card
               v-if="mainScreenCard"
               ref="mainCardRef"
-              :zoom="Math.round(($refs.mainPreview.clientWidth / 1920) * 100) / 100"
+              :zoom="Math.ceil(($refs.mainPreview.clientWidth / 1920) * 1000) / 1000"
               :card="mainScreenCard"
               :names="names"
               :config="config"
@@ -236,7 +236,7 @@
             <Card
               v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
               ref="sideCardRef"
-              :zoom="Math.round(($refs.sidePreview.clientWidth / 1920) * 100) / 100"
+              :zoom="Math.ceil(($refs.sidePreview.clientWidth / 1920) * 1000) / 1000"
               :card="sideScreenCard"
               :names="names"
               :config="config"
