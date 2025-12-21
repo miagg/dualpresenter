@@ -418,7 +418,7 @@ const slideStyles = computed(() => {
 // Computed properties for logo styling on blank cards
 const blankCardLogoStyles = computed(() => {
   const maxSize = props.config?.assets?.maxLogoSize ?? 60
-  const verticalOffset = props.config?.assets?.logoVerticalPosition ?? 0
+  const verticalOffset = props.isMainScreen ? (props.config?.assets?.logoVerticalPosition ?? 0) : 0
 
   return {
     maxHeight: `${maxSize}%`,
