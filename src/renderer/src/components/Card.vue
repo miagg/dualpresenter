@@ -1,6 +1,6 @@
 <template>
   <div
-    class="aspect-video overflow-hidden slides-content w-full h-full origin-top-left pointer-events-none"
+    class="aspect-video overflow-hidden slides-content w-full h-full origin-top-left pointer-events-none relative"
     :style="{
       fontFamily: slideStyles.fontFamilyImportant,
       backgroundColor: backgroundColor,
@@ -9,56 +9,60 @@
     }"
     ref="cardElement"
   >
-    <!-- Blank Card -->
-    <div v-if="card.type === CardType.Blank" class="flex flex-col justify-center h-full relative">
-      <!-- Background image -->
-      <img
-        v-if="backgroundImageSrc"
-        :src="backgroundImageSrc"
-        alt="Background"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
+    <!-- Background and logo live outside the per-type blocks below, so moving to another
+         slide swaps their src on the same <img> instead of destroying and re-creating it.
+         A re-created <img> is decoded asynchronously, which makes the logo pop in a few
+         frames late on the monitor outputs. -->
+    <img
+      v-if="cardBackgroundSrc"
+      :src="cardBackgroundSrc"
+      alt="Background"
+      decoding="sync"
+      class="absolute inset-0 object-cover w-full h-full"
+    />
+    <img
+      v-if="showCornerLogo && logoSrc"
+      :src="logoSrc"
+      alt="Logo"
+      decoding="sync"
+      class="absolute top-16 left-24 w-72 z-10"
+    />
 
-      <div class="flex items-center justify-center z-10">
-        <div class="flex flex-col flex-1 items-center justify-center relative">
-          <!-- Logo based on background -->
-          <img
-            v-if="logoSrc"
-            :src="logoSrc"
-            alt="Logo"
-            :style="blankCardLogoStyles"
-            class="transition-all duration-500 ease-in-out"
-          />
+    <!-- Blank Card (kept mounted with v-show for the same reason) -->
+    <div
+      v-show="card.type === CardType.Blank"
+      class="absolute inset-0 flex items-center justify-center z-10"
+    >
+      <div class="flex flex-col items-center justify-center relative w-full">
+        <!-- Logo based on background -->
+        <img
+          v-if="logoSrc"
+          :src="logoSrc"
+          alt="Logo"
+          decoding="sync"
+          :style="blankCardLogoStyles"
+          class="transition-all duration-500 ease-in-out"
+        />
 
-          <!-- Name display area (only for "Side Only" Names cards when setting is enabled) -->
-          <div
-            v-if="props.config?.audibleNames?.showNamesOnSideOnly"
-            class="absolute top-full mt-20 text-center flex items-center justify-center transition-opacity duration-500 px-14"
-          >
-            <Transition name="name-dissolve" mode="out-in">
-              <h2 v-if="displayName" :key="displayName" class="text-6xl font-bold text-white">
-                {{ displayName }}
-              </h2>
-            </Transition>
-          </div>
+        <!-- Name display area (only for "Side Only" Names cards when setting is enabled) -->
+        <div
+          v-if="props.config?.audibleNames?.showNamesOnSideOnly"
+          class="absolute top-full mt-20 text-center flex items-center justify-center transition-opacity duration-500 px-14"
+        >
+          <Transition name="name-dissolve" mode="out-in">
+            <h2 v-if="displayName" :key="displayName" class="text-6xl font-bold text-white">
+              {{ displayName }}
+            </h2>
+          </Transition>
         </div>
       </div>
     </div>
 
     <!-- Title Card -->
     <div
-      v-else-if="card.type === CardType.Title || card.type === CardType.Category"
+      v-if="card.type === CardType.Title || card.type === CardType.Category"
       class="flex flex-col items-left justify-center h-full relative p-24"
     >
-      <!-- Background image -->
-      <img
-        v-if="backgroundImageSrc"
-        :src="backgroundImageSrc"
-        alt="Background"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
-      <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
       <h1
         v-if="card.title"
         class="text-7xl z-10"
@@ -74,21 +78,6 @@
 
     <!-- Names Card -->
     <div v-else-if="card.type === CardType.Names" class="flex flex-col h-full p-24 relative">
-      <!-- Background image - prioritize names-specific background if available -->
-      <img
-        v-if="namesBackgroundImageSrc"
-        :src="namesBackgroundImageSrc"
-        alt="Background"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
-      <img
-        v-else-if="backgroundImageSrc"
-        :src="backgroundImageSrc"
-        alt="Background"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
-      <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
       <h1
         v-if="card.group || card.title"
         class="text-5xl text-center z-10 -mt-6 px-96"
@@ -137,22 +126,6 @@
 
     <!-- Unattended Card -->
     <div v-else-if="card.type === CardType.Unattended" class="flex flex-col h-full p-24 relative">
-      <!-- Background image - prioritize names-specific background if available -->
-      <img
-        v-if="namesBackgroundImageSrc"
-        :src="namesBackgroundImageSrc"
-        alt="Background"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
-      <img
-        v-else-if="backgroundImageSrc"
-        :src="backgroundImageSrc"
-        alt="Background"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
-      <!-- Logo based on background -->
-      <img v-if="logoSrc" :src="logoSrc" alt="Logo" class="absolute top-16 left-24 w-72 z-10" />
-
       <div
         class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
         :class="{
@@ -177,6 +150,7 @@
         v-if="imageCardImageDataUrl"
         :src="imageCardImageDataUrl"
         alt="Full Screen Image"
+        decoding="sync"
         class="absolute inset-0 object-cover w-full h-full"
       />
     </div>
@@ -184,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import type { PropType } from 'vue'
 import { CardType, DisplayType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
@@ -471,38 +445,48 @@ const logoSrc = computed(() => {
   return null
 })
 
-// Use watchEffect to react to changes in config
-watchEffect(async () => {
-  // For background image
-  if (props.config?.assets?.background) {
-    backgroundImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.background)
-  } else {
-    backgroundImageDataUrl.value = null
+// The background actually shown for the current card type. Computed here (rather than
+// branched in the template) so a single <img> element is reused across slide changes.
+const cardBackgroundSrc = computed(() => {
+  if (props.card.type === CardType.Image) {
+    return null
   }
-
-  // For names background image
-  if (props.config?.assets?.backgroundNames) {
-    namesBackgroundImageDataUrl.value = await loadImageAsDataUrl(
-      props.config.assets.backgroundNames
-    )
-  } else {
-    namesBackgroundImageDataUrl.value = null
+  if (props.card.type === CardType.Names || props.card.type === CardType.Unattended) {
+    return namesBackgroundImageSrc.value || backgroundImageSrc.value
   }
-
-  // For logo
-  if (props.config?.assets?.logo) {
-    logoImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logo)
-  } else {
-    logoImageDataUrl.value = null
-  }
-
-  // For inverted logo
-  if (props.config?.assets?.logoInverted) {
-    logoInvertedImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logoInverted)
-  } else {
-    logoInvertedImageDataUrl.value = null
-  }
+  return backgroundImageSrc.value
 })
+
+// Card types that show the logo in the top-left corner (blank cards center it instead)
+const showCornerLogo = computed(() => {
+  return (
+    props.card.type === CardType.Title ||
+    props.card.type === CardType.Category ||
+    props.card.type === CardType.Names ||
+    props.card.type === CardType.Unattended
+  )
+})
+
+// Load assets whenever their configured paths change. The monitor windows receive a brand
+// new config object on every IPC update, so watching the paths themselves (instead of the
+// config object) keeps each slide change from re-reading every image off disk.
+watch(
+  [
+    () => props.config?.assets?.background,
+    () => props.config?.assets?.backgroundNames,
+    () => props.config?.assets?.logo,
+    () => props.config?.assets?.logoInverted
+  ],
+  async ([background, backgroundNames, logo, logoInverted]) => {
+    backgroundImageDataUrl.value = background ? await loadImageAsDataUrl(background) : null
+    namesBackgroundImageDataUrl.value = backgroundNames
+      ? await loadImageAsDataUrl(backgroundNames)
+      : null
+    logoImageDataUrl.value = logo ? await loadImageAsDataUrl(logo) : null
+    logoInvertedImageDataUrl.value = logoInverted ? await loadImageAsDataUrl(logoInverted) : null
+  },
+  { immediate: true }
+)
 
 // Watch for changes in card type and title for Image cards
 watchEffect(() => {
@@ -515,39 +499,6 @@ watchEffect(() => {
 defineExpose({
   totalNamesPages,
   totalUnattendedPages
-})
-
-// Also load images on mount to ensure they're loaded immediately
-onMounted(async () => {
-  // For background image
-  if (props.config?.assets?.background) {
-    backgroundImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.background)
-  } else {
-    backgroundImageDataUrl.value = null
-  }
-
-  // For names background image
-  if (props.config?.assets?.backgroundNames) {
-    namesBackgroundImageDataUrl.value = await loadImageAsDataUrl(
-      props.config.assets.backgroundNames
-    )
-  } else {
-    namesBackgroundImageDataUrl.value = null
-  }
-
-  // For logo
-  if (props.config?.assets?.logo) {
-    logoImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logo)
-  } else {
-    logoImageDataUrl.value = null
-  }
-
-  // For inverted logo
-  if (props.config?.assets?.logoInverted) {
-    logoInvertedImageDataUrl.value = await loadImageAsDataUrl(props.config.assets.logoInverted)
-  } else {
-    logoInvertedImageDataUrl.value = null
-  }
 })
 </script>
 
