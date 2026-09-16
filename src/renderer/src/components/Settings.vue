@@ -458,7 +458,36 @@
               </label>
             </div>
             <p class="input-description">
-              When enabled, names will be distributed equally across all no-range names cards of the same group. Cards with ranges (from/to) will claim their names first, then remaining names are split across cards without ranges.
+              When enabled, names will be distributed equally across all no-range names cards of the
+              same group. Cards with ranges (from/to) will claim their names first, then remaining
+              names are split across cards without ranges.
+            </p>
+          </div>
+        </div>
+
+        <!-- Slide Transitions Setting -->
+        <div class="settings-section">
+          <div class="section-header">
+            <h3 class="section-title">Slide Transitions</h3>
+            <p class="section-description">Animate changes between slides on the displays</p>
+          </div>
+          <div class="input-group">
+            <div class="checkbox-wrapper">
+              <input
+                type="checkbox"
+                id="slideTransitions"
+                v-model="settings.slideTransitions"
+                class="checkbox-input"
+                @change="settingsChanged"
+              />
+              <label for="slideTransitions" class="checkbox-label">
+                Enable slide transitions
+              </label>
+            </div>
+            <p class="input-description">
+              When enabled, slides crossfade on the main and side screens and the logo glides to its
+              new position (for example from a blank card to a title card). Previews in this window
+              are not animated.
             </p>
           </div>
         </div>
@@ -896,7 +925,8 @@ const settings = reactive<Config>({
     showNamesOnSideOnly: true
   },
   namesPrecedence: 0,
-  distributeNames: true
+  distributeNames: true,
+  slideTransitions: false
 })
 
 // Store image previews as data URLs
@@ -987,7 +1017,9 @@ onMounted(() => {
           : true
 
       settings.namesPrecedence = config.namesPrecedence || 0
-      settings.distributeNames = config.distributeNames !== undefined ? config.distributeNames : true
+      settings.distributeNames =
+        config.distributeNames !== undefined ? config.distributeNames : true
+      settings.slideTransitions = config.slideTransitions ?? false
 
       // Load image previews after settings are updated
       loadImagePreviews()
@@ -1037,7 +1069,9 @@ const initializeSettings = (): void => {
       : true
 
   settings.namesPrecedence = props.config.namesPrecedence || 0
-  settings.distributeNames = props.config.distributeNames !== undefined ? props.config.distributeNames : true
+  settings.distributeNames =
+    props.config.distributeNames !== undefined ? props.config.distributeNames : true
+  settings.slideTransitions = props.config.slideTransitions ?? false
 }
 
 // Load image previews using the IPC API
@@ -1159,6 +1193,7 @@ watch(
         : true
 
     settings.namesPrecedence = newConfig.namesPrecedence ?? 2
+    settings.slideTransitions = newConfig.slideTransitions ?? false
 
     // Load image previews when config changes
     loadImagePreviews()
@@ -1202,7 +1237,8 @@ const settingsChanged = async (): Promise<void> => {
       showNamesOnSideOnly: settings.audibleNames.showNamesOnSideOnly
     },
     namesPrecedence: settings.namesPrecedence,
-    distributeNames: settings.distributeNames
+    distributeNames: settings.distributeNames,
+    slideTransitions: settings.slideTransitions
   }
 
   // Stop audio playback if audible names are disabled

@@ -26,4 +26,5 @@ export interface Config {
   }
   namesPrecedence: number
   distributeNames: boolean
+  slideTransitions: boolean
 }

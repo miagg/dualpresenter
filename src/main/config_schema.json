@@ -105,6 +105,10 @@
       "namesPrecedence": {
         "type": "number",
         "default": 2
+      },
+      "slideTransitions": {
+        "type": "boolean",
+        "default": false
       }
     },
     "default": {}

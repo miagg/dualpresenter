@@ -1,11 +1,13 @@
 <template>
   <div
     class="aspect-video overflow-hidden slides-content w-full h-full origin-top-left pointer-events-none relative"
+    :class="{ 'slide-animated': animate }"
     :style="{
       fontFamily: slideStyles.fontFamilyImportant,
       backgroundColor: backgroundColor,
       color: textColor,
-      zoom: zoom
+      zoom: zoom,
+      '--slide-transition-ms': `${SLIDE_TRANSITION_MS}ms`
     }"
     ref="cardElement"
   >
@@ -13,15 +15,22 @@
          slide swaps their src on the same <img> instead of destroying and re-creating it.
          A re-created <img> is decoded asynchronously, which makes the logo pop in a few
          frames late on the monitor outputs. -->
-    <img
-      v-if="cardBackgroundSrc"
-      :src="cardBackgroundSrc"
-      alt="Background"
-      decoding="sync"
-      class="absolute inset-0 object-cover w-full h-full"
-    />
+    <!-- z-0 isolates the background crossfade so it always stays beneath the slide content -->
+    <div class="absolute inset-0 z-0">
+      <Transition name="background-fade" :css="animate">
+        <img
+          v-if="cardBackgroundSrc"
+          :key="animate ? cardBackgroundSrc : 'background'"
+          :src="cardBackgroundSrc"
+          alt="Background"
+          decoding="sync"
+          class="absolute inset-0 object-cover w-full h-full"
+        />
+      </Transition>
+    </div>
     <img
       v-if="showCornerLogo && logoSrc"
+      ref="cornerLogoElement"
       :src="logoSrc"
       alt="Logo"
       decoding="sync"
@@ -37,6 +46,7 @@
         <!-- Logo based on background -->
         <img
           v-if="logoSrc"
+          ref="blankLogoElement"
           :src="logoSrc"
           alt="Logo"
           decoding="sync"
@@ -58,107 +68,121 @@
       </div>
     </div>
 
-    <!-- Title Card -->
-    <div
-      v-if="card.type === CardType.Title || card.type === CardType.Category"
-      class="flex flex-col items-left justify-center h-full relative p-24"
-    >
-      <h1
-        v-if="card.title"
-        class="text-7xl z-10"
-        :class="{ 'font-bold': props.config.fonts.useBoldTitles }"
-        v-html="card.title.replaceAll('\n', '<br />')"
-      />
-      <h2
-        v-if="card.subtitle"
-        class="text-5xl mt-4 z-10 leading-tight"
-        v-html="card.subtitle.replaceAll('\n', '<br />')"
-      />
-    </div>
-
-    <!-- Names Card -->
-    <div v-else-if="card.type === CardType.Names" class="flex flex-col h-full p-24 relative">
-      <h1
-        v-if="card.group || card.title"
-        class="text-5xl text-center z-10 -mt-6 px-96"
-        v-html="
-          card.group ? card.group.replaceAll('\n', '<br />') : card.title.replaceAll('\n', '<br />')
-        "
-      />
-
+    <Transition name="content-fade" :css="animate">
+      <!-- Title Card -->
       <div
-        class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 z-10"
-        :class="{
-          'justify-center': paginatedNames.length < linesPerColumn,
-          'pb-20': paginatedNames.length !== linesPerColumn + 1,
-          'pb-40': paginatedNames.length === linesPerColumn + 1
-        }"
+        v-if="card.type === CardType.Title || card.type === CardType.Category"
+        :key="contentKey"
+        class="flex flex-col items-left justify-center h-full relative p-24"
       >
-        <div
-          v-if="card.subtitle || (card.group && card.title)"
+        <h1
+          v-if="card.title"
+          class="text-7xl z-10"
+          :class="{ 'font-bold': props.config.fonts.useBoldTitles }"
+          v-html="card.title.replaceAll('\n', '<br />')"
+        />
+        <h2
+          v-if="card.subtitle"
+          class="text-5xl mt-4 z-10 leading-tight"
+          v-html="card.subtitle.replaceAll('\n', '<br />')"
+        />
+      </div>
+
+      <!-- Names Card -->
+      <div
+        v-else-if="card.type === CardType.Names"
+        :key="contentKey"
+        class="flex flex-col h-full p-24 relative"
+      >
+        <h1
+          v-if="card.group || card.title"
+          class="text-5xl text-center z-10 -mt-6 px-96"
           v-html="
-            card.subtitle
-              ? card.subtitle.replaceAll('\n', '<br />')
+            card.group
+              ? card.group.replaceAll('\n', '<br />')
               : card.title.replaceAll('\n', '<br />')
           "
-          class="leading-snug pb-4"
-          :class="{
-            'mt-10': card.title?.split('\n')?.length > 6
-          }"
         />
-        <div v-for="name in paginatedNames" :key="name.id">
-          {{ name.name }}
+
+        <div
+          class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl pt-30 z-10"
+          :class="{
+            'justify-center': paginatedNames.length < linesPerColumn,
+            'pb-20': paginatedNames.length !== linesPerColumn + 1,
+            'pb-40': paginatedNames.length === linesPerColumn + 1
+          }"
+        >
+          <div
+            v-if="card.subtitle || (card.group && card.title)"
+            v-html="
+              card.subtitle
+                ? card.subtitle.replaceAll('\n', '<br />')
+                : card.title.replaceAll('\n', '<br />')
+            "
+            class="leading-snug pb-4"
+            :class="{
+              'mt-10': card.title?.split('\n')?.length > 6
+            }"
+          />
+          <div v-for="name in paginatedNames" :key="name.id">
+            {{ name.name }}
+          </div>
+        </div>
+
+        <!-- Spoken name overlay for "Side Only" Names cards -->
+        <div
+          v-if="card.display === DisplayType.SideOnly && displayName"
+          class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20"
+        >
+          <Transition name="name-dissolve" mode="out-in">
+            <h2 :key="displayName" class="text-8xl font-bold text-white text-center">
+              {{ displayName }}
+            </h2>
+          </Transition>
         </div>
       </div>
 
-      <!-- Spoken name overlay for "Side Only" Names cards -->
+      <!-- Unattended Card -->
       <div
-        v-if="card.display === DisplayType.SideOnly && displayName"
-        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20"
+        v-else-if="card.type === CardType.Unattended"
+        :key="contentKey"
+        class="flex flex-col h-full p-24 relative"
       >
-        <Transition name="name-dissolve" mode="out-in">
-          <h2 :key="displayName" class="text-8xl font-bold text-white text-center">
-            {{ displayName }}
-          </h2>
-        </Transition>
-      </div>
-    </div>
-
-    <!-- Unattended Card -->
-    <div v-else-if="card.type === CardType.Unattended" class="flex flex-col h-full p-24 relative">
-      <div
-        class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
-        :class="{
-          'justify-center': paginatedUnattendedNames.length < linesPerColumn,
-          'pb-20': paginatedUnattendedNames.length !== linesPerColumn + 1,
-          'pb-40': paginatedUnattendedNames.length === linesPerColumn + 1
-        }"
-      >
-        <div v-for="name in paginatedUnattendedNames" :key="name.id">
-          {{ name.name }}
+        <div
+          class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
+          :class="{
+            'justify-center': paginatedUnattendedNames.length < linesPerColumn,
+            'pb-20': paginatedUnattendedNames.length !== linesPerColumn + 1,
+            'pb-40': paginatedUnattendedNames.length === linesPerColumn + 1
+          }"
+        >
+          <div v-for="name in paginatedUnattendedNames" :key="name.id">
+            {{ name.name }}
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Image Card -->
-    <div
-      v-else-if="card.type === CardType.Image"
-      class="flex items-center justify-center h-full relative"
-    >
-      <!-- Image content -->
-      <img
-        v-if="imageCardImageDataUrl"
-        :src="imageCardImageDataUrl"
-        alt="Full Screen Image"
-        decoding="sync"
-        class="absolute inset-0 object-cover w-full h-full"
-      />
-    </div>
+      <!-- Image Card -->
+      <div
+        v-else-if="card.type === CardType.Image"
+        :key="contentKey"
+        class="flex items-center justify-center h-full relative"
+      >
+        <!-- Image content -->
+        <img
+          v-if="imageCardImageDataUrl"
+          :src="imageCardImageDataUrl"
+          alt="Full Screen Image"
+          decoding="sync"
+          class="absolute inset-0 object-cover w-full h-full"
+        />
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from 'vue'
+import { computed, nextTick, ref, watch, watchEffect } from 'vue'
 import type { PropType } from 'vue'
 import { CardType, DisplayType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
@@ -173,6 +197,10 @@ import defaultLogoWhite from '../../../../resources/logo_white.png'
 
 // Reference to the card DOM element
 const cardElement = ref<HTMLElement | null>(null)
+const cornerLogoElement = ref<HTMLImageElement | null>(null)
+const blankLogoElement = ref<HTMLImageElement | null>(null)
+
+const SLIDE_TRANSITION_MS = 300
 const linesPerColumn = 8
 const namesPerPage = 16
 
@@ -233,6 +261,11 @@ const props = defineProps({
   allCards: {
     type: Array as PropType<Card[]>,
     default: () => []
+  },
+  // Animate slide changes (enabled by the display windows when the setting is on)
+  animate: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -467,6 +500,74 @@ const showCornerLogo = computed(() => {
   )
 })
 
+// Key for the content crossfade: per slide while animating, per card type otherwise so
+// same-type slides keep patching the existing elements in place.
+const contentKey = computed(() => {
+  return props.animate ? `${props.card.type}-${props.card.id}` : props.card.type
+})
+
+// Where the logo sits for the current card type
+const logoPlacement = computed(() => {
+  if (props.card.type === CardType.Blank) return 'blank'
+  if (showCornerLogo.value) return 'corner'
+  return 'none'
+})
+
+const logoElementFor = (placement: string): HTMLImageElement | null => {
+  if (placement === 'blank') return blankLogoElement.value
+  if (placement === 'corner') return cornerLogoElement.value
+  return null
+}
+
+const clearLogoAnimation = (element: HTMLElement): void => {
+  element.style.transition = ''
+  element.style.transform = ''
+  element.style.transformOrigin = ''
+}
+
+// When the logo moves between the blank-card and corner positions, glide it from the old
+// spot to the new one (FLIP: measure both rects, start the new logo at the old rect, then
+// transition the offset away). Runs before the DOM update so the old logo can be measured.
+watch(
+  logoPlacement,
+  async (next, previous) => {
+    if (!props.animate) return
+
+    const fromElement = logoElementFor(previous)
+    if (!fromElement) return
+    const from = fromElement.getBoundingClientRect()
+
+    await nextTick()
+
+    clearLogoAnimation(fromElement)
+    const toElement = logoElementFor(next)
+    if (!toElement) return
+    clearLogoAnimation(toElement)
+    const to = toElement.getBoundingClientRect()
+    if (!from.width || !to.width) return
+
+    // Rects are in screen pixels; transforms inside the card are scaled by its zoom
+    const zoom = props.zoom || 1
+    const dx = (from.left - to.left) / zoom
+    const dy = (from.top - to.top) / zoom
+    const scale = from.width / to.width
+
+    toElement.style.transition = 'none'
+    toElement.style.transformOrigin = 'top left'
+    toElement.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`
+    // Force a reflow so the starting transform is applied before transitioning away from it
+    void toElement.offsetWidth
+
+    toElement.style.transition = `transform ${SLIDE_TRANSITION_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`
+    toElement.style.transform = ''
+
+    const finish = (): void => clearLogoAnimation(toElement)
+    toElement.addEventListener('transitionend', finish, { once: true })
+    toElement.addEventListener('transitioncancel', finish, { once: true })
+  },
+  { flush: 'pre' }
+)
+
 // Load assets whenever their configured paths change. The monitor windows receive a brand
 // new config object on every IPC update, so watching the paths themselves (instead of the
 // config object) keeps each slide change from re-reading every image off disk.
@@ -503,6 +604,48 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Slide transitions (display windows only, see the `animate` prop) */
+.slide-animated {
+  transition:
+    background-color var(--slide-transition-ms) ease-in-out,
+    color var(--slide-transition-ms) ease-in-out;
+}
+
+.content-fade-enter-active,
+.content-fade-leave-active {
+  transition: opacity var(--slide-transition-ms) ease-in-out;
+}
+
+/* Take the outgoing slide out of the flow so both slides overlap while crossfading */
+.content-fade-leave-active {
+  position: absolute;
+  inset: 0;
+}
+
+.content-fade-enter-from,
+.content-fade-leave-to {
+  opacity: 0;
+}
+
+/* The new background fades in on top of the old one, which stays fully visible
+   underneath until the fade completes (avoids dipping to the background colour) */
+.background-fade-enter-active {
+  z-index: 1;
+  transition: opacity var(--slide-transition-ms) ease-in-out;
+}
+
+.background-fade-enter-from {
+  opacity: 0;
+}
+
+.background-fade-leave-active {
+  transition: opacity 1ms linear var(--slide-transition-ms);
+}
+
+.background-fade-leave-to {
+  opacity: 0;
+}
+
 /* Dissolve animation for name changes */
 .name-dissolve-enter-active,
 .name-dissolve-leave-active {
