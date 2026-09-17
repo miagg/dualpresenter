@@ -490,6 +490,27 @@
               are not animated.
             </p>
           </div>
+
+          <div class="input-group mt-6">
+            <label class="input-label">Transition Duration</label>
+            <div class="number-input-wrapper">
+              <input
+                v-model.number="settings.transitionDuration"
+                type="number"
+                min="100"
+                max="2000"
+                step="50"
+                class="number-input"
+                :disabled="!settings.slideTransitions"
+                @change="settingsChanged"
+              />
+              <span class="number-input-unit">ms</span>
+            </div>
+            <p class="input-description">
+              How long the outgoing slide takes to fade out. The incoming slide then waits that long
+              before animating in, so the two never overlap.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -926,7 +947,8 @@ const settings = reactive<Config>({
   },
   namesPrecedence: 0,
   distributeNames: true,
-  slideTransitions: false
+  slideTransitions: false,
+  transitionDuration: 500
 })
 
 // Store image previews as data URLs
@@ -1020,6 +1042,7 @@ onMounted(() => {
       settings.distributeNames =
         config.distributeNames !== undefined ? config.distributeNames : true
       settings.slideTransitions = config.slideTransitions ?? false
+      settings.transitionDuration = config.transitionDuration ?? 500
 
       // Load image previews after settings are updated
       loadImagePreviews()
@@ -1072,6 +1095,7 @@ const initializeSettings = (): void => {
   settings.distributeNames =
     props.config.distributeNames !== undefined ? props.config.distributeNames : true
   settings.slideTransitions = props.config.slideTransitions ?? false
+  settings.transitionDuration = props.config.transitionDuration ?? 500
 }
 
 // Load image previews using the IPC API
@@ -1194,6 +1218,7 @@ watch(
 
     settings.namesPrecedence = newConfig.namesPrecedence ?? 2
     settings.slideTransitions = newConfig.slideTransitions ?? false
+    settings.transitionDuration = newConfig.transitionDuration ?? 500
 
     // Load image previews when config changes
     loadImagePreviews()
@@ -1238,7 +1263,8 @@ const settingsChanged = async (): Promise<void> => {
     },
     namesPrecedence: settings.namesPrecedence,
     distributeNames: settings.distributeNames,
-    slideTransitions: settings.slideTransitions
+    slideTransitions: settings.slideTransitions,
+    transitionDuration: settings.transitionDuration
   }
 
   // Stop audio playback if audible names are disabled

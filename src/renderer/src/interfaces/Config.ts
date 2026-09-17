@@ -28,4 +28,5 @@ export interface Config {
   }
   namesPrecedence: number
   slideTransitions: boolean
+  transitionDuration: number
 }

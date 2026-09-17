@@ -7,7 +7,9 @@
       backgroundColor: backgroundColor,
       color: textColor,
       zoom: zoom,
-      '--slide-transition-ms': `${SLIDE_TRANSITION_MS}ms`
+      '--slide-transition-ms': `${transitionDuration}ms`,
+      '--content-enter-ms': `${contentEnterDuration}ms`,
+      '--content-enter-delay-ms': `${contentEnterDelay}ms`
     }"
     ref="cardElement"
   >
@@ -74,17 +76,18 @@
         v-if="card.type === CardType.Title || card.type === CardType.Category"
         :key="contentKey"
         class="flex flex-col items-left justify-center h-full relative p-24"
+        :style="{ color: textColor }"
       >
         <h1
           v-if="card.title"
           class="text-7xl z-10"
           :class="{ 'font-bold': props.config.fonts.useBoldTitles }"
-          v-html="card.title.replaceAll('\n', '<br />')"
+          v-html="slideText(card.title)"
         />
         <h2
           v-if="card.subtitle"
           class="text-5xl mt-4 z-10 leading-tight"
-          v-html="card.subtitle.replaceAll('\n', '<br />')"
+          v-html="slideText(card.subtitle, countWords(card.title))"
         />
       </div>
 
@@ -93,15 +96,12 @@
         v-else-if="card.type === CardType.Names"
         :key="contentKey"
         class="flex flex-col h-full p-24 relative"
+        :style="{ color: textColor }"
       >
         <h1
-          v-if="card.group || card.title"
+          v-if="namesHeading"
           class="text-5xl text-center z-10 -mt-6 px-96"
-          v-html="
-            card.group
-              ? card.group.replaceAll('\n', '<br />')
-              : card.title.replaceAll('\n', '<br />')
-          "
+          v-html="slideText(namesHeading)"
         />
 
         <div
@@ -113,18 +113,19 @@
           }"
         >
           <div
-            v-if="card.subtitle || (card.group && card.title)"
-            v-html="
-              card.subtitle
-                ? card.subtitle.replaceAll('\n', '<br />')
-                : card.title.replaceAll('\n', '<br />')
-            "
+            v-if="namesSubheading"
+            v-html="slideText(namesSubheading, countWords(namesHeading))"
             class="leading-snug pb-4"
             :class="{
               'mt-10': card.title?.split('\n')?.length > 6
             }"
           />
-          <div v-for="name in paginatedNames" :key="name.id">
+          <div
+            v-for="(name, index) in paginatedNames"
+            :key="name.id"
+            :class="{ 'slide-word': animate }"
+            :style="wordDelayStyle(namesStaggerOffset + index)"
+          >
             {{ name.name }}
           </div>
         </div>
@@ -147,6 +148,7 @@
         v-else-if="card.type === CardType.Unattended"
         :key="contentKey"
         class="flex flex-col h-full p-24 relative"
+        :style="{ color: textColor }"
       >
         <div
           class="flex flex-col flex-wrap w-full h-full gap-10 text-5xl mt-6 pt-30 pb-20 z-10"
@@ -156,7 +158,12 @@
             'pb-40': paginatedUnattendedNames.length === linesPerColumn + 1
           }"
         >
-          <div v-for="name in paginatedUnattendedNames" :key="name.id">
+          <div
+            v-for="(name, index) in paginatedUnattendedNames"
+            :key="name.id"
+            :class="{ 'slide-word': animate }"
+            :style="wordDelayStyle(index)"
+          >
             {{ name.name }}
           </div>
         </div>
@@ -175,6 +182,7 @@
           alt="Full Screen Image"
           decoding="sync"
           class="absolute inset-0 object-cover w-full h-full"
+          :class="{ 'slide-fade-in': animate }"
         />
       </div>
     </Transition>
@@ -200,7 +208,7 @@ const cardElement = ref<HTMLElement | null>(null)
 const cornerLogoElement = ref<HTMLImageElement | null>(null)
 const blankLogoElement = ref<HTMLImageElement | null>(null)
 
-const SLIDE_TRANSITION_MS = 300
+const DEFAULT_TRANSITION_MS = 500
 const linesPerColumn = 8
 const namesPerPage = 16
 
@@ -500,10 +508,73 @@ const showCornerLogo = computed(() => {
   )
 })
 
+const countWords = (text?: string | null): number => {
+  return text ? text.split(/\s+/).filter(Boolean).length : 0
+}
+
+// The configured duration drives the whole transition: the outgoing slide fades out over it,
+// the incoming slide waits that long so the two never overlap, then animates in over twice as
+// long. The word stagger scales with it too, so the timing stays balanced at any duration.
+const transitionDuration = computed(() => {
+  return Math.max(props.config?.transitionDuration ?? DEFAULT_TRANSITION_MS, 0)
+})
+const contentEnterDelay = computed(() => transitionDuration.value)
+const contentEnterDuration = computed(() => transitionDuration.value * 2)
+const wordStagger = computed(() => transitionDuration.value / 12)
+const maxWordStagger = computed(() => (transitionDuration.value * 2) / 3)
+
+const wordDelay = (index: number): number => {
+  const stagger = Math.min(index * wordStagger.value, maxWordStagger.value)
+  return Math.round(contentEnterDelay.value + stagger)
+}
+
+const wordDelayStyle = (index: number): Record<string, string> | undefined => {
+  if (!props.animate) return undefined
+  return { animationDelay: `${wordDelay(index)}ms` }
+}
+
+// Renders slide text for v-html. Newlines always become <br />; while animating, each word is
+// also wrapped in its own span so it can fade up separately, staggered from `startIndex`.
+const slideText = (text?: string | null, startIndex = 0): string => {
+  if (!text) return ''
+  if (!props.animate) return text.replaceAll('\n', '<br />')
+
+  let index = startIndex
+  return text
+    .split('\n')
+    .map((line) =>
+      line
+        .split(/(\s+)/)
+        .map((part) => {
+          // Keep the whitespace runs as-is so words still wrap normally
+          if (!part.trim()) return part
+          const delay = wordDelay(index)
+          index += 1
+          return `<span class="slide-word" style="animation-delay: ${delay}ms">${part}</span>`
+        })
+        .join('')
+    )
+    .join('<br />')
+}
+
 // Key for the content crossfade: per slide while animating, per card type otherwise so
 // same-type slides keep patching the existing elements in place.
 const contentKey = computed(() => {
   return props.animate ? `${props.card.type}-${props.card.id}` : props.card.type
+})
+
+// Heading and sub-heading shown on a names card (the sub-heading falls back to the title
+// when the card has a group, which is what puts the title above the list)
+const namesHeading = computed(() => props.card.group || props.card.title || '')
+const namesSubheading = computed(() => {
+  if (props.card.subtitle) return props.card.subtitle
+  if (props.card.group && props.card.title) return props.card.title
+  return ''
+})
+
+// Names continue the stagger started by the heading above them
+const namesStaggerOffset = computed(() => {
+  return countWords(namesHeading.value) + countWords(namesSubheading.value)
 })
 
 // Where the logo sits for the current card type
@@ -519,15 +590,11 @@ const logoElementFor = (placement: string): HTMLImageElement | null => {
   return null
 }
 
-const clearLogoAnimation = (element: HTMLElement): void => {
-  element.style.transition = ''
-  element.style.transform = ''
-  element.style.transformOrigin = ''
-}
+let logoAnimation: Animation | null = null
 
-// When the logo moves between the blank-card and corner positions, glide it from the old
-// spot to the new one (FLIP: measure both rects, start the new logo at the old rect, then
-// transition the offset away). Runs before the DOM update so the old logo can be measured.
+// When the logo moves between the blank-card and corner positions, glide it from the old spot
+// to the new one (FLIP: measure both rects, then animate away the difference). Runs before the
+// DOM update so the old logo can still be measured.
 watch(
   logoPlacement,
   async (next, previous) => {
@@ -535,14 +602,25 @@ watch(
 
     const fromElement = logoElementFor(previous)
     if (!fromElement) return
+    // The rect includes any glide still running, so interrupted slide changes carry on
+    // from wherever the logo currently is
     const from = fromElement.getBoundingClientRect()
 
     await nextTick()
 
-    clearLogoAnimation(fromElement)
+    logoAnimation?.cancel()
+    logoAnimation = null
+
     const toElement = logoElementFor(next)
     if (!toElement) return
-    clearLogoAnimation(toElement)
+
+    // A logo that has not finished loading has no layout yet, which would measure as an
+    // empty rect and drop the glide
+    if (!toElement.complete) {
+      await toElement.decode().catch(() => undefined)
+      if (logoPlacement.value !== next) return
+    }
+
     const to = toElement.getBoundingClientRect()
     if (!from.width || !to.width) return
 
@@ -552,18 +630,16 @@ watch(
     const dy = (from.top - to.top) / zoom
     const scale = from.width / to.width
 
-    toElement.style.transition = 'none'
-    toElement.style.transformOrigin = 'top left'
-    toElement.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`
-    // Force a reflow so the starting transform is applied before transitioning away from it
-    void toElement.offsetWidth
-
-    toElement.style.transition = `transform ${SLIDE_TRANSITION_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`
-    toElement.style.transform = ''
-
-    const finish = (): void => clearLogoAnimation(toElement)
-    toElement.addEventListener('transitionend', finish, { once: true })
-    toElement.addEventListener('transitioncancel', finish, { once: true })
+    logoAnimation = toElement.animate(
+      [
+        { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
+        { transformOrigin: 'top left', transform: 'none' }
+      ],
+      {
+        duration: transitionDuration.value,
+        easing: 'cubic-bezier(0.65, 0, 0.35, 1)'
+      }
+    )
   },
   { flush: 'pre' }
 )
@@ -606,25 +682,51 @@ defineExpose({
 <style scoped>
 /* Slide transitions (display windows only, see the `animate` prop) */
 .slide-animated {
-  transition:
-    background-color var(--slide-transition-ms) ease-in-out,
-    color var(--slide-transition-ms) ease-in-out;
+  transition: background-color var(--slide-transition-ms) ease-in-out;
 }
 
-.content-fade-enter-active,
-.content-fade-leave-active {
-  transition: opacity var(--slide-transition-ms) ease-in-out;
-}
-
-/* Take the outgoing slide out of the flow so both slides overlap while crossfading */
+/* The incoming slide is not faded as a whole: its words fade up individually (see
+   .slide-word below). Only the outgoing slide fades, taken out of the flow so the two
+   slides overlap while it does. */
 .content-fade-leave-active {
   position: absolute;
   inset: 0;
+  transition: opacity var(--slide-transition-ms) ease-in-out;
 }
 
-.content-fade-enter-from,
 .content-fade-leave-to {
   opacity: 0;
+}
+
+/* :deep() so this also reaches the word spans rendered through v-html */
+.slide-animated :deep(.slide-word) {
+  display: inline-block;
+  animation: word-fade-up var(--content-enter-ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes word-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Full-screen images have no words to stagger, so they just fade in */
+.slide-animated .slide-fade-in {
+  animation: slide-fade-in var(--content-enter-ms) ease-in-out var(--content-enter-delay-ms) both;
+}
+
+@keyframes slide-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* The new background fades in on top of the old one, which stays fully visible

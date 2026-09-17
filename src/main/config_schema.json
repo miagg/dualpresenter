@@ -109,6 +109,10 @@
       "slideTransitions": {
         "type": "boolean",
         "default": false
+      },
+      "transitionDuration": {
+        "type": "number",
+        "default": 500
       }
     },
     "default": {}
