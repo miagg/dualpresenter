@@ -874,7 +874,10 @@ const state = reactive({
 const monitors = ref<Electron.Display[]>([])
 const mainScreen = ref<string | null>(null)
 const sideScreen = ref<string | null>(null)
-const isScreenFlipping = ref(false) // Flag to prevent infinite loop when flipping screens
+// Screen selections as the main process last reported them. Sending one of these straight
+// back would trigger another data-updated, and the two sides can then bounce off each other.
+let appliedMainScreen: string | null = null
+let appliedSideScreen: string | null = null
 const initialLoadComplete = ref(false) // Flag to track initial load
 const showExcelStructure = ref(false) // Controls visibility of Excel structure modal
 const audioPlaybackTimeout = ref<NodeJS.Timeout | null>(null)
@@ -1118,6 +1121,8 @@ onMounted(() => {
     state.frozenSlideIndex =
       typeof data.state.frozenSlideIndex === 'number' ? data.state.frozenSlideIndex : null
     monitors.value = data.monitors || []
+    appliedMainScreen = data.state.mainScreen ?? null
+    appliedSideScreen = data.state.sideScreen ?? null
     mainScreen.value = data.state.mainScreen
     sideScreen.value = data.state.sideScreen
 
@@ -1371,19 +1376,19 @@ const currentNamesSlide = computed(() => {
 
 // Watch monitor selection changes
 watch(mainScreen, (newValue) => {
-  // Only send IPC message if not in the middle of a screen flip
-  if (!isScreenFlipping.value) {
-    window.electron.ipcRenderer.send('set-main-screen', newValue)
-  }
+  // Ensure null string is converted to actual null
+  const value = newValue === 'null' ? null : newValue
+  // Don't echo back a value the main process just sent us
+  if (value === appliedMainScreen) return
+  appliedMainScreen = value
+  window.electron.ipcRenderer.send('set-main-screen', value)
 })
 
 watch(sideScreen, (newValue) => {
-  // Only send IPC message if not in the middle of a screen flip
-  if (!isScreenFlipping.value) {
-    // Ensure null string is converted to actual null
-    const value = newValue === 'null' ? null : newValue
-    window.electron.ipcRenderer.send('set-side-screen', value)
-  }
+  const value = newValue === 'null' ? null : newValue
+  if (value === appliedSideScreen) return
+  appliedSideScreen = value
+  window.electron.ipcRenderer.send('set-side-screen', value)
 })
 
 // Methods
@@ -1768,25 +1773,9 @@ const flipScreens = () => {
     return
   }
 
-  // Store current values
-  const tempMain = mainScreen.value
-  const tempSide = sideScreen.value
-
-  // First, clear both screens to avoid conflicts
-  window.electron.ipcRenderer.send('set-main-screen', null)
-  window.electron.ipcRenderer.send('set-side-screen', null)
-
-  // Wait for the screens to be cleared
-  setTimeout(() => {
-    mainScreen.value = tempSide
-    window.electron.ipcRenderer.send('set-main-screen', tempSide)
-  }, 100)
-
-  setTimeout(() => {
-    sideScreen.value = tempMain
-    const sideValue = tempMain === 'null' ? null : tempMain
-    window.electron.ipcRenderer.send('set-side-screen', sideValue)
-  }, 200)
+  // The main process swaps both screens in one step and reports the result back. Doing it
+  // here instead, one screen at a time, left the two processes disagreeing in between.
+  window.electron.ipcRenderer.send('flip-screens')
 }
 
 const blackOutScreens = () => {

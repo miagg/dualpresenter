@@ -1,6 +1,6 @@
 {
   "name": "dualpresenter",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "Angelos Michalopoulos (miagg.com)",
@@ -50,5 +50,10 @@
     "vite": "^6.1.0",
     "vue": "^3.5.13",
     "vue-tsc": "^2.2.2"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "fsevents@2.3.3": true,
+    "electron-winstaller@5.4.0": true
   }
 }
