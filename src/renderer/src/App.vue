@@ -126,7 +126,12 @@
             </div>
           </div>
           <div
-            class="card-preview mb-4 border border-gray-600/90 rounded-md overflow-hidden"
+            class="card-preview mb-4 border rounded-md overflow-hidden relative"
+            :class="
+              isLastNameSpeaking
+                ? 'border-red-600 ring-2 ring-red-600 shadow-[0_0_22px_rgba(220,38,38,0.5)]'
+                : 'border-gray-600/90'
+            "
             ref="mainPreview"
           >
             <Card
@@ -149,6 +154,14 @@
               class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400 rounded-md"
             >
               No slide available
+            </div>
+
+            <!-- Warns that playback is about to finish, so play is not hit again by mistake -->
+            <div
+              v-if="isLastNameSpeaking"
+              class="absolute top-2 right-2 px-2 py-0.5 rounded bg-red-600 text-white text-xs font-bold tracking-wide pointer-events-none"
+            >
+              ONE LAST NAME
             </div>
           </div>
 
@@ -1363,6 +1376,15 @@ const isMainScreenFromSideOnlyNamesCard = computed(() => {
     return card.display === DisplayType.SideOnly && card.type === CardType.Names
   }
   return false
+})
+
+// True while the final name of a "Side Only" card is being spoken. Those cards show nothing
+// on the main screen, so there is no other way to see that playback is about to end.
+const isLastNameSpeaking = computed(() => {
+  if (!isMainScreenFromSideOnlyNamesCard.value) return false
+  if (!audioStatus.value.isPlaying && !audioStatus.value.isPaused) return false
+  const { currentIndex, totalNames } = audioStatus.value
+  return totalNames > 0 && currentIndex === totalNames - 1
 })
 
 // Computed property to check if current slide has audible names

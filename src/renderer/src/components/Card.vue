@@ -59,7 +59,7 @@
         <!-- Name display area (only for "Side Only" Names cards when setting is enabled) -->
         <div
           v-if="props.config?.audibleNames?.showNamesOnSideOnly"
-          class="absolute top-full mt-20 text-center flex items-center justify-center transition-opacity duration-500 px-14"
+          class="name-stack absolute top-full mt-20 text-center transition-opacity duration-500 px-14"
         >
           <Transition name="name-dissolve" mode="out-in">
             <h2 v-if="displayName" :key="displayName" class="text-6xl font-bold text-white">
@@ -784,6 +784,19 @@ defineExpose({
 
 .background-fade-leave-to {
   opacity: 0;
+}
+
+/* Names share one grid cell, so a name arriving while the previous one is still fading out
+   dissolves into it instead of being pushed onto a second line. The transition's out-in mode
+   does not cover that on its own: Vue skips it whenever the change passes through an empty
+   state, which is exactly what stopping playback and starting it again does. */
+.name-stack {
+  display: grid;
+  place-items: center;
+}
+
+.name-stack > * {
+  grid-area: 1 / 1;
 }
 
 /* Dissolve animation for name changes */
