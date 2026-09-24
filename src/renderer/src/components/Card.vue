@@ -1,7 +1,7 @@
 <template>
   <div
     class="aspect-video overflow-hidden slides-content w-full h-full origin-top-left pointer-events-none relative"
-    :class="{ 'slide-animated': animate }"
+    :class="{ 'slide-animated': animate, 'slide-entering': isEntering }"
     :style="{
       fontFamily: slideStyles.fontFamilyImportant,
       backgroundColor: backgroundColor,
@@ -190,7 +190,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, watchEffect } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch, watchEffect } from 'vue'
 import type { PropType } from 'vue'
 import { CardType, DisplayType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
@@ -274,6 +274,11 @@ const props = defineProps({
   animate: {
     type: Boolean,
     default: false
+  },
+  // Index of the slide being shown, used to tell a slide change apart from a re-render
+  slideIndex: {
+    type: Number,
+    default: -1
   }
 })
 
@@ -557,6 +562,39 @@ const slideText = (text?: string | null, startIndex = 0): string => {
     .join('<br />')
 }
 
+// Content animates in when the slide (or the names page) actually changes. Re-rendering the
+// same slide must not replay it: reloading the Excel file rebuilds the cards and rewrites the
+// text, which creates fresh elements that would otherwise animate in again.
+const enterToken = computed(() => {
+  return `${props.slideIndex}-${props.currentNamesPage}-${props.currentUnattendedPage}`
+})
+
+const isEntering = ref(false)
+let enterTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  enterToken,
+  () => {
+    if (!props.animate) return
+    isEntering.value = true
+    if (enterTimer) clearTimeout(enterTimer)
+    enterTimer = setTimeout(
+      () => {
+        isEntering.value = false
+        enterTimer = null
+      },
+      // The last word starts after the delay plus its stagger, then runs for the full duration
+      contentEnterDelay.value + maxWordStagger.value + contentEnterDuration.value + 100
+    )
+  },
+  // Runs before the re-render, so the class is in place as the new elements are created
+  { flush: 'pre' }
+)
+
+onUnmounted(() => {
+  if (enterTimer) clearTimeout(enterTimer)
+})
+
 // Key for the content crossfade: per slide while animating, per card type otherwise so
 // same-type slides keep patching the existing elements in place.
 const contentKey = computed(() => {
@@ -699,7 +737,7 @@ defineExpose({
 }
 
 /* :deep() so this also reaches the word spans rendered through v-html */
-.slide-animated :deep(.slide-word) {
+.slide-entering :deep(.slide-word) {
   display: inline-block;
   animation: word-fade-up var(--content-enter-ms) cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -716,7 +754,7 @@ defineExpose({
 }
 
 /* Full-screen images have no words to stagger, so they just fade in */
-.slide-animated .slide-fade-in {
+.slide-entering .slide-fade-in {
   animation: slide-fade-in var(--content-enter-ms) ease-in-out var(--content-enter-delay-ms) both;
 }
 

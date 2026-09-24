@@ -13,6 +13,7 @@
       :currentNamesPage="currentNamesPage"
       :currentUnattendedPage="currentUnattendedPage"
       :animate="config?.slideTransitions ?? false"
+      :slideIndex="currentSlideIndex"
     />
     <div v-if="blackOutActive" class="black-overlay" :class="{ 'fade-in': blackOutActive }"></div>
   </div>
