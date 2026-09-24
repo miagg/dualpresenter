@@ -208,7 +208,7 @@ const cardElement = ref<HTMLElement | null>(null)
 const cornerLogoElement = ref<HTMLImageElement | null>(null)
 const blankLogoElement = ref<HTMLImageElement | null>(null)
 
-const DEFAULT_TRANSITION_MS = 500
+const DEFAULT_TRANSITION_MS = 400
 const linesPerColumn = 8
 const namesPerPage = 16
 

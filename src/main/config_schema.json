@@ -112,7 +112,7 @@
       },
       "transitionDuration": {
         "type": "number",
-        "default": 500
+        "default": 400
       }
     },
     "default": {}

@@ -948,7 +948,7 @@ const settings = reactive<Config>({
   namesPrecedence: 0,
   distributeNames: true,
   slideTransitions: false,
-  transitionDuration: 500
+  transitionDuration: 400
 })
 
 // Store image previews as data URLs
@@ -1042,7 +1042,7 @@ onMounted(() => {
       settings.distributeNames =
         config.distributeNames !== undefined ? config.distributeNames : true
       settings.slideTransitions = config.slideTransitions ?? false
-      settings.transitionDuration = config.transitionDuration ?? 500
+      settings.transitionDuration = config.transitionDuration ?? 400
 
       // Load image previews after settings are updated
       loadImagePreviews()
@@ -1095,7 +1095,7 @@ const initializeSettings = (): void => {
   settings.distributeNames =
     props.config.distributeNames !== undefined ? props.config.distributeNames : true
   settings.slideTransitions = props.config.slideTransitions ?? false
-  settings.transitionDuration = props.config.transitionDuration ?? 500
+  settings.transitionDuration = props.config.transitionDuration ?? 400
 }
 
 // Load image previews using the IPC API
@@ -1218,7 +1218,7 @@ watch(
 
     settings.namesPrecedence = newConfig.namesPrecedence ?? 2
     settings.slideTransitions = newConfig.slideTransitions ?? false
-    settings.transitionDuration = newConfig.transitionDuration ?? 500
+    settings.transitionDuration = newConfig.transitionDuration ?? 400
 
     // Load image previews when config changes
     loadImagePreviews()
