@@ -441,8 +441,8 @@
         <!-- Distributed Names Setting -->
         <div class="settings-section">
           <div class="section-header">
-            <h3 class="section-title">Names Distribution</h3>
-            <p class="section-description">Automatically distribute names across cards</p>
+            <h3 class="section-title">Names Distribution / Balance</h3>
+            <p class="section-description">Automatically distribute or balance names</p>
           </div>
           <div class="input-group">
             <div class="checkbox-wrapper">
@@ -461,6 +461,26 @@
               When enabled, names will be distributed equally across all no-range names cards of the
               same group. Cards with ranges (from/to) will claim their names first, then remaining
               names are split across cards without ranges.
+            </p>
+          </div>
+
+          <div class="input-group mt-6">
+            <div class="checkbox-wrapper">
+              <input
+                type="checkbox"
+                id="balanceNamesPages"
+                v-model="settings.balanceNamesPages"
+                class="checkbox-input"
+                @change="settingsChanged"
+              />
+              <label for="balanceNamesPages" class="checkbox-label">
+                Avoid last pages with only one or two names
+              </label>
+            </div>
+            <p class="input-description">
+              When a names or unattended card would end with a page holding just one or two names,
+              the previous page shows 13 names and the rest move to the last page (for example, 17
+              names are split 13 + 4 instead of 16 + 1).
             </p>
           </div>
         </div>
@@ -947,6 +967,7 @@ const settings = reactive<Config>({
   },
   namesPrecedence: 0,
   distributeNames: true,
+  balanceNamesPages: false,
   slideTransitions: false,
   transitionDuration: 400
 })
@@ -1041,6 +1062,7 @@ onMounted(() => {
       settings.namesPrecedence = config.namesPrecedence || 0
       settings.distributeNames =
         config.distributeNames !== undefined ? config.distributeNames : true
+      settings.balanceNamesPages = config.balanceNamesPages ?? false
       settings.slideTransitions = config.slideTransitions ?? false
       settings.transitionDuration = config.transitionDuration ?? 400
 
@@ -1094,6 +1116,7 @@ const initializeSettings = (): void => {
   settings.namesPrecedence = props.config.namesPrecedence || 0
   settings.distributeNames =
     props.config.distributeNames !== undefined ? props.config.distributeNames : true
+  settings.balanceNamesPages = props.config.balanceNamesPages ?? false
   settings.slideTransitions = props.config.slideTransitions ?? false
   settings.transitionDuration = props.config.transitionDuration ?? 400
 }
@@ -1217,6 +1240,7 @@ watch(
         : true
 
     settings.namesPrecedence = newConfig.namesPrecedence ?? 2
+    settings.balanceNamesPages = newConfig.balanceNamesPages ?? false
     settings.slideTransitions = newConfig.slideTransitions ?? false
     settings.transitionDuration = newConfig.transitionDuration ?? 400
 
@@ -1263,6 +1287,7 @@ const settingsChanged = async (): Promise<void> => {
     },
     namesPrecedence: settings.namesPrecedence,
     distributeNames: settings.distributeNames,
+    balanceNamesPages: settings.balanceNamesPages,
     slideTransitions: settings.slideTransitions,
     transitionDuration: settings.transitionDuration
   }

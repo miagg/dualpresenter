@@ -196,6 +196,7 @@ import { CardType, DisplayType, type Card } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
 import type { Config } from '../interfaces/Config'
 import { filterNamesForCard, filterUnattendedNames } from '../../../shared/nameFilters'
+import { getNamesPageSizes, paginateNames } from '../../../shared/namePagination'
 
 // Import default assets
 import defaultBg from '../../../../resources/bg.png'
@@ -210,7 +211,6 @@ const blankLogoElement = ref<HTMLImageElement | null>(null)
 
 const DEFAULT_TRANSITION_MS = 400
 const linesPerColumn = 8
-const namesPerPage = 16
 
 // Reactive refs to store loaded image data URLs
 const backgroundImageDataUrl = ref<string | null>(null)
@@ -288,16 +288,17 @@ const filteredNames = computed(() => {
   return filterNamesForCard(props.names, props.card, props.allCards, distributeNames)
 })
 
+// Avoid a last page with just one or two names when the setting is enabled
+const balanceNamesPages = computed(() => props.config?.balanceNamesPages ?? false)
+
 // Paginated names for display
 const paginatedNames = computed(() => {
-  const start = props.currentNamesPage * namesPerPage
-  const end = start + namesPerPage
-  return filteredNames.value.slice(start, end)
+  return paginateNames(filteredNames.value, props.currentNamesPage, balanceNamesPages.value)
 })
 
 // Total pages for names
 const totalNamesPages = computed(() => {
-  return Math.ceil(filteredNames.value.length / namesPerPage)
+  return getNamesPageSizes(filteredNames.value.length, balanceNamesPages.value).length
 })
 
 // Compute the name to display on blank cards (main screen only)
@@ -344,14 +345,16 @@ const unattendedNames = computed(() => {
 
 // Paginated unattended names for display
 const paginatedUnattendedNames = computed(() => {
-  const start = props.currentUnattendedPage * namesPerPage
-  const end = start + namesPerPage
-  return unattendedNames.value.slice(start, end)
+  return paginateNames(
+    unattendedNames.value,
+    props.currentUnattendedPage,
+    balanceNamesPages.value
+  )
 })
 
 // Total pages for unattended names
 const totalUnattendedPages = computed(() => {
-  return Math.ceil(unattendedNames.value.length / namesPerPage)
+  return getNamesPageSizes(unattendedNames.value.length, balanceNamesPages.value).length
 })
 
 // Determine background color based on card type

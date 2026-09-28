@@ -20,6 +20,9 @@ const config = new Store({
     },
     '1.4.0': (store): void => {
       store.set('config.audibleNames.showNamesOnSideOnly', true)
+    },
+    '1.5.5': (store): void => {
+      store.set('config.balanceNamesPages', false)
     }
   }
 })

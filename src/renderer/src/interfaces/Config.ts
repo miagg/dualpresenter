@@ -27,6 +27,7 @@ export interface Config {
     showNamesOnSideOnly: boolean
   }
   namesPrecedence: number
+  balanceNamesPages?: boolean
   slideTransitions: boolean
   transitionDuration: number
 }
