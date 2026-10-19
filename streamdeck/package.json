@@ -1,0 +1,28 @@
+{
+  "name": "dualpresenter-streamdeck",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Stream Deck plugin for controlling DualPresenter",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/assets.ts && rollup -c",
+    "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.miagg.dualpresenter\"",
+    "link": "streamdeck link com.miagg.dualpresenter.sdPlugin",
+    "validate": "streamdeck validate com.miagg.dualpresenter.sdPlugin",
+    "pack": "npm run build && streamdeck pack com.miagg.dualpresenter.sdPlugin --output dist --force",
+    "install-icons": "rm -rf \"$HOME/Library/Application Support/com.elgato.StreamDeck/IconPacks/com.miagg.dualpresenter.sdIconPack\" && cp -R com.miagg.dualpresenter.sdIconPack \"$HOME/Library/Application Support/com.elgato.StreamDeck/IconPacks/\""
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^3.0.2"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.10.2",
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^24.19.2",
+    "rollup": "^4.64.10",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
+  }
+}

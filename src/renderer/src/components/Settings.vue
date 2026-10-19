@@ -704,14 +704,6 @@
                   <span class="shortcut-label">Next Slide</span>
                   <kbd class="shortcut-key">→/↓/Space</kbd>
                 </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Previous Slide (Global)</span>
-                  <kbd class="shortcut-key">Ctrl+Shift+←</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Next Slide (Global)</span>
-                  <kbd class="shortcut-key">Ctrl+Shift+→</kbd>
-                </div>
               </div>
             </div>
 
@@ -759,7 +751,7 @@
               <div class="shortcuts-list">
                 <div class="shortcut-item">
                   <span class="shortcut-label">Open Settings</span>
-                  <kbd class="shortcut-key">{{ isMacOs ? 'Cmd+,' : 'Ctrl+P' }}</kbd>
+                  <kbd class="shortcut-key">{{ isMacOs ? 'Cmd+,' : 'Ctrl+,' }}</kbd>
                 </div>
                 <div class="shortcut-item">
                   <span class="shortcut-label">Close Settings</span>

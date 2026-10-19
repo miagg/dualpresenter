@@ -1,0 +1,30 @@
+[
+  {
+    "path": "more.svg",
+    "name": "More",
+    "tags": [
+      "dualpresenter"
+    ]
+  },
+  {
+    "path": "more-settings.svg",
+    "name": "More - Settings",
+    "tags": [
+      "dualpresenter"
+    ]
+  },
+  {
+    "path": "back.svg",
+    "name": "Back",
+    "tags": [
+      "dualpresenter"
+    ]
+  },
+  {
+    "path": "goto.svg",
+    "name": "Go to slide",
+    "tags": [
+      "dualpresenter"
+    ]
+  }
+]

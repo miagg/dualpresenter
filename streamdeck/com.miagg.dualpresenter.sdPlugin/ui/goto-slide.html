@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="sdpi-components.js"></script>
+  </head>
+  <body>
+    <sdpi-item label="Slide">
+      <sdpi-select setting="slide" datasource="getSlides" hot-reload placeholder="Choose a slide">
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="Or number">
+      <sdpi-textfield setting="slide" pattern="[0-9]+" placeholder="e.g. 12"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item>
+      <p style="margin: 0; color: #9a9a9a; font-size: 9pt">
+        The slide list comes from the file open in DualPresenter. The key turns green while that
+        slide is on screen.
+      </p>
+    </sdpi-item>
+  </body>
+</html>

@@ -1196,6 +1196,35 @@ onMounted(() => {
     }
   })
 
+  // Names page changes requested from the Stream Deck
+  // Search toggled from the Stream Deck: open it ready to type, or close it
+  window.electron.ipcRenderer.on('remote-toggle-search', () => {
+    if (showSearchResults.value) {
+      closeSearchAndClear()
+      searchInputRef.value?.blur()
+    } else if (searchInputRef.value) {
+      searchInputRef.value.focus()
+      showSearchResults.value = true
+      nextTick(() => searchInputRef.value?.select())
+    }
+  })
+
+  window.electron.ipcRenderer.on('remote-change-page', (_, { screen, direction }) => {
+    const type = screen === 'side' ? sideScreenCard.value?.type : mainScreenCard.value?.type
+    const pagers = {
+      main: {
+        [CardType.Names]: [prevMainNamesPage, nextMainNamesPage],
+        [CardType.Unattended]: [prevMainUnattendedPage, nextMainUnattendedPage]
+      },
+      side: {
+        [CardType.Names]: [prevSideNamesPage, nextSideNamesPage],
+        [CardType.Unattended]: [prevSideUnattendedPage, nextSideUnattendedPage]
+      }
+    }
+    const pager = type ? pagers[screen === 'side' ? 'side' : 'main'][type] : undefined
+    pager?.[direction > 0 ? 1 : 0]()
+  })
+
   // Load initial data
   window.electron.ipcRenderer.send('get-data')
 
@@ -1234,6 +1263,8 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('toggle-black-out')
   window.electron.ipcRenderer.removeAllListeners('flip-screens')
   window.electron.ipcRenderer.removeAllListeners('scroll-to-current')
+  window.electron.ipcRenderer.removeAllListeners('remote-change-page')
+  window.electron.ipcRenderer.removeAllListeners('remote-toggle-search')
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keydown', handleKeyboardEvent)
   window.removeEventListener('keyup', handleKeyboardEvent)
@@ -1396,6 +1427,47 @@ const currentNamesSlide = computed(() => {
   return currentCard && currentCard.type === CardType.Names ? currentCard : null
 })
 
+// Names page shown on each screen, reported to the main process for the Stream Deck keys
+const pageInfo = (
+  type: CardType | undefined,
+  cardRef: { totalNamesPages?: number; totalUnattendedPages?: number } | null,
+  namesPage: number,
+  unattendedPage: number
+): { page: number; total: number } => {
+  if (type === CardType.Names) return { page: namesPage, total: cardRef?.totalNamesPages ?? 0 }
+  if (type === CardType.Unattended) {
+    return { page: unattendedPage, total: cardRef?.totalUnattendedPages ?? 0 }
+  }
+  return { page: 0, total: 0 }
+}
+
+const remotePageInfo = computed(() => ({
+  main: pageInfo(
+    mainScreenCard.value?.type,
+    mainCardRef.value,
+    currentMainNamesPage.value,
+    currentMainUnattendedPage.value
+  ),
+  side: pageInfo(
+    sideScreenCard.value?.type,
+    sideCardRef.value,
+    currentSideNamesPage.value,
+    currentSideUnattendedPage.value
+  )
+}))
+
+// Whether search is open, for the Stream Deck search key
+watch(showSearchResults, (open) => window.electron.ipcRenderer.send('remote-search-open', open))
+
+// Started once mounted: sideScreenCard calls functions defined further down this file
+onMounted(() => {
+  watch(
+    remotePageInfo,
+    (info) => window.electron.ipcRenderer.send('remote-page-info', JSON.parse(JSON.stringify(info))),
+    { immediate: true }
+  )
+})
+
 // Watch monitor selection changes
 watch(mainScreen, (newValue) => {
   // Ensure null string is converted to actual null
@@ -1453,6 +1525,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
     }
     return
   }
+
+  // Slide navigation uses the plain keys only; combinations like Cmd+Shift+Arrow do nothing
+  if (event.metaKey || event.ctrlKey || event.altKey) return
 
   if (
     event.key === 'ArrowLeft' ||

@@ -177,7 +177,7 @@ export function createApplicationMenu(
             { type: 'separator' },
             {
               label: 'Settings',
-              accelerator: 'Ctrl+P',
+              accelerator: 'Ctrl+,',
               click: () => {
                 createSettingsWindow()
               }

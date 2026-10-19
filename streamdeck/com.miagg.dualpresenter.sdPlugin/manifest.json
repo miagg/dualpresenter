@@ -1,0 +1,587 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "com.miagg.dualpresenter",
+  "Name": "DualPresenter",
+  "Version": "1.1.0.0",
+  "Author": "Angelos Michalopoulos (miagg.com)",
+  "Description": "Control DualPresenter from Stream Deck: slides, black out, freeze, audible names and names pages, with live status on every key.",
+  "Icon": "imgs/plugin/icon",
+  "Category": "DualPresenter",
+  "CategoryIcon": "imgs/plugin/category",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    },
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24",
+    "Debug": "enabled"
+  },
+  "Profiles": [
+    {
+      "Name": "profiles/numpad",
+      "DeviceType": 0,
+      "DontAutoSwitchWhenInstalled": true,
+      "Readonly": false
+    }
+  ],
+  "Actions": [
+    {
+      "UUID": "com.miagg.dualpresenter.open-app",
+      "Name": "Open DualPresenter",
+      "Tooltip": "Open DualPresenter, or bring it to the front if it is already open.",
+      "Icon": "imgs/actions/open-app/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/open-app/app",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/open-app.html"
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.blackout",
+      "Name": "Black Out",
+      "Tooltip": "Black out both screens. Red while the screens are black.",
+      "Icon": "imgs/actions/blackout/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/blackout/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.freeze",
+      "Name": "Freeze Output",
+      "Tooltip": "Keep the screens on the current slide while you move around. Red while frozen.",
+      "Icon": "imgs/actions/freeze/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/freeze/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.current-slide",
+      "Name": "Current Slide",
+      "Tooltip": "Shows the selected slide, its title and how far into the show you are. Framed red when it is the frozen slide. Press to type a slide number to jump to.",
+      "Icon": "imgs/actions/current-slide/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/current-slide/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.frozen-slide",
+      "Name": "Frozen Slide",
+      "Tooltip": "While the output is frozen, shows the slide held on the screens. Press to go back to it.",
+      "Icon": "imgs/actions/frozen-slide/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/frozen-slide/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.next-slide",
+      "Name": "Next Slide",
+      "Tooltip": "Go to the next slide. Shows its number and title.",
+      "Icon": "imgs/actions/next-slide/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/next-slide/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.prev-slide",
+      "Name": "Previous Slide",
+      "Tooltip": "Go to the previous slide. Shows its number and title.",
+      "Icon": "imgs/actions/prev-slide/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/prev-slide/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.goto-slide",
+      "Name": "Go To Slide",
+      "Tooltip": "Jump straight to a chosen slide. Green while that slide is on screen.",
+      "Icon": "imgs/actions/goto-slide/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/goto-slide/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/goto-slide.html"
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.numpad-open",
+      "Name": "Open Numpad",
+      "Tooltip": "Open the numpad page to type a slide number to jump to. Looks like the \"Go to slide\" folder icon.",
+      "Icon": "imgs/actions/numpad-open/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/numpad-open/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.numpad-digit",
+      "Name": "Numpad Digit",
+      "Tooltip": "Type a slide number to jump to with the Numpad Go key. Each digit key you add gets the next digit; change it in the key settings.",
+      "Icon": "imgs/actions/numpad-digit/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/numpad-digit/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/numpad-digit.html"
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.numpad-go",
+      "Name": "Numpad Go",
+      "Tooltip": "Shows the slide number typed on the numpad and its title. Press to jump to it.",
+      "Icon": "imgs/actions/numpad-go/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/numpad-go/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.numpad-close",
+      "Name": "Numpad Back",
+      "Tooltip": "Leave the numpad without jumping. Used on the numpad page opened by Current Slide.",
+      "Icon": "imgs/actions/numpad-close/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/numpad-close/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.numpad-delete",
+      "Name": "Numpad Delete",
+      "Tooltip": "Remove the last digit typed on the numpad.",
+      "Icon": "imgs/actions/numpad-delete/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/numpad-delete/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.flip-screens",
+      "Name": "Flip Screens",
+      "Tooltip": "Swap the main and side screens.",
+      "Icon": "imgs/actions/flip-screens/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/flip-screens/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.play-names",
+      "Name": "Play / Stop Names",
+      "Tooltip": "Read out the names on the current slide. Shows progress, the name being read and its position, e.g. 3/12. Turns red on the last name of a Side Only names card.",
+      "Icon": "imgs/actions/play-names/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/play-names/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.stop-names",
+      "Name": "Stop Names",
+      "Tooltip": "Stop reading out names.",
+      "Icon": "imgs/actions/stop-names/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/stop-names/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.next-name",
+      "Name": "Next Name",
+      "Tooltip": "Skip to the next name while names are being read out.",
+      "Icon": "imgs/actions/next-name/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/next-name/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.prev-name",
+      "Name": "Previous Name",
+      "Tooltip": "Go back to the previous name while names are being read out.",
+      "Icon": "imgs/actions/prev-name/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/prev-name/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.audible-names",
+      "Name": "Audible Names On/Off",
+      "Tooltip": "Turn reading names out loud on or off.",
+      "Icon": "imgs/actions/audible-names/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/audible-names/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.auto-playback",
+      "Name": "Auto Playback On/Off",
+      "Tooltip": "Start reading names automatically when a names slide comes up.",
+      "Icon": "imgs/actions/auto-playback/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/auto-playback/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.transitions",
+      "Name": "Slide Transitions On/Off",
+      "Tooltip": "Turn the transition between slides on or off. Shows the transition duration.",
+      "Icon": "imgs/actions/transitions/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/transitions/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.next-page",
+      "Name": "Next Names Page",
+      "Tooltip": "Show the next page of names on the main or side screen. Shows the page, e.g. 2/3.",
+      "Icon": "imgs/actions/next-page/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/next-page/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/names-page.html"
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.prev-page",
+      "Name": "Previous Names Page",
+      "Tooltip": "Show the previous page of names on the main or side screen.",
+      "Icon": "imgs/actions/prev-page/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/prev-page/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/names-page.html"
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.precedence-up",
+      "Name": "Names Precedence +",
+      "Tooltip": "Show names on the side screen one slide earlier. Shows the current precedence.",
+      "Icon": "imgs/actions/precedence-up/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/precedence-up/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.precedence-down",
+      "Name": "Names Precedence −",
+      "Tooltip": "Show names on the side screen one slide later. Shows the current precedence.",
+      "Icon": "imgs/actions/precedence-down/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/precedence-down/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.open-excel",
+      "Name": "Open Excel File",
+      "Tooltip": "Choose an Excel file to open in DualPresenter. Shows the file that is open.",
+      "Icon": "imgs/actions/open-excel/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/open-excel/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.close-excel",
+      "Name": "Close Excel File",
+      "Tooltip": "Close the open Excel file. Asks first while the main screen is on.",
+      "Icon": "imgs/actions/close-excel/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/close-excel/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.search",
+      "Name": "Search",
+      "Tooltip": "Open the slide search in DualPresenter, ready to type, or close it. Highlighted while search is open.",
+      "Icon": "imgs/actions/search/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/search/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.settings",
+      "Name": "Settings",
+      "Tooltip": "Open the DualPresenter settings. Highlighted while the settings window is open.",
+      "Icon": "imgs/actions/settings/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/settings/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.edit-excel",
+      "Name": "Edit Excel File",
+      "Tooltip": "Open the Excel file in Excel. Shows which file is open.",
+      "Icon": "imgs/actions/edit-excel/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/edit-excel/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.reload",
+      "Name": "Reload Data",
+      "Tooltip": "Reload the Excel file. Shows which file is open.",
+      "Icon": "imgs/actions/reload/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/reload/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.slide-dial",
+      "Name": "Slide Dial",
+      "Tooltip": "Turn to move through slides, press to black out, touch to freeze.",
+      "Icon": "imgs/actions/slide-dial/icon",
+      "Controllers": [
+        "Encoder"
+      ],
+      "Encoder": {
+        "layout": "$B1",
+        "Icon": "imgs/actions/slide-dial/encoder",
+        "TriggerDescription": {
+          "Rotate": "Change slide",
+          "Push": "Black out",
+          "Touch": "Freeze"
+        }
+      },
+      "States": [
+        {
+          "Image": "imgs/actions/slide-dial/key"
+        }
+      ]
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.names-dial",
+      "Name": "Names Dial",
+      "Tooltip": "Press to play or stop names, turn to skip between names.",
+      "Icon": "imgs/actions/names-dial/icon",
+      "Controllers": [
+        "Encoder"
+      ],
+      "Encoder": {
+        "layout": "$B1",
+        "Icon": "imgs/actions/names-dial/encoder",
+        "TriggerDescription": {
+          "Rotate": "Previous / next name",
+          "Push": "Play / stop",
+          "Touch": "Play / stop"
+        }
+      },
+      "States": [
+        {
+          "Image": "imgs/actions/names-dial/key"
+        }
+      ]
+    }
+  ]
+}

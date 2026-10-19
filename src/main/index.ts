@@ -5,11 +5,16 @@ import {
   ipcMain,
   screen,
   dialog,
-  globalShortcut,
   nativeTheme,
   powerSaveBlocker
 } from 'electron'
-import { createApplicationMenu, updateFreezeState, updateBlackOutState } from './menu'
+import {
+  createApplicationMenu,
+  updateFreezeState,
+  updateBlackOutState,
+  updateAudibleNamesState,
+  updateAutoPlaybackState
+} from './menu'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // Import electron-updater correctly as a CommonJS module
@@ -20,10 +25,12 @@ import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import { audioManager } from './utils/audioManager'
 import { CardType } from './enums/CardType'
+import { DisplayType } from './enums/DisplayType'
 import { filterNamesForCard } from '../shared/nameFilters'
 import fileWatcher from 'chokidar'
 import fs from 'fs'
 import path from 'path'
+import { RemoteControl, startRemoteControl } from './remoteControl'
 
 let mainWindow: BrowserWindow | null = null
 let mainDisplayWindow: BrowserWindow | null = null
@@ -35,6 +42,19 @@ let lastModifiedTime: Date | null = null
 let fileCheckInterval: NodeJS.Timeout | null = null
 let debounceTimer: NodeJS.Timeout | null = null
 let isQuittingForUpdate = false // Add this flag
+let remoteControl: RemoteControl | null = null
+
+// Names page of each screen as the renderer reports it (page is zero-based, total 0 = no pages)
+interface PageInfo {
+  page: number
+  total: number
+}
+// Whether the search box in the main window is open, as the renderer reports it
+let remoteSearchOpen = false
+let remotePageInfo: { main: PageInfo; side: PageInfo } = {
+  main: { page: 0, total: 0 },
+  side: { page: 0, total: 0 }
+}
 
 const data: Data = {
   cards: [],
@@ -293,9 +313,13 @@ function sendData(): void {
       mainWindow.setTitle('DualPresenter')
     }
   }
+
+  remoteControl?.notify()
 }
 
 function updateDisplayWindows(): void {
+  remoteControl?.notify()
+
   if (data.state.freezeMonitors) {
     return
   }
@@ -654,97 +678,307 @@ function createExcelStructureWindow(): void {
   })
 }
 
-// Menu functions are now imported from './menu'
+function openExcelFile(): void {
+  const filePath = dialog.showOpenDialogSync({
+    title: 'Select Excel File',
+    properties: ['openFile'],
+    filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
+  })?.[0]
 
-// Register global shortcuts for slide navigation
-function registerGlobalShortcuts(): void {
-  // Unregister any existing shortcuts first to avoid duplicates
-  globalShortcut.unregisterAll()
-
-  // Register keyboard shortcuts that work on both macOS and Windows
-  // For previous slide: Control+Shift+Left
-  globalShortcut.register('CommandOrControl+Shift+Left', () => {
-    if (data.state.currentSlideIndex > 0) {
-      data.state.currentSlideIndex--
-      config.set('state.currentSlideIndex', data.state.currentSlideIndex)
-      sendData()
-      updateDisplayWindows()
-      preloadCurrentCardAudio()
-      // Send message to scroll to current slide in the UI
-      mainWindow?.webContents.send('scroll-to-current')
-    }
-  })
-
-  // For next slide: Control+Shift+Right
-  globalShortcut.register('CommandOrControl+Shift+Right', () => {
-    if (data.state.currentSlideIndex < data.cards.length - 1) {
-      data.state.currentSlideIndex++
-      config.set('state.currentSlideIndex', data.state.currentSlideIndex)
-      sendData()
-      updateDisplayWindows()
-      preloadCurrentCardAudio()
-      // Send message to scroll to current slide in the UI
-      mainWindow?.webContents.send('scroll-to-current')
-    }
-  })
-
-  // For reloading data: Control+Shift+R
-  globalShortcut.register('CommandOrControl+Shift+R', () => {
+  if (filePath) {
+    // Stop any ongoing audio playback when opening a new Excel file
+    audioManager.stopPlayback()
+    data.state.excelPath = filePath
+    config.set('state.excelPath', filePath)
+    // Set currentSlideIndex to 0 when opening a new Excel file
+    data.state.currentSlideIndex = 0
+    config.set('state.currentSlideIndex', 0)
     loadData()
-  })
 
-  // For freezing/unfreezing displays: Control+Shift+F
-  globalShortcut.register('CommandOrControl+Shift+F', () => {
-    data.state.freezeMonitors = !data.state.freezeMonitors
-    config.set('state.freezeMonitors', data.state.freezeMonitors)
+    // Recreate the application menu to update the "Close Excel File" enabled state
+    createApplicationMenu(
+      data,
+      mainWindow,
+      loadData,
+      closeExcelFile,
+      createSettingsWindow,
+      createExcelStructureWindow,
+      updateDisplayWindows,
+      sendData,
+      config,
+      autoUpdater,
+      preloadCurrentCardAudio
+    )
+  }
+}
 
-    // Store the current slide index when freezing, clear it when unfreezing
-    if (data.state.freezeMonitors) {
-      data.state.frozenSlideIndex = data.state.currentSlideIndex
-      config.set('state.frozenSlideIndex', data.state.frozenSlideIndex)
-    } else {
-      data.state.frozenSlideIndex = null
-      config.set('state.frozenSlideIndex', null)
-    }
+function focusMainWindow(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  }
+  app.focus({ steal: true })
+}
 
-    // Update menu item checked state
-    updateFreezeState(data.state.freezeMonitors)
-
-    // Send data to update UI indicators in renderer
-    sendData()
-
-    if (!data.state.freezeMonitors) {
-      updateDisplayWindows()
-    }
-  })
-
-  if (process.platform === 'darwin') {
-    globalShortcut.register('Command+,', () => {
-      createSettingsWindow()
-    })
-  } else {
-    globalShortcut.register('Control+,', () => {
-      createSettingsWindow()
+// Runs an action that may show a modal dialog. Dialogs block the main process until they are
+// closed, so wait until the Stream Deck has been answered, and bring the app forward first.
+function withDialog(action: () => void): () => void {
+  return () => {
+    setImmediate(() => {
+      focusMainWindow()
+      action()
     })
   }
+}
 
-  // For audio playback toggle: Cmd+P (macOS) or Ctrl+P (Windows/Linux)
-  globalShortcut.register('CommandOrControl+P', () => {
-    // Check if audible names is enabled and we're on a names slide
-    if (data.config.audibleNames.enabled) {
-      // Check bounds before accessing the card
-      if (data.cards.length > 0 && data.state.currentSlideIndex < data.cards.length) {
-        const currentCard = data.cards[data.state.currentSlideIndex]
-        if (
-          currentCard &&
-          (currentCard.type === CardType.Names || currentCard.type === CardType.Unattended)
-        ) {
-          // Send message to renderer to toggle audio
-          mainWindow?.webContents.send('toggle-audio-playback')
-        }
-      }
-    }
-  })
+function goToSlide(index: number): void {
+  if (index >= 0 && index < data.cards.length) {
+    data.state.currentSlideIndex = index
+    config.set('state.currentSlideIndex', data.state.currentSlideIndex)
+    resetPaginationState()
+    sendData()
+    updateDisplayWindows()
+    preloadCurrentCardAudio()
+    // Send message to scroll to current slide in the UI
+    mainWindow?.webContents.send('scroll-to-current')
+  }
+}
+
+function toggleFreeze(): void {
+  data.state.freezeMonitors = !data.state.freezeMonitors
+  config.set('state.freezeMonitors', data.state.freezeMonitors)
+
+  // Store the current slide index when freezing, clear it when unfreezing
+  if (data.state.freezeMonitors) {
+    data.state.frozenSlideIndex = data.state.currentSlideIndex
+    config.set('state.frozenSlideIndex', data.state.frozenSlideIndex)
+  } else {
+    data.state.frozenSlideIndex = null
+    config.set('state.frozenSlideIndex', null)
+  }
+
+  // Update menu item checked state
+  updateFreezeState(data.state.freezeMonitors)
+
+  sendData()
+
+  if (!data.state.freezeMonitors) {
+    updateDisplayWindows()
+  }
+}
+
+function toggleBlackOut(): void {
+  data.state.blackOutScreens = !data.state.blackOutScreens
+  config.set('state.blackOutScreens', data.state.blackOutScreens)
+
+  // Update menu item checked state
+  updateBlackOutState(data.state.blackOutScreens)
+
+  // Send updated state to renderer
+  sendData()
+
+  // Update both display windows to apply or remove the black out
+  if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+    mainDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
+  }
+
+  if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+    sideDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
+  }
+}
+
+function flipScreens(): void {
+  if (!data.state.mainScreen && !data.state.sideScreen) {
+    return // Nothing to flip if no screens are assigned
+  }
+
+  // Store current values
+  const tempMain = data.state.mainScreen
+  const tempSide = data.state.sideScreen
+
+  // Close both display windows first
+  if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
+    mainDisplayWindow.close()
+    mainDisplayWindow = null
+  }
+
+  if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
+    sideDisplayWindow.close()
+    sideDisplayWindow = null
+  }
+
+  // Swap the screens
+  data.state.mainScreen = tempSide
+  data.state.sideScreen = tempMain
+
+  // Update configuration
+  config.set('state.mainScreen', data.state.mainScreen)
+  config.set('state.sideScreen', data.state.sideScreen)
+
+  // Notify renderer of the change
+  sendData()
+
+  // Update display windows
+  updateDisplayWindows()
+}
+
+// Persist a config change made outside the renderer and push it everywhere it is shown
+function applyConfigChange(): void {
+  config.set('config', data.config)
+  sendData()
+  updateDisplayWindows()
+
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.webContents.send('settings-data', data.config)
+  }
+}
+
+function cardLabel(index: number): string | null {
+  const card = data.cards[index]
+  if (!card) return null
+  return card.title || card.group || card.type
+}
+
+// State snapshot sent to the Stream Deck plugin
+function getRemoteState(): object {
+  const audio = audioManager.getPlaybackStatus()
+  const index = data.state.currentSlideIndex
+  const card = data.cards[index]
+
+  return {
+    app: 'DualPresenter',
+    version: app.getVersion(),
+    excelLoaded: data.cards.length > 0,
+    fileName: getFileNameWithoutExtension(data.state.excelPath || ''),
+    slide: {
+      index,
+      count: data.cards.length,
+      type: card?.type ?? null,
+      title: cardLabel(index),
+      subtitle: card?.subtitle ?? null,
+      previousTitle: cardLabel(index - 1),
+      nextTitle: cardLabel(index + 1),
+      titles: data.cards.map((_, i) => cardLabel(i))
+    },
+    blackOut: data.state.blackOutScreens,
+    freeze: data.state.freezeMonitors,
+    frozenSlideIndex: data.state.frozenSlideIndex,
+    settingsOpen: !!settingsWindow && !settingsWindow.isDestroyed(),
+    searchOpen: remoteSearchOpen,
+    screens: {
+      main: !!data.state.mainScreen,
+      side: !!data.state.sideScreen
+    },
+    audibleNames: {
+      enabled: data.config.audibleNames.enabled,
+      autoPlayback: data.config.audibleNames.autoPlayback,
+      continuousPlayback: data.config.audibleNames.continuousPlayback,
+      available: card?.type === CardType.Names || card?.type === CardType.Unattended,
+      // Last name of a "Side Only" names card is being read: those cards leave the main screen
+      // blank, so the app frames its preview red (isLastNameSpeaking in App.vue)
+      lastName:
+        card?.type === CardType.Names &&
+        card.display === DisplayType.SideOnly &&
+        (audio.isPlaying || audio.isPaused) &&
+        audio.totalNames > 0 &&
+        audio.currentIndex === audio.totalNames - 1,
+      isPlaying: audio.isPlaying,
+      isPaused: audio.isPaused,
+      currentIndex: audio.currentIndex,
+      totalNames: audio.totalNames,
+      // The name at currentIndex, as the app's audio bar shows it next to the position
+      currentName: audio.queuedName ?? null
+    },
+    namesPrecedence: data.config.namesPrecedence,
+    transitions: {
+      enabled: !!data.config.slideTransitions,
+      duration: data.config.transitionDuration ?? 400
+    },
+    pages: remotePageInfo
+  }
+}
+
+// Actions the Stream Deck plugin can run
+const remoteActions = {
+  'next-slide': () => goToSlide(data.state.currentSlideIndex + 1),
+  'prev-slide': () => goToSlide(data.state.currentSlideIndex - 1),
+  'goto-slide': ({ index }) => goToSlide(Number(index)),
+  'toggle-black-out': toggleBlackOut,
+  'toggle-freeze': toggleFreeze,
+  'flip-screens': flipScreens,
+  'reload-data': loadData,
+  'focus-app': focusMainWindow,
+  'toggle-search': () => {
+    // Bring the app forward so the search box can be typed in straight away
+    if (!remoteSearchOpen) focusMainWindow()
+    mainWindow?.webContents.send('remote-toggle-search')
+  },
+  'open-excel': withDialog(openExcelFile),
+  'close-excel': withDialog(closeExcelFile),
+  'open-settings': withDialog(createSettingsWindow),
+  'edit-excel': () => {
+    if (data.state.excelPath) shell.openExternal(`file://${data.state.excelPath}`)
+  },
+  'toggle-audible-names': () => {
+    data.config.audibleNames.enabled = !data.config.audibleNames.enabled
+    updateAudibleNamesState(data.config.audibleNames.enabled)
+    if (!data.config.audibleNames.enabled) audioManager.stopPlayback()
+    applyConfigChange()
+    preloadCurrentCardAudio()
+  },
+  'toggle-transitions': () => {
+    data.config.slideTransitions = !data.config.slideTransitions
+    applyConfigChange()
+  },
+  'toggle-auto-playback': () => {
+    data.config.audibleNames.autoPlayback = !data.config.audibleNames.autoPlayback
+    updateAutoPlaybackState(data.config.audibleNames.autoPlayback)
+    applyConfigChange()
+  },
+  // The renderer decides which names belong to the current card, so it starts playback
+  'toggle-audio-playback': () => mainWindow?.webContents.send('toggle-audio-playback'),
+  'stop-audio': () => {
+    audioManager.stopPlayback()
+    updateDisplayWindows()
+  },
+  'next-name': () => {
+    audioManager.goToNext()
+    updateDisplayWindows()
+  },
+  'prev-name': () => {
+    audioManager.goToPrevious()
+    updateDisplayWindows()
+  },
+  // Page counts depend on the rendered cards, so paging is done by the renderer
+  'next-page': ({ screen }) =>
+    mainWindow?.webContents.send('remote-change-page', { screen, direction: 1 }),
+  'prev-page': ({ screen }) =>
+    mainWindow?.webContents.send('remote-change-page', { screen, direction: -1 }),
+  'precedence-up': () => {
+    data.config.namesPrecedence = data.config.namesPrecedence + 1
+    applyConfigChange()
+  },
+  'precedence-down': () => {
+    data.config.namesPrecedence = Math.max(0, data.config.namesPrecedence - 1)
+    applyConfigChange()
+  }
+} satisfies Record<string, (params: Record<string, unknown>) => void>
+
+// Menu functions are now imported from './menu'
+
+// Keyboard shortcuts for the main window that have no menu item. Like the menu shortcuts, they
+// only work while DualPresenter is focused.
+function handleAppShortcuts(event: Electron.Event, input: Electron.Input): void {
+  if (input.type !== 'keyDown' || input.alt) return
+  const modifier = process.platform === 'darwin' ? input.meta : input.control
+  if (!modifier || !input.shift) return
+
+  // Reload data
+  if (input.key.toLowerCase() === 'r') {
+    event.preventDefault()
+    loadData()
+  }
 }
 
 function createWindow(): void {
@@ -834,6 +1068,8 @@ function createWindow(): void {
     // Force quit the app
     app.quit()
   })
+
+  mainWindow.webContents.on('before-input-event', handleAppShortcuts)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -1113,18 +1349,7 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.on('goto-slide', (_, index: number) => {
-    if (index >= 0 && index < data.cards.length) {
-      data.state.currentSlideIndex = index
-      config.set('state.currentSlideIndex', data.state.currentSlideIndex)
-      resetPaginationState()
-      sendData()
-      updateDisplayWindows()
-      preloadCurrentCardAudio()
-      // Send message to scroll to current slide in the UI
-      mainWindow?.webContents.send('scroll-to-current')
-    }
-  })
+  ipcMain.on('goto-slide', (_, index: number) => goToSlide(index))
 
   ipcMain.on('set-main-screen', (_, monitorId: string) => {
     data.state.mainScreen = monitorId
@@ -1151,27 +1376,17 @@ app.whenReady().then(() => {
     updateDisplayWindows()
   })
 
-  ipcMain.on('toggle-freeze', () => {
-    data.state.freezeMonitors = !data.state.freezeMonitors
-    config.set('state.freezeMonitors', data.state.freezeMonitors)
+  ipcMain.on('toggle-freeze', toggleFreeze)
 
-    // Store the current slide index when freezing, clear it when unfreezing
-    if (data.state.freezeMonitors) {
-      data.state.frozenSlideIndex = data.state.currentSlideIndex
-      config.set('state.frozenSlideIndex', data.state.frozenSlideIndex)
-    } else {
-      data.state.frozenSlideIndex = null
-      config.set('state.frozenSlideIndex', null)
-    }
+  ipcMain.on('remote-search-open', (_, open: boolean) => {
+    remoteSearchOpen = open
+    remoteControl?.notify()
+  })
 
-    // Update menu item checked state
-    updateFreezeState(data.state.freezeMonitors)
-
-    sendData()
-
-    if (!data.state.freezeMonitors) {
-      updateDisplayWindows()
-    }
+  // The renderer reports the names page each screen shows, for the Stream Deck keys
+  ipcMain.on('remote-page-info', (_, info) => {
+    remotePageInfo = info
+    remoteControl?.notify()
   })
 
   // Pagination handlers
@@ -1193,39 +1408,7 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.on('open-excel', () => {
-    const filePath = dialog.showOpenDialogSync({
-      title: 'Select Excel File',
-      properties: ['openFile'],
-      filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
-    })?.[0]
-
-    if (filePath) {
-      // Stop any ongoing audio playback when opening a new Excel file
-      audioManager.stopPlayback()
-      data.state.excelPath = filePath
-      config.set('state.excelPath', filePath)
-      // Set currentSlideIndex to 0 when opening a new Excel file
-      data.state.currentSlideIndex = 0
-      config.set('state.currentSlideIndex', 0)
-      loadData()
-
-      // Recreate the application menu to update the "Close Excel File" enabled state
-      createApplicationMenu(
-        data,
-        mainWindow,
-        loadData,
-        closeExcelFile,
-        createSettingsWindow,
-        createExcelStructureWindow,
-        updateDisplayWindows,
-        sendData,
-        config,
-        autoUpdater,
-        preloadCurrentCardAudio
-      )
-    }
-  })
+  ipcMain.on('open-excel', openExcelFile)
 
   ipcMain.on('reload-data', () => {
     loadData()
@@ -1243,25 +1426,7 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.on('toggle-black-out', () => {
-    data.state.blackOutScreens = !data.state.blackOutScreens
-    config.set('state.blackOutScreens', data.state.blackOutScreens)
-
-    // Update menu item checked state
-    updateBlackOutState(data.state.blackOutScreens)
-
-    // Send updated state to renderer
-    sendData()
-
-    // Update both display windows to apply or remove the black out
-    if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
-      mainDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
-    }
-
-    if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
-      sideDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
-    }
-  })
+  ipcMain.on('toggle-black-out', toggleBlackOut)
 
   // Add the file selection handler for settings
   ipcMain.handle('select-file', async (_, options) => {
@@ -1372,40 +1537,7 @@ app.whenReady().then(() => {
   )
 
   // Add handler for flip-screens command from the application menu
-  ipcMain.on('flip-screens', () => {
-    if (!data.state.mainScreen && !data.state.sideScreen) {
-      return // Nothing to flip if no screens are assigned
-    }
-
-    // Store current values
-    const tempMain = data.state.mainScreen
-    const tempSide = data.state.sideScreen
-
-    // Close both display windows first
-    if (mainDisplayWindow && !mainDisplayWindow.isDestroyed()) {
-      mainDisplayWindow.close()
-      mainDisplayWindow = null
-    }
-
-    if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
-      sideDisplayWindow.close()
-      sideDisplayWindow = null
-    }
-
-    // Swap the screens
-    data.state.mainScreen = tempSide
-    data.state.sideScreen = tempMain
-
-    // Update configuration
-    config.set('state.mainScreen', data.state.mainScreen)
-    config.set('state.sideScreen', data.state.sideScreen)
-
-    // Notify renderer of the change
-    sendData()
-
-    // Update display windows
-    updateDisplayWindows()
-  })
+  ipcMain.on('flip-screens', flipScreens)
 
   // Add handler for saving template file to user location
   ipcMain.handle('save-excel-template', async () => {
@@ -1565,8 +1697,6 @@ app.whenReady().then(() => {
   // Set Dark mode
   nativeTheme.themeSource = 'dark'
 
-  // Register global shortcuts when app is ready
-  registerGlobalShortcuts()
 
   loadData()
   createWindow()
@@ -1587,6 +1717,9 @@ app.whenReady().then(() => {
 
   // Prevent sleeping while the app is running
   powerSaveBlocker.start('prevent-display-sleep')
+
+  // Local API for the Stream Deck plugin
+  remoteControl = startRemoteControl(getRemoteState, remoteActions)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -1612,8 +1745,6 @@ app.on('window-all-closed', () => {
 
 // Clean up resources when quitting
 app.on('will-quit', () => {
-  // Unregister all global shortcuts
-  globalShortcut.unregisterAll()
 
   if (watcher) {
     watcher.close()
@@ -1621,4 +1752,5 @@ app.on('will-quit', () => {
   if (fileCheckInterval) {
     clearInterval(fileCheckInterval)
   }
+  remoteControl?.close()
 })
