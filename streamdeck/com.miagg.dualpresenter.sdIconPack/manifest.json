@@ -3,7 +3,7 @@
   "Description": "Icons matching the DualPresenter plugin keys",
   "Author": "Angelos Michalopoulos (miagg.com)",
   "URL": "https://miagg.com",
-  "Version": "1.1.0",
+  "Version": "1.1.2",
   "Icon": "icon.png",
   "Tags": "dualpresenter",
   "StreamdeckID": "com.miagg.dualpresenter"

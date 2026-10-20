@@ -2,7 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "com.miagg.dualpresenter",
   "Name": "DualPresenter",
-  "Version": "1.1.0.0",
+  "Version": "1.1.2.0",
   "Author": "Angelos Michalopoulos (miagg.com)",
   "Description": "Control DualPresenter from Stream Deck: slides, black out, freeze, audible names and names pages, with live status on every key.",
   "Icon": "imgs/plugin/icon",
