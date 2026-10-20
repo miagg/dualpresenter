@@ -48,12 +48,24 @@ let remoteControl: RemoteControl | null = null
 interface PageInfo {
   page: number
   total: number
+  // Type of the card the screen shows
+  type: string | null
 }
+// Screen previews shown on Stream Deck keys. The renderer only watches and captures a preview
+// panel while a key for it is on the deck.
+type PreviewScreens = { main: boolean; side: boolean }
+let previewSubscriptions: PreviewScreens = { main: false, side: false }
+
+function setPreviewSubscriptions(next: PreviewScreens): void {
+  previewSubscriptions = next
+  mainWindow?.webContents.send('remote-preview-subscribe', next)
+}
+
 // Whether the search box in the main window is open, as the renderer reports it
 let remoteSearchOpen = false
 let remotePageInfo: { main: PageInfo; side: PageInfo } = {
-  main: { page: 0, total: 0 },
-  side: { page: 0, total: 0 }
+  main: { page: 0, total: 0, type: null },
+  side: { page: 0, total: 0, type: null }
 }
 
 const data: Data = {
@@ -909,6 +921,9 @@ const remoteActions = {
   'flip-screens': flipScreens,
   'reload-data': loadData,
   'focus-app': focusMainWindow,
+  // The plugin reports which screen previews have a key on the deck
+  'set-previews': ({ main, side }) =>
+    setPreviewSubscriptions({ main: main === true, side: side === true }),
   'toggle-search': () => {
     // Bring the app forward so the search box can be typed in straight away
     if (!remoteSearchOpen) focusMainWindow()
@@ -929,6 +944,10 @@ const remoteActions = {
   },
   'toggle-transitions': () => {
     data.config.slideTransitions = !data.config.slideTransitions
+    applyConfigChange()
+  },
+  'toggle-continuous-playback': () => {
+    data.config.audibleNames.continuousPlayback = !data.config.audibleNames.continuousPlayback
     applyConfigChange()
   },
   'toggle-auto-playback': () => {
@@ -1070,6 +1089,11 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.on('before-input-event', handleAppShortcuts)
+
+  // A reloaded page starts without preview watchers; tell it which previews are wanted
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow?.webContents.send('remote-preview-subscribe', previewSubscriptions)
+  })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -1378,6 +1402,27 @@ app.whenReady().then(() => {
 
   ipcMain.on('toggle-freeze', toggleFreeze)
 
+  // The renderer asks for a preview panel to be captured after it changed
+  ipcMain.on(
+    'remote-preview-capture',
+    async (_, screen: keyof PreviewScreens, rect: Electron.Rectangle) => {
+      if (!previewSubscriptions[screen] || !mainWindow || mainWindow.isDestroyed()) return
+      try {
+        const image = await mainWindow.webContents.capturePage(rect)
+        if (image.isEmpty()) return
+        // Twice the key's width, so a key that crops the preview to fill itself stays sharp
+        const key = image.resize({ width: 288, quality: 'good' })
+        remoteControl?.sendPreview(
+          screen,
+          `data:image/jpeg;base64,${key.toJPEG(85).toString('base64')}`,
+          key.getSize()
+        )
+      } catch (error) {
+        console.error('Could not capture screen preview:', error)
+      }
+    }
+  )
+
   ipcMain.on('remote-search-open', (_, open: boolean) => {
     remoteSearchOpen = open
     remoteControl?.notify()
@@ -1395,14 +1440,14 @@ app.whenReady().then(() => {
     data.state.currentMainUnattendedPage = paginationState.currentMainUnattendedPage
     data.state.currentSideNamesPage = paginationState.currentSideNamesPage
     data.state.currentSideUnattendedPage = paginationState.currentSideUnattendedPage
-    
+
     config.set('state.currentMainNamesPage', paginationState.currentMainNamesPage)
     config.set('state.currentMainUnattendedPage', paginationState.currentMainUnattendedPage)
     config.set('state.currentSideNamesPage', paginationState.currentSideNamesPage)
     config.set('state.currentSideUnattendedPage', paginationState.currentSideUnattendedPage)
 
     sendData()
-    
+
     if (!data.state.freezeMonitors) {
       updateDisplayWindows()
     }
@@ -1697,7 +1742,6 @@ app.whenReady().then(() => {
   // Set Dark mode
   nativeTheme.themeSource = 'dark'
 
-
   loadData()
   createWindow()
   createAudioWindow()
@@ -1719,7 +1763,9 @@ app.whenReady().then(() => {
   powerSaveBlocker.start('prevent-display-sleep')
 
   // Local API for the Stream Deck plugin
-  remoteControl = startRemoteControl(getRemoteState, remoteActions)
+  remoteControl = startRemoteControl(getRemoteState, remoteActions, () =>
+    setPreviewSubscriptions({ main: false, side: false })
+  )
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -1745,7 +1791,6 @@ app.on('window-all-closed', () => {
 
 // Clean up resources when quitting
 app.on('will-quit', () => {
-
   if (watcher) {
     watcher.close()
   }

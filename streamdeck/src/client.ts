@@ -10,6 +10,8 @@ const STALE_CONNECTION_TIMEOUT = 40000
 export interface PageInfo {
   page: number
   total: number
+  // Type of the card the screen shows
+  type: string | null
 }
 
 export interface AppState {
@@ -53,16 +55,33 @@ export interface AppState {
 
 type Listener = (state: AppState | null) => void
 
+export type PreviewScreen = 'main' | 'side'
+
+// Screen preview image (data URL) and its size in pixels
+export interface Preview {
+  image: string
+  width: number
+  height: number
+}
+
 class AppClient {
   // null while DualPresenter isn't running
   state: AppState | null = null
+  // Latest preview image (data URL) of each screen, sent by the app when it changes
+  previews: Partial<Record<PreviewScreen, Preview>> = {}
   private listeners = new Set<Listener>()
+  private previewListeners = new Set<() => void>()
 
   onChange(listener: Listener): void {
     this.listeners.add(listener)
   }
 
+  onPreview(listener: () => void): void {
+    this.previewListeners.add(listener)
+  }
+
   private setState(state: AppState | null): void {
+    if (state === null) this.previews = {}
     if (state === null && this.state === null) return
     this.state = state
     for (const listener of this.listeners) listener(state)
@@ -106,14 +125,23 @@ class AppClient {
         while ((end = buffer.indexOf('\n\n')) !== -1) {
           const message = buffer.slice(0, end)
           buffer = buffer.slice(end + 2)
-          const data = message
-            .split('\n')
+          const lines = message.split('\n')
+          const event = lines.find((line) => line.startsWith('event: '))?.slice(7)
+          const data = lines
             .filter((line) => line.startsWith('data: '))
             .map((line) => line.slice(6))
             .join('\n')
           if (!data) continue
           try {
-            this.setState(JSON.parse(data))
+            if (event === 'preview') {
+              const { screen, ...preview } = JSON.parse(data) as Preview & {
+                screen: PreviewScreen
+              }
+              this.previews[screen] = preview
+              for (const listener of this.previewListeners) listener()
+            } else {
+              this.setState(JSON.parse(data))
+            }
           } catch {
             // Ignore a malformed message; the next one carries the full state again
           }

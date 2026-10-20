@@ -5,7 +5,8 @@ import http from 'http'
 // machine - and no website open in a browser on it - can drive the presentation.
 //
 //   GET  /state   current state snapshot as JSON
-//   GET  /events  Server-Sent Events stream; a snapshot is pushed whenever the state changes
+//   GET  /events  Server-Sent Events stream; a snapshot is pushed whenever the state changes, and
+//                 a "preview" event with a screen preview image whenever that image changes
 //   POST /action  {"action": "<name>", ...params} runs one of the registered actions
 export const REMOTE_CONTROL_PORT = Number(process.env['DUALPRESENTER_REMOTE_PORT']) || 47321
 
@@ -14,6 +15,9 @@ export type RemoteActionHandler = (params: Record<string, unknown>) => void
 export interface RemoteControl {
   // Push the current state to connected clients, if it changed since the last push
   notify: () => void
+  // Push a screen preview image (data URL) and its size in pixels, if it differs from the last
+  // one sent for that screen
+  sendPreview: (screen: string, image: string, size: { width: number; height: number }) => void
   close: () => void
 }
 
@@ -21,10 +25,25 @@ const MAX_BODY_SIZE = 16 * 1024
 
 export function startRemoteControl(
   getState: () => unknown,
-  actions: Record<string, RemoteActionHandler>
+  actions: Record<string, RemoteActionHandler>,
+  // Called when the last client disconnects, so work done for clients can stop
+  onAllClientsGone: () => void = () => undefined
 ): RemoteControl {
   const clients = new Set<http.ServerResponse>()
   let lastPayload = ''
+  // Latest preview message of each screen, also sent to clients that connect later
+  const previews = new Map<string, { image: string; message: string }>()
+
+  const sendPreview = (
+    screen: string,
+    image: string,
+    size: { width: number; height: number }
+  ): void => {
+    if (previews.get(screen)?.image === image) return
+    const message = `event: preview\ndata: ${JSON.stringify({ screen, image, ...size })}\n\n`
+    previews.set(screen, { image, message })
+    for (const client of clients) client.write(message)
+  }
 
   const sendJson = (res: http.ServerResponse, status: number, body: unknown): void => {
     res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
@@ -104,8 +123,12 @@ export function startRemoteControl(
         Connection: 'keep-alive'
       })
       res.write(`data: ${JSON.stringify(getState())}\n\n`)
+      for (const { message } of previews.values()) res.write(message)
       clients.add(res)
-      req.on('close', () => clients.delete(res))
+      req.on('close', () => {
+        clients.delete(res)
+        if (clients.size === 0) onAllClientsGone()
+      })
     } else if (req.method === 'POST' && url === '/action') {
       runAction(req, res)
     } else {
@@ -140,6 +163,7 @@ export function startRemoteControl(
 
   return {
     notify,
+    sendPreview,
     close: () => {
       closed = true
       if (retryTimer) clearTimeout(retryTimer)

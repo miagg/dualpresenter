@@ -40,6 +40,49 @@ export interface KeyView {
   status?: string
   // Background fades between its colour and a darker shade, e.g. while audio is playing
   pulse?: boolean
+  // 16:9 screen preview (data URL) shown across the key, between the label and the detail
+  preview?: string
+  // Preview is stretched to fill the key below the label, instead of fitting with a detail
+  previewFill?: boolean
+  // Width / height of the preview image
+  previewAspect?: number
+  // Colour of a strip behind the label of a preview key, e.g. red for the frozen slide
+  labelBackground?: string
+  // Font size of the label, when it should stand out more than the usual caption
+  labelSize?: number
+  // Scroll the detail text when it is too long to fit, instead of cutting it off
+  scrollDetail?: boolean
+}
+
+// Position of the key's animations, for keys that have them
+export interface Frame {
+  // Pulse position, 0..1 (0 = full colour, 1 = darkest)
+  pulse?: number
+  // Milliseconds since the scrolling detail text first appeared
+  scrollTime?: number
+}
+
+// Characters of detail text that fit across a key
+const DETAIL_CHARS = 14
+// Scrolling: hold the start, move one character at a time, hold the end, start over
+const SCROLL_HOLD = 1500
+const SCROLL_STEP = 200
+
+const cleanText = (text: string): string => text.replace(/\s+/g, ' ').trim()
+
+const scrolls = (view: KeyView): boolean =>
+  !!view.scrollDetail && cleanText(view.detail ?? '').length > DETAIL_CHARS
+
+// Whether the key needs redrawing over time
+export const isAnimated = (view: KeyView): boolean => !!view.pulse || scrolls(view)
+
+// First character shown of a scrolling text `length` characters long, `time` ms after it appeared
+function scrollOffset(length: number, time: number): number {
+  const steps = length - DETAIL_CHARS
+  const cycle = SCROLL_HOLD + steps * SCROLL_STEP + SCROLL_HOLD
+  const t = time % cycle
+  if (t < SCROLL_HOLD) return 0
+  return Math.min(steps, Math.floor((t - SCROLL_HOLD) / SCROLL_STEP) + 1)
 }
 
 // Darken a #rrggbb colour by `amount` (0..1)
@@ -74,10 +117,9 @@ const valueSize = (value: string, hasDetail: boolean): number => {
   return Math.min(max, Math.floor(250 / Math.max(value.length, 1)))
 }
 
-// `pulse` is the pulse animation's position, 0..1 (0 = full colour, 1 = darkest)
-export function renderKey(view: KeyView, pulse = 0): string {
+export function renderKey(view: KeyView, frame: Frame = {}): string {
   const base = view.disabled ? colors.offline : (view.background ?? colors.idle)
-  const background = view.pulse ? darken(base, pulse * 0.55) : base
+  const background = view.pulse ? darken(base, (frame.pulse ?? 0) * 0.55) : base
   const foreground = view.disabled ? colors.disabled : colors.text
   const caption = view.disabled ? colors.disabled : view.background ? '#ffffffcc' : colors.muted
   const parts: string[] = [`<rect width="144" height="144" fill="${background}"/>`]
@@ -89,9 +131,10 @@ export function renderKey(view: KeyView, pulse = 0): string {
   }
 
   if (view.image) return svgUrl(parts.concat(imageKeyParts(view)))
+  if (view.preview) return svgUrl(parts.concat(previewKeyParts(view, caption, foreground)))
 
   const label = fit(view.label.toUpperCase(), 14)
-  parts.push(text(label, 30, label.length > 11 ? 14 : 17, caption))
+  parts.push(text(label, 30, view.labelSize ?? (label.length > 11 ? 14 : 17), caption))
 
   const hasDetail = !!view.detail
   const centerY = hasDetail ? 72 : 82
@@ -108,9 +151,11 @@ export function renderKey(view: KeyView, pulse = 0): string {
   }
 
   if (view.detail) {
-    parts.push(
-      text(fit(view.detail, 14), view.progress !== undefined ? 116 : 122, 17, foreground, '600')
-    )
+    const detail = cleanText(view.detail)
+    const shown = scrolls(view)
+      ? detail.slice(scrollOffset(detail.length, frame.scrollTime ?? 0)).slice(0, DETAIL_CHARS)
+      : fit(detail, DETAIL_CHARS)
+    parts.push(text(shown, view.progress !== undefined ? 116 : 122, 17, foreground, '600'))
   }
 
   if (view.progress !== undefined) {
@@ -148,6 +193,33 @@ function imageKeyParts(view: KeyView): string[] {
     } else {
       parts.push(text(detail, 130, 17, color))
     }
+  }
+  return parts
+}
+
+// The preview image. Placed by position and size alone, as Stream Deck's SVG renderer ignores
+// preserveAspectRatio. To fill, it is stretched across the whole space below the label; to fit, it
+// is as wide as the key at its own aspect ratio, centred between the label and the detail.
+function previewImage(view: KeyView): string {
+  const aspect = view.previewAspect || 16 / 9
+  const [x, y, width, height] = view.previewFill
+    ? [0, 33, 144, 111]
+    : [0, 33 + (81 - 144 / aspect) / 2, 144, 144 / aspect]
+  const r = (n: number): string => n.toFixed(1)
+  return `<image x="${r(x)}" y="${r(y)}" width="${r(width)}" height="${r(height)}" preserveAspectRatio="none" href="${view.preview}" xlink:href="${view.preview}"/>`
+}
+
+// Screen preview filling the width of the key, with the label above and the detail below
+function previewKeyParts(view: KeyView, caption: string, foreground: string): string[] {
+  const parts = [
+    ...(view.labelBackground
+      ? [`<rect width="144" height="33" fill="${view.labelBackground}"/>`]
+      : []),
+    text(fit(view.label.toUpperCase(), 16), 24, 15, view.labelBackground ? colors.text : caption),
+    previewImage(view)
+  ]
+  if (view.detail && !view.previewFill) {
+    parts.push(text(fit(view.detail, 14), 136, 16, foreground, '600'))
   }
   return parts
 }

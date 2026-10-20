@@ -1,4 +1,5 @@
-import type { AppState } from './client.ts'
+import type { AppState, PreviewScreen } from './client.ts'
+import { appClient } from './client.ts'
 import type { GlyphName } from './glyphs.ts'
 import { numpad, withDigit } from './numpad.ts'
 import { colors, fit, type KeyView } from './render.ts'
@@ -15,6 +16,10 @@ export type Settings = {
   screen?: 'main' | 'side'
   // Open DualPresenter: app to launch instead of the installed one
   appPath?: string
+  // Screen preview keys: stretch the preview to fill the key below the label (on unless turned off)
+  previewFill?: boolean
+  // Keys showing a title or file name: scroll it when it is too long to fit (on unless turned off)
+  scrollTitle?: boolean
   // Numpad digit key: which digit, assigned automatically when the key is added
   digit?: string
 }
@@ -120,7 +125,49 @@ const nameStepView = (s: AppState, direction: 1 | -1): KeyView => {
   return { label, icon, detail: `${position} / ${total}`, progress: position / total }
 }
 
+// Main or side screen preview, as captured from the app's preview panels
+const previewView = (s: AppState, screen: PreviewScreen, settings: Settings): KeyView => {
+  const label = screen === 'main' ? 'Main screen' : 'Side screen'
+  const preview = appClient.previews[screen]
+  if (!preview) return { label, icon: 'monitor', detail: 'LOADING' }
+
+  // Card type, with the names page when there is more than one
+  const { page, total, type } = s.pages[screen]
+  const status = [type?.toUpperCase(), total > 1 ? `${page + 1}/${total}` : null]
+    .filter(Boolean)
+    .join(' · ')
+  return {
+    label,
+    preview: preview.image,
+    previewAspect: preview.width / preview.height,
+    // The preview is the app's view; the screens themselves may be black
+    detail: s.blackOut ? 'BLACK OUT' : status,
+    previewFill: settings.previewFill !== false,
+    labelBackground: screen === 'main' ? frozenFrame(s, s.slide.index) : undefined
+  }
+}
+
 export const keys: KeyDefinition[] = [
+  {
+    id: 'preview-main',
+    name: 'Main Screen Preview',
+    tooltip:
+      'Shows the main screen as previewed in DualPresenter. Updated only when it changes, and only captured while this key is on the deck.',
+    inspector: 'preview.html',
+    icon: 'monitor',
+    needsFile: true,
+    view: (s, settings) => previewView(s, 'main', settings)
+  },
+  {
+    id: 'preview-side',
+    name: 'Side Screen Preview',
+    tooltip:
+      'Shows the side screen as previewed in DualPresenter. Updated only when it changes, and only captured while this key is on the deck.',
+    inspector: 'preview.html',
+    icon: 'monitor',
+    needsFile: true,
+    view: (s, settings) => previewView(s, 'side', settings)
+  },
   {
     id: 'open-app',
     name: 'Open DualPresenter',
@@ -175,16 +222,37 @@ export const keys: KeyDefinition[] = [
     id: 'current-slide',
     name: 'Current Slide',
     tooltip:
-      'Shows the selected slide, its title and how far into the show you are. Framed red when it is the frozen slide. Press to type a slide number to jump to.',
+      'Shows the selected slide, its title and how far into the show you are. Framed red when it is the frozen slide. Turns red while the screens are blacked out or frozen. Press to type a slide number to jump to.',
     icon: 'slides',
     needsFile: true,
-    view: (s) => ({
-      label: s.slide.type ? `Slide · ${s.slide.type}` : 'Slide',
-      value: slideNumber(s),
-      detail: s.slide.title ?? '',
-      progress: (s.slide.index + 1) / s.slide.count,
-      outline: frozenFrame(s, s.slide.index)
-    }),
+    inspector: 'scroll-text.html',
+    view: (s, settings) => {
+      // Black out and freeze change what the audience sees, so this key shows them even when
+      // their own keys aren't on the page
+      const frozen = s.freeze && s.frozenSlideIndex !== null
+      const alert = s.blackOut || frozen
+      const label =
+        s.blackOut && frozen
+          ? 'Black · Frozen'
+          : s.blackOut
+            ? 'Black out'
+            : frozen
+              ? `Frozen ${s.frozenSlideIndex! + 1}`
+              : (s.slide.type ?? 'Slide')
+      // On the red background, the frozen-slide frame is drawn darker so it stays visible
+      const frame = frozenFrame(s, s.slide.index)
+      return {
+        label,
+        // Long captions (e.g. "BLACK · FROZEN") need a smaller size to fit across the key
+        labelSize: label.length > 11 ? 16 : 20,
+        value: slideNumber(s),
+        detail: s.slide.title ?? '',
+        scrollDetail: settings.scrollTitle !== false,
+        progress: (s.slide.index + 1) / s.slide.count,
+        background: alert ? colors.red : undefined,
+        outline: frame && alert ? '#7f1d1d' : frame
+      }
+    },
     press: () => {
       numpad.set('')
       return ['@numpad-toggle']
@@ -219,13 +287,15 @@ export const keys: KeyDefinition[] = [
     name: 'Next Slide',
     tooltip: 'Go to the next slide. Shows its number and title.',
     icon: 'next',
+    inspector: 'scroll-text.html',
     needsFile: true,
-    view: (s) =>
+    view: (s, settings) =>
       s.slide.index < s.slide.count - 1
         ? {
             label: `Next ${s.slide.index + 2}/${s.slide.count}`,
             icon: 'next',
             detail: s.slide.nextTitle ?? '',
+            scrollDetail: settings.scrollTitle !== false,
             outline: frozenFrame(s, s.slide.index + 1)
           }
         : { label: 'Next', icon: 'next', detail: 'END OF SHOW', disabled: true },
@@ -236,13 +306,15 @@ export const keys: KeyDefinition[] = [
     name: 'Previous Slide',
     tooltip: 'Go to the previous slide. Shows its number and title.',
     icon: 'prev',
+    inspector: 'scroll-text.html',
     needsFile: true,
-    view: (s) =>
+    view: (s, settings) =>
       s.slide.index > 0
         ? {
             label: `Prev ${s.slide.index}/${s.slide.count}`,
             icon: 'prev',
             detail: s.slide.previousTitle ?? '',
+            scrollDetail: settings.scrollTitle !== false,
             outline: frozenFrame(s, s.slide.index - 1)
           }
         : { label: 'Prev', icon: 'prev', detail: 'FIRST SLIDE', disabled: true },
@@ -393,8 +465,9 @@ export const keys: KeyDefinition[] = [
     tooltip:
       'Read out the names on the current slide. Shows progress, the name being read and its position, e.g. 3/12. Turns red on the last name of a Side Only names card.',
     icon: 'play',
+    inspector: 'scroll-text.html',
     needsFile: true,
-    view: (s) => {
+    view: (s, settings) => {
       const a = s.audibleNames
       const { active, position, total } = audio(s)
       if (!a.enabled)
@@ -404,6 +477,7 @@ export const keys: KeyDefinition[] = [
           label: a.isPaused ? 'Last · paused' : 'Last name',
           value: `${position}/${total}`,
           detail: a.currentName ?? '',
+          scrollDetail: settings.scrollTitle !== false,
           progress: 1,
           background: colors.red,
           pulse: !a.isPaused
@@ -414,6 +488,7 @@ export const keys: KeyDefinition[] = [
           label: a.isPaused ? 'Paused' : 'Playing',
           value: `${position}/${total}`,
           detail: a.currentName ?? '',
+          scrollDetail: settings.scrollTitle !== false,
           progress: total > 0 ? position / total : 0,
           background: a.isPaused ? colors.amber : colors.green,
           pulse: !a.isPaused
@@ -507,6 +582,17 @@ export const keys: KeyDefinition[] = [
     press: () => ['toggle-transitions']
   },
   {
+    id: 'continuous-playback',
+    name: 'Continuous Playback On/Off',
+    tooltip: 'On: names are read one after another. Off: one name per press, step by step.',
+    icon: 'loop',
+    view: (s) =>
+      s.audibleNames.continuousPlayback
+        ? { label: 'Continuous', icon: 'loop', detail: 'ON', background: '#0891b2' }
+        : { label: 'Continuous', icon: 'loop', detail: 'OFF · STEP' },
+    press: () => ['toggle-continuous-playback']
+  },
+  {
     id: 'next-page',
     name: 'Next Names Page',
     tooltip: 'Show the next page of names on the main or side screen. Shows the page, e.g. 2/3.',
@@ -549,11 +635,13 @@ export const keys: KeyDefinition[] = [
     id: 'open-excel',
     name: 'Open Excel File',
     tooltip: 'Choose an Excel file to open in DualPresenter. Shows the file that is open.',
+    inspector: 'scroll-text.html',
     icon: 'folder',
-    view: (s) => ({
+    view: (s, settings) => ({
       label: 'Open Excel',
       icon: 'folder',
-      detail: s.excelLoaded ? s.fileName : 'NO FILE'
+      detail: s.excelLoaded ? s.fileName : 'NO FILE',
+      scrollDetail: settings.scrollTitle !== false
     }),
     press: () => ['open-excel']
   },
@@ -562,8 +650,14 @@ export const keys: KeyDefinition[] = [
     name: 'Close Excel File',
     tooltip: 'Close the open Excel file. Asks first while the main screen is on.',
     icon: 'close',
+    inspector: 'scroll-text.html',
     needsFile: true,
-    view: (s) => ({ label: 'Close Excel', icon: 'close', detail: s.fileName }),
+    view: (s, settings) => ({
+      label: 'Close Excel',
+      icon: 'close',
+      detail: s.fileName,
+      scrollDetail: settings.scrollTitle !== false
+    }),
     press: () => ['close-excel']
   },
   {
@@ -595,8 +689,14 @@ export const keys: KeyDefinition[] = [
     name: 'Edit Excel File',
     tooltip: 'Open the Excel file in Excel. Shows which file is open.',
     icon: 'edit',
+    inspector: 'scroll-text.html',
     needsFile: true,
-    view: (s) => ({ label: 'Edit Excel', icon: 'edit', detail: s.fileName }),
+    view: (s, settings) => ({
+      label: 'Edit Excel',
+      icon: 'edit',
+      detail: s.fileName,
+      scrollDetail: settings.scrollTitle !== false
+    }),
     press: () => ['edit-excel']
   },
   {
@@ -604,8 +704,14 @@ export const keys: KeyDefinition[] = [
     name: 'Reload Data',
     tooltip: 'Reload the Excel file. Shows which file is open.',
     icon: 'reload',
+    inspector: 'scroll-text.html',
     needsFile: true,
-    view: (s) => ({ label: 'Reload', icon: 'reload', detail: s.fileName }),
+    view: (s, settings) => ({
+      label: 'Reload',
+      icon: 'reload',
+      detail: s.fileName,
+      scrollDetail: settings.scrollTitle !== false
+    }),
     press: () => ['reload-data']
   }
 ]

@@ -1197,6 +1197,12 @@ onMounted(() => {
   })
 
   // Names page changes requested from the Stream Deck
+  // Screen previews wanted by the Stream Deck
+  window.electron.ipcRenderer.on('remote-preview-subscribe', (_, screens) => {
+    setPreviewWatcher('main', screens.main ? mainPreview.value : null)
+    setPreviewWatcher('side', screens.side ? sidePreview.value : null)
+  })
+
   // Search toggled from the Stream Deck: open it ready to type, or close it
   window.electron.ipcRenderer.on('remote-toggle-search', () => {
     if (showSearchResults.value) {
@@ -1265,6 +1271,9 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('scroll-to-current')
   window.electron.ipcRenderer.removeAllListeners('remote-change-page')
   window.electron.ipcRenderer.removeAllListeners('remote-toggle-search')
+  window.electron.ipcRenderer.removeAllListeners('remote-preview-subscribe')
+  setPreviewWatcher('main', null)
+  setPreviewWatcher('side', null)
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keydown', handleKeyboardEvent)
   window.removeEventListener('keyup', handleKeyboardEvent)
@@ -1427,18 +1436,21 @@ const currentNamesSlide = computed(() => {
   return currentCard && currentCard.type === CardType.Names ? currentCard : null
 })
 
-// Names page shown on each screen, reported to the main process for the Stream Deck keys
+// Card type and names page shown on each screen, reported to the main process for the Stream
+// Deck keys
 const pageInfo = (
   type: CardType | undefined,
   cardRef: { totalNamesPages?: number; totalUnattendedPages?: number } | null,
   namesPage: number,
   unattendedPage: number
-): { page: number; total: number } => {
-  if (type === CardType.Names) return { page: namesPage, total: cardRef?.totalNamesPages ?? 0 }
-  if (type === CardType.Unattended) {
-    return { page: unattendedPage, total: cardRef?.totalUnattendedPages ?? 0 }
+): { page: number; total: number; type: CardType | null } => {
+  if (type === CardType.Names) {
+    return { page: namesPage, total: cardRef?.totalNamesPages ?? 0, type }
   }
-  return { page: 0, total: 0 }
+  if (type === CardType.Unattended) {
+    return { page: unattendedPage, total: cardRef?.totalUnattendedPages ?? 0, type }
+  }
+  return { page: 0, total: 0, type: type ?? null }
 }
 
 const remotePageInfo = computed(() => ({
@@ -1456,6 +1468,59 @@ const remotePageInfo = computed(() => ({
   )
 }))
 
+// Screen previews for the Stream Deck. While a preview key is on the deck, its preview panel is
+// watched and captured shortly after it changes (slide, names page, highlighted name, finished
+// transition, loaded image); there is no polling, and nothing is watched otherwise.
+const mainPreview = ref<HTMLElement | null>(null)
+const sidePreview = ref<HTMLElement | null>(null)
+const PREVIEW_SETTLE_DELAY = 150
+const PREVIEW_EVENTS = ['transitionend', 'animationend', 'load']
+const previewWatchers: { main?: () => void; side?: () => void } = {}
+
+const watchPreview = (screen: 'main' | 'side', element: HTMLElement): (() => void) => {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const capture = (): void => {
+    const rect = element.getBoundingClientRect()
+    if (rect.width < 1 || rect.height < 1) return
+    window.electron.ipcRenderer.send('remote-preview-capture', screen, {
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height)
+    })
+  }
+  // Wait until changes settle, so one capture covers a burst of them
+  const schedule = (): void => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(capture, PREVIEW_SETTLE_DELAY)
+  }
+
+  const mutations = new MutationObserver(schedule)
+  mutations.observe(element, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    characterData: true
+  })
+  const resizes = new ResizeObserver(schedule)
+  resizes.observe(element)
+  // These don't bubble, so listen while they travel down to their target
+  PREVIEW_EVENTS.forEach((name) => element.addEventListener(name, schedule, true))
+  schedule()
+
+  return () => {
+    mutations.disconnect()
+    resizes.disconnect()
+    PREVIEW_EVENTS.forEach((name) => element.removeEventListener(name, schedule, true))
+    if (timer) clearTimeout(timer)
+  }
+}
+
+const setPreviewWatcher = (screen: 'main' | 'side', element: HTMLElement | null): void => {
+  previewWatchers[screen]?.()
+  previewWatchers[screen] = element ? watchPreview(screen, element) : undefined
+}
+
 // Whether search is open, for the Stream Deck search key
 watch(showSearchResults, (open) => window.electron.ipcRenderer.send('remote-search-open', open))
 
@@ -1463,7 +1528,8 @@ watch(showSearchResults, (open) => window.electron.ipcRenderer.send('remote-sear
 onMounted(() => {
   watch(
     remotePageInfo,
-    (info) => window.electron.ipcRenderer.send('remote-page-info', JSON.parse(JSON.stringify(info))),
+    (info) =>
+      window.electron.ipcRenderer.send('remote-page-info', JSON.parse(JSON.stringify(info))),
     { immediate: true }
   )
 })

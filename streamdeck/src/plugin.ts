@@ -29,7 +29,7 @@ import {
   type Settings
 } from './actions.ts'
 import { numpad } from './numpad.ts'
-import { colors, renderGlyph, renderKey, type KeyView } from './render.ts'
+import { colors, isAnimated, renderGlyph, renderKey, type KeyView } from './render.ts'
 
 const execFileAsync = promisify(execFile)
 const APP_BUNDLE_ID = 'com.miagg.dualpresenter'
@@ -77,21 +77,32 @@ async function launchApp(settings: Settings): Promise<boolean> {
   return true
 }
 
-// Pulse animation: keys whose view asks for it are redrawn with a changing background while the
-// timer runs. It only runs while at least one such key is showing.
+// Animation (pulsing background, scrolling text): animated keys are redrawn while the timer runs,
+// and it only runs while at least one is showing. Frames that look the same as the last one
+// aren't sent, so a scrolling text that is holding still costs nothing.
 const PULSE_PERIOD = 1400
-const PULSE_FRAME = 120
-const pulsing = new Set<string>()
-let pulseTimer: NodeJS.Timeout | null = null
+const ANIMATION_FRAME = 100
+const animating = new Set<string>()
+let animationTimer: NodeJS.Timeout | null = null
+// When each key's scrolling text appeared, so a new text starts from its beginning
+const scrollStarts = new Map<string, { text: string; start: number }>()
 
 const pulsePosition = (): number => (1 - Math.cos((2 * Math.PI * Date.now()) / PULSE_PERIOD)) / 2
 
-function updatePulse(): void {
-  if (pulsing.size > 0 && !pulseTimer) {
-    pulseTimer = setInterval(() => renderAll(), PULSE_FRAME)
-  } else if (pulsing.size === 0 && pulseTimer) {
-    clearInterval(pulseTimer)
-    pulseTimer = null
+function scrollTime(id: string, text: string): number {
+  const now = Date.now()
+  const entry = scrollStarts.get(id)
+  if (entry?.text === text) return now - entry.start
+  scrollStarts.set(id, { text, start: now })
+  return 0
+}
+
+function updateAnimation(): void {
+  if (animating.size > 0 && !animationTimer) {
+    animationTimer = setInterval(() => renderAll(), ANIMATION_FRAME)
+  } else if (animating.size === 0 && animationTimer) {
+    clearInterval(animationTimer)
+    animationTimer = null
   }
 }
 
@@ -144,10 +155,13 @@ class KeyActionHandler extends SingletonAction<Settings> {
     const state = appClient.state
     const settings = settingsById.get(action.id) ?? {}
     const view = unavailableView(this.definition, state) ?? this.definition.view(state!, settings)
-    if (view.pulse) pulsing.add(action.id)
-    else pulsing.delete(action.id)
-    updatePulse()
-    const image = renderKey(view, pulsePosition())
+    if (isAnimated(view)) animating.add(action.id)
+    else animating.delete(action.id)
+    updateAnimation()
+    const image = renderKey(view, {
+      pulse: pulsePosition(),
+      scrollTime: view.scrollDetail ? scrollTime(action.id, view.detail ?? '') : 0
+    })
     if (imageById.get(action.id) === image) return
     imageById.set(action.id, image)
     void action.setImage(image)
@@ -173,13 +187,16 @@ class KeyActionHandler extends SingletonAction<Settings> {
     settingsById.set(ev.action.id, settings)
     imageById.delete(ev.action.id)
     this.render(ev.action)
+    setImmediate(updatePreviewSubscriptions)
   }
 
   override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
     settingsById.delete(ev.action.id)
     imageById.delete(ev.action.id)
-    pulsing.delete(ev.action.id)
-    updatePulse()
+    animating.delete(ev.action.id)
+    scrollStarts.delete(ev.action.id)
+    updateAnimation()
+    setImmediate(updatePreviewSubscriptions)
   }
 
   override onDidReceiveSettings(ev: DidReceiveSettingsEvent<Settings>): void {
@@ -300,7 +317,27 @@ function renderAll(): void {
   for (const handler of handlers) handler.renderAll()
 }
 
+// Tell the app which screen previews have a key showing, so it only captures those. Checked
+// after keys appear or disappear, and resent after every reconnect, as a restarted app starts
+// with none.
+let sentPreviews = ''
+function updatePreviewSubscriptions(force = false): void {
+  if (!appClient.state) return
+  const showing = (id: string): boolean =>
+    [...(handlers.find((h) => h.manifestId === `${PLUGIN_UUID}.${id}`)?.actions ?? [])].length > 0
+  const wanted = { main: showing('preview-main'), side: showing('preview-side') }
+  const key = JSON.stringify(wanted)
+  if (!force && key === sentPreviews) return
+  sentPreviews = key
+  void appClient.send('set-previews', wanted)
+}
+
+appClient.onPreview(renderAll)
+
+let wasConnected = false
 appClient.onChange((state) => {
+  if (state && !wasConnected) updatePreviewSubscriptions(true)
+  wasConnected = !!state
   if (state && launching) {
     clearTimeout(launching)
     launching = null

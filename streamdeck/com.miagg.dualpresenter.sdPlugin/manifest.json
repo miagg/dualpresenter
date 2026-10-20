@@ -37,6 +37,40 @@
   ],
   "Actions": [
     {
+      "UUID": "com.miagg.dualpresenter.preview-main",
+      "Name": "Main Screen Preview",
+      "Tooltip": "Shows the main screen as previewed in DualPresenter. Updated only when it changes, and only captured while this key is on the deck.",
+      "Icon": "imgs/actions/preview-main/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/preview-main/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/preview.html"
+    },
+    {
+      "UUID": "com.miagg.dualpresenter.preview-side",
+      "Name": "Side Screen Preview",
+      "Tooltip": "Shows the side screen as previewed in DualPresenter. Updated only when it changes, and only captured while this key is on the deck.",
+      "Icon": "imgs/actions/preview-side/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/preview-side/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/preview.html"
+    },
+    {
       "UUID": "com.miagg.dualpresenter.open-app",
       "Name": "Open DualPresenter",
       "Tooltip": "Open DualPresenter, or bring it to the front if it is already open.",
@@ -88,7 +122,7 @@
     {
       "UUID": "com.miagg.dualpresenter.current-slide",
       "Name": "Current Slide",
-      "Tooltip": "Shows the selected slide, its title and how far into the show you are. Framed red when it is the frozen slide. Press to type a slide number to jump to.",
+      "Tooltip": "Shows the selected slide, its title and how far into the show you are. Framed red when it is the frozen slide. Turns red while the screens are blacked out or frozen. Press to type a slide number to jump to.",
       "Icon": "imgs/actions/current-slide/icon",
       "Controllers": [
         "Keypad"
@@ -99,7 +133,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.frozen-slide",
@@ -131,7 +166,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.prev-slide",
@@ -147,7 +183,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.goto-slide",
@@ -277,7 +314,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.stop-names",
@@ -376,6 +414,22 @@
       "UserTitleEnabled": false
     },
     {
+      "UUID": "com.miagg.dualpresenter.continuous-playback",
+      "Name": "Continuous Playback On/Off",
+      "Tooltip": "On: names are read one after another. Off: one name per press, step by step.",
+      "Icon": "imgs/actions/continuous-playback/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/continuous-playback/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
       "UUID": "com.miagg.dualpresenter.next-page",
       "Name": "Next Names Page",
       "Tooltip": "Show the next page of names on the main or side screen. Shows the page, e.g. 2/3.",
@@ -455,7 +509,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.close-excel",
@@ -471,7 +526,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.search",
@@ -519,7 +575,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.reload",
@@ -535,7 +592,8 @@
           "ShowTitle": false
         }
       ],
-      "UserTitleEnabled": false
+      "UserTitleEnabled": false,
+      "PropertyInspectorPath": "ui/scroll-text.html"
     },
     {
       "UUID": "com.miagg.dualpresenter.slide-dial",

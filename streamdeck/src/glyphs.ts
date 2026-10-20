@@ -35,6 +35,7 @@ export type GlyphName =
   | 'numpad'
   | 'search'
   | 'backspace'
+  | 'loop'
 
 const stroke = (c: string, w = 4): string =>
   `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`
@@ -84,6 +85,8 @@ export const glyphs: Record<GlyphName, (c: string) => string> = {
     `<circle cx="20" cy="20" r="13" ${stroke(c, 4)}/><path d="M30 30 L43 43" ${stroke(c, 5)}/>`,
   numpad: (c) =>
     `<rect x="5" y="5" width="10" height="10" rx="2" fill="${c}"/><rect x="19" y="5" width="10" height="10" rx="2" fill="${c}"/><rect x="33" y="5" width="10" height="10" rx="2" fill="${c}"/><rect x="5" y="19" width="10" height="10" rx="2" fill="${c}"/><rect x="19" y="19" width="10" height="10" rx="2" fill="${c}"/><rect x="33" y="19" width="10" height="10" rx="2" fill="${c}"/><rect x="5" y="33" width="10" height="10" rx="2" fill="${c}"/><rect x="19" y="33" width="10" height="10" rx="2" fill="${c}"/><rect x="33" y="33" width="10" height="10" rx="2" fill="${c}"/>`,
+  loop: (c) =>
+    `<path d="M10 28 V20 A8 8 0 0 1 18 12 H38 M32 6 L38 12 L32 18 M38 20 V28 A8 8 0 0 1 30 36 H10 M16 30 L10 36 L16 42" ${stroke(c, 3.5)}/>`,
   backspace: (c) =>
     `<path d="M16 9 H42 A2 2 0 0 1 44 11 V37 A2 2 0 0 1 42 39 H16 L4 24 Z" ${stroke(c, 3.5)}/><path d="M22 18 L34 30 M34 18 L22 30" ${stroke(c, 3.5)}/>`,
   transition: (c) =>
