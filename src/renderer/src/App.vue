@@ -501,9 +501,7 @@
                   @click="toggleAudibleNames"
                 >
                   <svg
-                    v-if="
-                      !(audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames)
-                    "
+                    v-if="playbackAction === 'Play' || playbackAction === 'Resume'"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                   >
@@ -511,18 +509,18 @@
                       d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"
                     />
                   </svg>
+                  <svg
+                    v-else-if="playbackAction === 'Pause'"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <rect x="6" y="5" width="4" height="14" rx="1" />
+                    <rect x="14" y="5" width="4" height="14" rx="1" />
+                  </svg>
                   <svg v-else viewBox="0 0 24 24" fill="currentColor">
                     <rect x="6" y="6" width="12" height="12" rx="2" />
                   </svg>
-                  <span>{{
-                    audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
-                      ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
-                        ? 'Resume'
-                        : config.audibleNames.continuousPlayback
-                          ? 'Stop'
-                          : 'Pause'
-                      : 'Play'
-                  }}</span>
+                  <span>{{ playbackAction }}</span>
                 </button>
 
                 <button
@@ -1392,6 +1390,14 @@ const isLastNameSpeaking = computed(() => {
   if (!audioStatus.value.isPlaying && !audioStatus.value.isPaused) return false
   const { currentIndex, totalNames } = audioStatus.value
   return totalNames > 0 && currentIndex === totalNames - 1
+})
+
+// What the audible names button does when clicked, shown as its label and icon
+const playbackAction = computed(() => {
+  const { isPlaying, isPaused, currentIndex, totalNames } = audioStatus.value
+  if (!isPlaying || currentIndex >= totalNames) return 'Play'
+  if (config.value.audibleNames.continuousPlayback) return 'Stop'
+  return isPaused ? 'Resume' : 'Pause'
 })
 
 // Computed property to check if current slide has audible names
