@@ -1271,7 +1271,8 @@ const handleSearchShortcut = (event: KeyboardEvent) => {
   const isFKey = event.key.toLowerCase() === 'f' || event.keyCode === 70
   const isModifierPressed = (isMac && event.metaKey) || (!isMac && event.ctrlKey)
 
-  if (isModifierPressed && isFKey) {
+  // Plain Cmd/Ctrl+F only: Cmd/Ctrl+Shift+F is the Freeze Output menu shortcut
+  if (isModifierPressed && isFKey && !event.shiftKey && !event.altKey) {
     event.preventDefault()
     event.stopPropagation() // Stop event propagation to prevent browser's find dialog
 

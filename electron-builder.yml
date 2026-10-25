@@ -31,6 +31,7 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    - NSAppleEventsUsageDescription: DualPresenter asks Microsoft Excel to show the row of the current slide when you edit the Excel file.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}

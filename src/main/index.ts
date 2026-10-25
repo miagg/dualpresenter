@@ -24,6 +24,7 @@ import config from './config'
 import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import { audioManager } from './utils/audioManager'
+import { editExcelFile } from './utils/excelEditor'
 import { CardType } from './enums/CardType'
 import { DisplayType } from './enums/DisplayType'
 import { filterNamesForCard } from '../shared/nameFilters'
@@ -938,9 +939,7 @@ const remoteActions = {
   'open-excel': withDialog(openExcelFile),
   'close-excel': withDialog(closeExcelFile),
   'open-settings': withDialog(createSettingsWindow),
-  'edit-excel': () => {
-    if (data.state.excelPath) shell.openExternal(`file://${data.state.excelPath}`)
-  },
+  'edit-excel': () => editExcelFile(data),
   'toggle-audible-names': () => {
     data.config.audibleNames.enabled = !data.config.audibleNames.enabled
     updateAudibleNamesState(data.config.audibleNames.enabled)

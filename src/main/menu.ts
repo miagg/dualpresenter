@@ -1,7 +1,8 @@
-import { Menu, app, dialog, shell, BrowserWindow } from 'electron'
+import { Menu, app, dialog, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { dirname, join } from 'path'
 import { Data } from './interfaces/Data'
+import { editExcelFile } from './utils/excelEditor'
 
 // Function to update the checked state of the Freeze Output menu item
 export function updateFreezeState(isChecked: boolean): void {
@@ -178,11 +179,7 @@ export function createApplicationMenu(
         label: 'Edit Excel File',
         accelerator: 'CmdOrCtrl+E',
         enabled: !!data.state.excelPath,
-        click: () => {
-          if (data.state.excelPath) {
-            shell.openExternal(`file://${data.state.excelPath}`)
-          }
-        }
+        click: () => editExcelFile(data)
       },
       {
         label: 'Close Excel File',
