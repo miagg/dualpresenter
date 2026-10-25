@@ -1,29 +1,17 @@
 <template>
-  <div class="app-container bg-gray-900 text-gray-200 select-none">
-    <!-- Top Navigation Bar -->
-    <div class="toolbar bg-gray-800 text-gray-200 p-4 flex items-center justify-between">
-      <div class="app-title text-xl font-bold flex items-center">
-        <span>DualPresenter</span>
-        <span class="text-gray-600 mx-3 font-normal">|</span>
-        <span
-          class="text-gray-400 text-2xl ml-1 font-normal tabular-nums font-mono flex items-center space-x-4"
-        >
-          {{ currentTime }}
-        </span>
+  <div class="app-container ui-root select-none">
+    <!-- Toolbar -->
+    <header class="toolbar">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="toolbar-title">DualPresenter</span>
+        <span class="toolbar-clock">{{ currentTime }}</span>
       </div>
 
-      <div class="controls flex space-x-3">
-        <button @click="openExcel" class="btn">
-          <svg
-            class="h-5 w-5 mr-1"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-          >
+      <div class="flex items-center gap-1.5">
+        <button @click="openExcel" class="ui-btn" title="Open an Excel file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path
-              stroke="currentColor"
               stroke-linejoin="round"
-              stroke-width="2"
               d="M17 8V7C17 6.44772 16.5523 6 16 6H10.4142C10.149 6 9.89464 5.89464 9.70711 5.70711L8.29289 4.29289C8.10536 4.10536 7.851 4 7.58579 4H4C3.44772 4 3 4.44772 3 5V17C3 18.1046 3.89543 19 5 19H19C19.5523 19 20 18.5523 20 18V11C20 10.4477 19.5523 10 19 10H8C7.44772 10 7 10.4477 7 11V17C7 18.1046 6.10457 19 5 19V19"
             />
           </svg>
@@ -32,52 +20,51 @@
 
         <button
           @click="reloadData"
-          class="btn disabled:opacity-50 disabled:pointer-events-none"
+          class="ui-btn"
           :disabled="!state.isExcelLoaded"
+          title="Reload data from the Excel file"
         >
           <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-1"
-            viewBox="0 0 20 20"
-            fill="currentColor"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <path
-              fill-rule="evenodd"
-              d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-              clip-rule="evenodd"
-            />
+            <path d="M20 11a8 8 0 0 0-14.9-3.5M4 4v4h4M4 13a8 8 0 0 0 14.9 3.5M20 20v-4h-4" />
           </svg>
           Reload
         </button>
 
+        <div class="toolbar-divider"></div>
+
         <button
           @click="toggleFreeze"
-          class="btn disabled:opacity-50 disabled:pointer-events-none"
-          :class="{ '!bg-red-800 animate-pulse': state.freezeMonitors }"
+          class="ui-btn"
+          :class="{ 'is-alert': state.freezeMonitors }"
           :disabled="!state.isExcelLoaded"
+          :title="state.freezeMonitors ? 'Resume live output' : 'Hold the current output'"
         >
+          <span v-if="state.freezeMonitors" class="live-dot animate-pulse"></span>
           <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-1"
-            viewBox="0 0 20 20"
-            fill="currentColor"
+            v-else
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
           >
-            <path
-              fill-rule="evenodd"
-              d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
-              clip-rule="evenodd"
-            />
+            <rect x="6" y="5" width="4" height="14" rx="1" />
+            <rect x="14" y="5" width="4" height="14" rx="1" />
           </svg>
           {{ state.freezeMonitors ? 'Unfreeze Output' : 'Freeze Output' }}
         </button>
 
-        <button @click="openSettings" class="btn">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-1"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
+        <div class="toolbar-divider"></div>
+
+        <button @click="openSettings" class="ui-btn" title="Settings">
+          <svg viewBox="0 0 20 20" fill="currentColor">
             <path
               fill-rule="evenodd"
               d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
@@ -86,521 +73,511 @@
           </svg>
           Settings
         </button>
+
+        <button
+          @click="openExcelStructureWindow"
+          class="help-btn"
+          title="Excel File Structure – how to set up your Excel file"
+        >
+          ?
+        </button>
       </div>
-    </div>
+    </header>
 
     <!-- Main Content Area -->
     <div class="main-content flex-grow flex">
-      <!-- Left Sidebar - Current and Next Slide -->
-      <div
-        class="sidebar-left shrink-0 bg-gray-800 flex flex-col relative"
+      <!-- Left Sidebar - Screen previews and output controls -->
+      <aside
+        class="sidebar-left shrink-0 flex flex-col relative"
         :class="{ 'transition-all duration-200': !isResizing }"
         :style="{ width: sidebarWidth + 'px' }"
       >
-        <div class="sidebar-content overflow-y-auto h-full p-4">
-          <div class="flex items-center justify-between mb-2">
-            <h2 class="text-lg font-bold text-gray-200">Main Screen</h2>
-            <div class="flex items-center space-x-2 bg-gray-700 rounded-sm px-2 py-1">
-              <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM1 17a1 1 0 011-1h16a1 1 0 110 2H2a1 1 0 01-1-1z"
-                />
-              </svg>
+        <div class="sidebar-content overflow-y-auto h-full px-4 pt-4 pb-6">
+          <!-- Main Screen -->
+          <section class="mb-6">
+            <div class="panel-head">
+              <h2 class="panel-title">
+                <span class="screen-dot screen-dot-main"></span>
+                Main Screen
+              </h2>
               <select
                 v-model="mainScreen"
                 @change="focusSlidesList"
-                class="p-1 text-xs border rounded-sm bg-gray-700 text-gray-200 border-gray-700 min-w-[90px] focus:outline-none"
+                class="ui-select min-w-[110px]"
+                title="Display used for the main screen"
               >
-                <option :value="null" class="text-gray-400">None</option>
+                <option :value="null">None</option>
                 <option
                   v-for="monitor in monitors.filter(
                     (m) => !m.isPrimary && m.id.toString() !== sideScreen
                   )"
                   :key="monitor.id"
                   :value="monitor.id.toString()"
-                  class="text-gray-200"
                 >
                   {{ monitor.label || `Display ${monitor.id}` }}
                 </option>
               </select>
             </div>
-          </div>
-          <div
-            class="card-preview mb-4 border rounded-md overflow-hidden relative"
-            :class="
-              isLastNameSpeaking
-                ? 'border-red-600 ring-2 ring-red-600 shadow-[0_0_22px_rgba(220,38,38,0.5)]'
-                : 'border-gray-600/90'
-            "
-            ref="mainPreview"
-          >
-            <Card
-              v-if="mainScreenCard"
-              ref="mainCardRef"
-              :zoom="Math.ceil(($refs.mainPreview.clientWidth / 1920) * 1000) / 1000"
-              :card="mainScreenCard"
-              :names="names"
-              :config="config"
-              :all-cards="cards"
-              :audio-status="audioStatus"
-              :last-spoken-name="previewSpokenName"
-              :is-main-screen="true"
-              :is-from-side-only-names-card="isMainScreenFromSideOnlyNamesCard"
-              :current-names-page="currentMainNamesPage"
-              :current-unattended-page="currentMainUnattendedPage"
-            />
             <div
-              v-else
-              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400 rounded-md"
+              class="card-preview preview-frame relative"
+              :class="{ 'is-warning': isLastNameSpeaking }"
+              ref="mainPreview"
             >
-              No slide available
+              <Card
+                v-if="mainScreenCard"
+                ref="mainCardRef"
+                :zoom="Math.ceil(($refs.mainPreview.clientWidth / 1920) * 1000) / 1000"
+                :card="mainScreenCard"
+                :names="names"
+                :config="config"
+                :all-cards="cards"
+                :audio-status="audioStatus"
+                :last-spoken-name="previewSpokenName"
+                :is-main-screen="true"
+                :is-from-side-only-names-card="isMainScreenFromSideOnlyNamesCard"
+                :current-names-page="currentMainNamesPage"
+                :current-unattended-page="currentMainUnattendedPage"
+              />
+              <div v-else class="empty-preview aspect-video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="4" width="18" height="13" rx="2" />
+                  <path stroke-linecap="round" d="M8 21h8M12 17v4" />
+                </svg>
+                No slide available
+              </div>
+
+              <!-- Warns that playback is about to finish, so play is not hit again by mistake -->
+              <div v-if="isLastNameSpeaking" class="last-name-badge">ONE LAST NAME</div>
             </div>
 
-            <!-- Warns that playback is about to finish, so play is not hit again by mistake -->
+            <!-- Pagination controls for Main Screen Names -->
             <div
-              v-if="isLastNameSpeaking"
-              class="absolute top-2 right-2 px-2 py-0.5 rounded bg-red-600 text-white text-xs font-bold tracking-wide pointer-events-none"
+              v-if="mainCardRef?.totalNamesPages > 1 && mainScreenCard?.type === CardType.Names"
+              class="pager"
             >
-              ONE LAST NAME
+              <button
+                @click="prevMainNamesPage"
+                :disabled="currentMainNamesPage === 0"
+                class="pager-btn"
+                title="Previous page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <span class="pager-label">
+                Page {{ currentMainNamesPage + 1 }} of {{ mainCardRef.totalNamesPages }}
+              </span>
+              <button
+                @click="nextMainNamesPage"
+                :disabled="currentMainNamesPage === mainCardRef.totalNamesPages - 1"
+                class="pager-btn"
+                title="Next page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
             </div>
-          </div>
 
-          <!-- Pagination controls for Main Screen Names -->
-          <div
-            v-if="mainCardRef?.totalNamesPages > 1 && mainScreenCard?.type === CardType.Names"
-            class="flex gap-2 mb-4 justify-center"
-          >
-            <button
-              @click="prevMainNamesPage"
-              :disabled="currentMainNamesPage === 0"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            <!-- Pagination controls for Main Screen Unattended -->
+            <div
+              v-if="
+                mainCardRef?.totalUnattendedPages > 1 &&
+                mainScreenCard?.type === CardType.Unattended
+              "
+              class="pager"
             >
-              ‹
-            </button>
-            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
-              {{ currentMainNamesPage + 1 }} / {{ mainCardRef.totalNamesPages }}
-            </span>
-            <button
-              @click="nextMainNamesPage"
-              :disabled="currentMainNamesPage === mainCardRef.totalNamesPages - 1"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              ›
-            </button>
-          </div>
+              <button
+                @click="prevMainUnattendedPage"
+                :disabled="currentMainUnattendedPage === 0"
+                class="pager-btn"
+                title="Previous page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <span class="pager-label">
+                Page {{ currentMainUnattendedPage + 1 }} of {{ mainCardRef.totalUnattendedPages }}
+              </span>
+              <button
+                @click="nextMainUnattendedPage"
+                :disabled="currentMainUnattendedPage === mainCardRef.totalUnattendedPages - 1"
+                class="pager-btn"
+                title="Next page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+            </div>
+          </section>
 
-          <!-- Pagination controls for Main Screen Unattended -->
-          <div
-            v-if="
-              mainCardRef?.totalUnattendedPages > 1 && mainScreenCard?.type === CardType.Unattended
-            "
-            class="flex gap-2 mb-4 justify-center"
-          >
-            <button
-              @click="prevMainUnattendedPage"
-              :disabled="currentMainUnattendedPage === 0"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              ‹
-            </button>
-            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
-              {{ currentMainUnattendedPage + 1 }} / {{ mainCardRef.totalUnattendedPages }}
-            </span>
-            <button
-              @click="nextMainUnattendedPage"
-              :disabled="currentMainUnattendedPage === mainCardRef.totalUnattendedPages - 1"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              ›
-            </button>
-          </div>
-
-          <div class="flex items-center justify-between mb-2">
-            <h2 class="text-lg font-bold text-gray-200">Side Screen</h2>
-            <div class="flex items-center space-x-2 bg-gray-700 rounded-sm px-2 py-1">
-              <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM1 17a1 1 0 011-1h16a1 1 0 110 2H2a1 1 0 01-1-1z"
-                />
-              </svg>
+          <!-- Side Screen -->
+          <section class="mb-6">
+            <div class="panel-head">
+              <h2 class="panel-title">
+                <span class="screen-dot screen-dot-side"></span>
+                Side Screen
+              </h2>
               <select
                 v-model="sideScreen"
                 @change="focusSlidesList"
-                class="p-1 text-xs border rounded-sm bg-gray-700 text-gray-200 border-gray-700 min-w-[90px] focus:outline-none"
+                class="ui-select min-w-[110px]"
+                title="Display used for the side screen"
               >
-                <option :value="null" class="text-gray-400">None</option>
+                <option :value="null">None</option>
                 <option
                   v-for="monitor in monitors.filter(
                     (m) => !m.isPrimary && m.id.toString() !== mainScreen
                   )"
                   :key="monitor.id"
                   :value="monitor.id.toString()"
-                  class="text-gray-200"
                 >
                   {{ monitor.label || `Display ${monitor.id}` }}
                 </option>
               </select>
             </div>
-          </div>
-          <div
-            class="card-preview border border-gray-600/90 rounded-md overflow-hidden"
-            ref="sidePreview"
-          >
-            <Card
-              v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
-              ref="sideCardRef"
-              :zoom="Math.ceil(($refs.sidePreview.clientWidth / 1920) * 1000) / 1000"
-              :card="sideScreenCard"
-              :names="names"
-              :config="config"
-              :all-cards="cards"
-              :audio-status="audioStatus"
-              :last-spoken-name="lastSpokenName"
-              :is-main-screen="false"
-              :is-from-side-only-names-card="false"
-              :current-names-page="currentSideNamesPage"
-              :current-unattended-page="currentSideUnattendedPage"
-            />
-            <div
-              v-else
-              class="empty-preview bg-gray-700 aspect-video flex items-center justify-center text-gray-400 rounded-md"
-            >
-              No slide available
+            <div class="card-preview preview-frame" ref="sidePreview">
+              <Card
+                v-if="cards.length > 0 && state.currentSlideIndex < cards.length"
+                ref="sideCardRef"
+                :zoom="Math.ceil(($refs.sidePreview.clientWidth / 1920) * 1000) / 1000"
+                :card="sideScreenCard"
+                :names="names"
+                :config="config"
+                :all-cards="cards"
+                :audio-status="audioStatus"
+                :last-spoken-name="lastSpokenName"
+                :is-main-screen="false"
+                :is-from-side-only-names-card="false"
+                :current-names-page="currentSideNamesPage"
+                :current-unattended-page="currentSideUnattendedPage"
+              />
+              <div v-else class="empty-preview aspect-video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="4" width="18" height="13" rx="2" />
+                  <path stroke-linecap="round" d="M8 21h8M12 17v4" />
+                </svg>
+                No slide available
+              </div>
             </div>
-          </div>
 
-          <!-- Pagination controls for Side Screen Names -->
-          <div
-            v-if="sideCardRef?.totalNamesPages > 1 && sideScreenCard?.type === CardType.Names"
-            class="flex gap-2 mt-4 mb-4 justify-center"
-          >
-            <button
-              @click="prevSideNamesPage"
-              :disabled="currentSideNamesPage === 0"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            <!-- Pagination controls for Side Screen Names -->
+            <div
+              v-if="sideCardRef?.totalNamesPages > 1 && sideScreenCard?.type === CardType.Names"
+              class="pager"
             >
-              ‹
-            </button>
-            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
-              {{ currentSideNamesPage + 1 }} / {{ sideCardRef.totalNamesPages }}
-            </span>
-            <button
-              @click="nextSideNamesPage"
-              :disabled="currentSideNamesPage === sideCardRef.totalNamesPages - 1"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              ›
-            </button>
-          </div>
+              <button
+                @click="prevSideNamesPage"
+                :disabled="currentSideNamesPage === 0"
+                class="pager-btn"
+                title="Previous page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <span class="pager-label">
+                Page {{ currentSideNamesPage + 1 }} of {{ sideCardRef.totalNamesPages }}
+              </span>
+              <button
+                @click="nextSideNamesPage"
+                :disabled="currentSideNamesPage === sideCardRef.totalNamesPages - 1"
+                class="pager-btn"
+                title="Next page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+            </div>
 
-          <!-- Pagination controls for Side Screen Unattended -->
-          <div
-            v-if="
-              sideCardRef?.totalUnattendedPages > 1 && sideScreenCard?.type === CardType.Unattended
-            "
-            class="flex gap-2 mt-4 mb-4 justify-center"
-          >
-            <button
-              @click="prevSideUnattendedPage"
-              :disabled="currentSideUnattendedPage === 0"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            <!-- Pagination controls for Side Screen Unattended -->
+            <div
+              v-if="
+                sideCardRef?.totalUnattendedPages > 1 &&
+                sideScreenCard?.type === CardType.Unattended
+              "
+              class="pager"
             >
-              ‹
-            </button>
-            <span class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded">
-              {{ currentSideUnattendedPage + 1 }} / {{ sideCardRef.totalUnattendedPages }}
-            </span>
-            <button
-              @click="nextSideUnattendedPage"
-              :disabled="currentSideUnattendedPage === sideCardRef.totalUnattendedPages - 1"
-              class="px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              ›
-            </button>
-          </div>
+              <button
+                @click="prevSideUnattendedPage"
+                :disabled="currentSideUnattendedPage === 0"
+                class="pager-btn"
+                title="Previous page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <span class="pager-label">
+                Page {{ currentSideUnattendedPage + 1 }} of {{ sideCardRef.totalUnattendedPages }}
+              </span>
+              <button
+                @click="nextSideUnattendedPage"
+                :disabled="currentSideUnattendedPage === sideCardRef.totalUnattendedPages - 1"
+                class="pager-btn"
+                title="Next page"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+            </div>
+          </section>
 
-          <!-- Display Selection -->
-          <div class="display-selection mt-6">
-            <h2 class="text-lg font-bold mb-3 text-gray-200 flex items-center justify-between">
-              <span>Output</span>
-              <div class="flex space-x-2">
-                <button
-                  @click="blackOutScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-cente disabled:opacity-50 disabled:pointer-events-none"
-                  :class="{ '!bg-red-800 animate-pulse': state.blackOutScreens }"
-                  title="Black out all screens"
-                  :disabled="!state.isExcelLoaded"
-                >
+          <!-- Output controls -->
+          <section class="display-selection">
+            <div class="panel-head">
+              <h2 class="panel-title">Output</h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                @click="blackOutScreens"
+                class="tile"
+                :class="{ 'is-alert': state.blackOutScreens }"
+                title="Black out all screens"
+                :disabled="!state.isExcelLoaded"
+              >
+                <span class="tile-icon" :class="{ 'animate-pulse': state.blackOutScreens }">
                   <svg
-                    class="w-5 h-5"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
-                    fill="transparent"
-                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
                   >
                     <path
                       d="M2.99902 3L20.999 21M9.8433 9.91364C9.32066 10.4536 8.99902 11.1892 8.99902 12C8.99902 13.6569 10.3422 15 11.999 15C12.8215 15 13.5667 14.669 14.1086 14.133M6.49902 6.64715C4.59972 7.90034 3.15305 9.78394 2.45703 12C3.73128 16.0571 7.52159 19 11.9992 19C13.9881 19 15.8414 18.4194 17.3988 17.4184M10.999 5.04939C11.328 5.01673 11.6617 5 11.9992 5C16.4769 5 20.2672 7.94291 21.5414 12C21.2607 12.894 20.8577 13.7338 20.3522 14.5"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
                     />
                   </svg>
-                </button>
-                <button
-                  @click="flipScreens"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
-                  title="Flip main screen with side screen"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                </span>
+                <span class="tile-text">
+                  <span class="tile-label">Blackout</span>
+                  <span class="tile-sub">{{ state.blackOutScreens ? 'On' : 'Off' }}</span>
+                </span>
+              </button>
+
+              <button @click="flipScreens" class="tile" title="Flip main screen with side screen">
+                <span class="tile-icon">
+                  <svg viewBox="0 0 20 20" fill="currentColor">
                     <path
-                      fill-rule="evenodd"
                       d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"
                     />
                   </svg>
-                </button>
+                </span>
+                <span class="tile-text">
+                  <span class="tile-label">Flip Screens</span>
+                  <span class="tile-sub">Swap main & side</span>
+                </span>
+              </button>
+            </div>
 
-                <!-- Audio Settings Toggle Buttons -->
-                <button
-                  v-if="config.audibleNames.enabled"
-                  class="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-200 flex items-center"
+            <!-- Audible names -->
+            <div v-if="config.audibleNames.enabled" class="audio-card mt-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <svg
+                    class="w-4 h-4 shrink-0 text-[var(--ui-text-2)]"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span class="text-[13px] font-semibold">Audible Names</span>
+                </div>
+
+                <!-- Auto / manual playback -->
+                <div
+                  class="segmented"
                   :title="
                     config.audibleNames.autoPlayback
                       ? 'Disable auto playback (manual mode)'
                       : 'Enable auto playback'
                   "
-                  @click="toggleAutoPlayback"
                 >
-                  <!-- Simple text letters for auto/manual -->
-                  <span class="text-sm font-bold w-5 h-5 flex items-center justify-center">
-                    {{ config.audibleNames.autoPlayback ? 'A' : 'M' }}
-                  </span>
-                </button>
-
-                <div v-if="config.audibleNames.enabled" class="flex space-x-2 font-normal text-sm">
                   <button
-                    :disabled="
-                      !currentNamesSlide &&
-                      (cards.length === 0 ||
-                        state.currentSlideIndex >= cards.length ||
-                        cards[state.currentSlideIndex].type !== CardType.Unattended)
-                    "
-                    class="btn !px-2 !py-1 min-w-18 justify-center items-center disabled:opacity-50 disabled:pointer-events-none relative overflow-hidden"
-                    :title="
-                      audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
-                        ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
-                          ? 'Resume audible names playback'
-                          : config.audibleNames.continuousPlayback
-                            ? 'Stop audible names playback'
-                            : 'Pause audible names playback'
-                        : 'Play audible names for current slide'
-                    "
-                    @click="toggleAudibleNames"
+                    :class="{ 'is-active': config.audibleNames.autoPlayback }"
+                    @click="!config.audibleNames.autoPlayback && toggleAutoPlayback()"
                   >
-                    <!-- Progress bar background (only visible when playing) -->
-                    <div
-                      class="absolute inset-0 bg-slate-500"
-                      :class="{
-                        'transition-all duration-[3s] ease-out':
-                          audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
-                      }"
-                      :style="{
-                        width: `${audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames ? Math.ceil(((audioStatus.currentIndex + 1) / audioStatus.totalNames) * 100) : 0}%`
-                      }"
-                    ></div>
-
-                    <!-- Button content -->
-                    <div class="relative z-10 flex items-center">
-                      <svg
-                        v-if="
-                          !(
-                            audioStatus.isPlaying &&
-                            audioStatus.currentIndex < audioStatus.totalNames
-                          )
-                        "
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-5 w-5 mr-1"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                      <svg
-                        v-else
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-5 w-5 mr-1"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                      <span>{{
-                        audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
-                          ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
-                            ? 'Resume'
-                            : config.audibleNames.continuousPlayback
-                              ? 'Stop'
-                              : 'Pause'
-                          : 'Play'
-                      }}</span>
-                    </div>
+                    Auto
+                  </button>
+                  <button
+                    :class="{ 'is-active': !config.audibleNames.autoPlayback }"
+                    @click="config.audibleNames.autoPlayback && toggleAutoPlayback()"
+                  >
+                    Manual
                   </button>
                 </div>
               </div>
-            </h2>
 
-            <!-- Status indicator showing current position and total - on its own line -->
-            <div
-              v-if="config.audibleNames.enabled"
-              class="text-sm text-gray-400 flex items-center justify-between mb-4 bg-gray-700/50 px-3 py-2 rounded min-h-10"
-            >
-              <div class="flex items-center space-x-2">
-                <span>🔊</span>
+              <!-- Status showing current position and total -->
+              <div class="audio-status">
                 <div
                   v-if="audioStatus.isPlaying || audioStatus.isPaused"
-                  class="flex items-center space-x-2"
+                  class="flex items-center gap-2 min-w-0"
                 >
-                  <span v-if="audioStatus.currentIndex < audioStatus.totalNames">
+                  <span
+                    v-if="audioStatus.currentIndex < audioStatus.totalNames"
+                    class="tabular-nums text-[var(--ui-text-2)] shrink-0"
+                  >
                     {{ audioStatus.currentIndex + 1 }}/{{ audioStatus.totalNames }}
                   </span>
-                  <span v-else> Not playing </span>
+                  <span v-else class="text-[var(--ui-text-2)]"> Not playing </span>
                   <span
                     v-if="
                       audioStatus.queuedName && audioStatus.currentIndex < audioStatus.totalNames
                     "
-                    class="text-gray-300"
+                    class="truncate text-[var(--ui-text)]"
                   >
                     {{ audioStatus.queuedName }}
                   </span>
                   <span
                     v-if="audioStatus.isPaused && audioStatus.currentIndex < audioStatus.totalNames"
-                    class="text-yellow-400"
-                    >(Paused)</span
+                    class="paused-pill"
+                    >Paused</span
                   >
                 </div>
-                <span v-else class="text-gray-400">Not playing</span>
+                <span v-else class="text-[var(--ui-text-3)]">Not playing</span>
               </div>
 
-              <!-- Navigation buttons - only show when continuous playback is disabled and audio is active -->
-              <div
-                v-if="
-                  !config.audibleNames.continuousPlayback &&
-                  (audioStatus.isPlaying || audioStatus.isPaused) &&
-                  audioStatus.totalNames > 1
-                "
-                class="flex items-center space-x-1"
-              >
+              <!-- Playback progress (only filled while playing) -->
+              <div class="audio-progress">
+                <div
+                  class="audio-progress-fill"
+                  :class="{
+                    'transition-all duration-[3s] ease-out':
+                      audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
+                  }"
+                  :style="{
+                    width: `${audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames ? Math.ceil(((audioStatus.currentIndex + 1) / audioStatus.totalNames) * 100) : 0}%`
+                  }"
+                ></div>
+              </div>
+
+              <div class="flex items-center justify-center gap-2">
+                <!-- Navigation buttons - only show when continuous playback is disabled and audio is active -->
                 <button
+                  v-if="
+                    !config.audibleNames.continuousPlayback &&
+                    (audioStatus.isPlaying || audioStatus.isPaused) &&
+                    audioStatus.totalNames > 1
+                  "
                   @click="goToPreviousName"
                   :disabled="audioStatus.currentIndex <= 0"
-                  class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  class="ui-btn ui-btn-icon"
                   title="Previous name"
                 >
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fill-rule="evenodd"
-                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 6h2v12H7zM20 6v12l-9-6z" />
                   </svg>
                 </button>
+
                 <button
+                  :disabled="
+                    !currentNamesSlide &&
+                    (cards.length === 0 ||
+                      state.currentSlideIndex >= cards.length ||
+                      cards[state.currentSlideIndex].type !== CardType.Unattended)
+                  "
+                  class="ui-btn ui-btn-primary flex-1 max-w-48"
+                  :title="
+                    audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
+                      ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
+                        ? 'Resume audible names playback'
+                        : config.audibleNames.continuousPlayback
+                          ? 'Stop audible names playback'
+                          : 'Pause audible names playback'
+                      : 'Play audible names for current slide'
+                  "
+                  @click="toggleAudibleNames"
+                >
+                  <svg
+                    v-if="
+                      !(audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames)
+                    "
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"
+                    />
+                  </svg>
+                  <svg v-else viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                  <span>{{
+                    audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
+                      ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
+                        ? 'Resume'
+                        : config.audibleNames.continuousPlayback
+                          ? 'Stop'
+                          : 'Pause'
+                      : 'Play'
+                  }}</span>
+                </button>
+
+                <button
+                  v-if="
+                    !config.audibleNames.continuousPlayback &&
+                    (audioStatus.isPlaying || audioStatus.isPaused) &&
+                    audioStatus.totalNames > 1
+                  "
                   @click="goToNextName"
                   :disabled="audioStatus.currentIndex >= audioStatus.totalNames - 1"
-                  class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  class="ui-btn ui-btn-icon"
                   title="Next name"
                 >
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fill-rule="evenodd"
-                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                      clip-rule="evenodd"
-                    />
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15 6h2v12h-2zM4 6v12l9-6z" />
                   </svg>
                 </button>
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
         <!-- Resize handle -->
-        <div
-          class="resize-handle absolute top-0 right-0 bottom-0 w-px bg-gray-700 hover:bg-blue-500 cursor-col-resize group"
-          @mousedown="startResize"
-        >
-          <div
-            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-8 bg-gray-500 group-hover:bg-blue-400 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
-          ></div>
+        <div class="resize-handle" @mousedown="startResize">
+          <div class="resize-grip"></div>
         </div>
-      </div>
+      </aside>
 
       <!-- Main Content - Slide List -->
-      <div
-        class="content-main flex-grow flex flex-col overflow-hidden bg-gray-900 border-y border-gray-700"
-      >
-        <div class="flex justify-between items-center p-4 pr-4.5">
-          <div class="flex items-center">
-            <h2 class="text-xl font-bold text-gray-200 mr-3">All Slides</h2>
+      <main class="content-main flex-grow flex flex-col overflow-hidden">
+        <div class="list-header">
+          <div class="flex items-center gap-3">
+            <h2 class="list-title">All Slides</h2>
 
-            <!-- Add slide counter and navigation arrows -->
-            <div class="flex items-center bg-gray-800 rounded-lg px-2 py-1">
+            <!-- Slide counter and navigation arrows -->
+            <div class="stepper">
               <button
                 @click="prevSlide"
-                class="text-gray-400 hover:text-white p-1 focus:outline-none disabled:pointer-events-none"
-                :class="{ 'opacity-50 cursor-not-allowed': state.currentSlideIndex <= 0 }"
                 :disabled="state.currentSlideIndex <= 0"
+                title="Previous slide"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 19l-7-7 7-7"
-                  />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
-              <span class="text-sm text-gray-300 mx-2"
+              <span class="stepper-label"
                 >{{ cards.length ? state.currentSlideIndex + 1 : 0 }} / {{ cards.length }}</span
               >
               <button
                 @click="nextSlide"
-                class="text-gray-400 hover:text-white p-1 focus:outline-none disabled:pointer-events-none"
-                :class="{
-                  'opacity-50 cursor-not-allowed': state.currentSlideIndex >= cards.length - 1
-                }"
                 :disabled="state.currentSlideIndex >= cards.length - 1"
+                title="Next slide"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
                 </svg>
               </button>
             </div>
@@ -609,11 +586,22 @@
           <!-- Search Bar -->
           <div class="relative" ref="searchContainerRef">
             <div class="relative">
+              <svg
+                class="search-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="M20 20l-4.2-4.2" />
+              </svg>
               <input
                 type="text"
                 v-model="searchQuery"
-                class="w-64 xl:w-96 px-4 py-2 pr-16 border rounded bg-gray-800 text-gray-200 border-gray-700 focus:outline-none"
-                placeholder="Search slides..."
+                class="ui-input search-input w-64 xl:w-96"
+                placeholder="Search slides and names"
                 @focus="showSearchResults = true"
                 @keydown.down.prevent="navigateSearchResults('down')"
                 @keydown.up.prevent="navigateSearchResults('up')"
@@ -621,39 +609,33 @@
                 @keydown.escape="closeSearchAndClear()"
                 ref="searchInputRef"
               />
-              <div
-                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"
-              >
-                {{ isMac ? '⌘F' : 'Ctrl+F' }}
-              </div>
+              <kbd class="search-hint">{{ isMac ? '⌘F' : 'Ctrl+F' }}</kbd>
             </div>
 
             <!-- Search Results Popup -->
             <div
               v-if="showSearchResults && filteredSearchResults.length > 0"
-              class="absolute z-50 top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto bg-gray-800 border border-gray-700 rounded shadow-lg"
+              class="search-popover ui-scroll"
             >
               <div
                 v-for="(result, index) in filteredSearchResults"
                 :key="result.id"
-                class="p-2 hover:bg-gray-700 flex items-center"
-                :class="{ 'bg-blue-900': index === selectedSearchIndex }"
+                class="search-item"
+                :class="{ 'is-selected': index === selectedSearchIndex }"
                 @click="selectSearchResult(index)"
                 @mouseover="selectedSearchIndex = index"
               >
-                <div
-                  class="flex-shrink-0 mr-2 w-10 h-6 bg-gray-700 flex items-center justify-center rounded"
-                >
+                <div class="search-index">
                   {{ result.index + 1 }}
                 </div>
-                <div class="flex-grow">
-                  <div class="font-medium text-gray-200">{{ result.type }}</div>
-                  <div class="text-sm text-gray-400" v-if="result.title">
+                <div class="flex-grow min-w-0">
+                  <div class="search-type">{{ result.type }}</div>
+                  <div class="search-title" v-if="result.title">
                     {{ result.title }}
                   </div>
                   <!-- Display matched names if any -->
                   <div
-                    class="text-xs text-gray-400 mt-1"
+                    class="search-names"
                     v-if="result.matchedNames && result.matchedNames.length > 0"
                   >
                     <span>Matched names: {{ result.matchedNames.slice(0, 3).join(', ') }}</span>
@@ -668,18 +650,17 @@
         </div>
 
         <div
-          class="slides-list flex-grow overflow-y-auto space-y-4 p-4 mr-0.5 focus:outline-0 focus:ring-0"
+          class="slides-list ui-scroll flex-grow overflow-y-auto space-y-2 px-4 pb-4 pt-1 focus:outline-0 focus:ring-0"
           ref="slidesListRef"
           tabindex="0"
         >
           <div
             v-for="(card, index) in cards"
             :key="card.id"
-            class="slide-item p-3 border rounded flex bg-gray-850 border-gray-700 outline-none transition relative"
+            class="slide-item"
             :class="{
-              '!bg-blue-900/70 ring-2 ring-blue-700 shadow-[0_0_22px_rgba(20,50,255,0.5)]':
-                index === state.currentSlideIndex,
-              '!ring-red-700 ring-2': state.freezeMonitors && index === state.frozenSlideIndex
+              'is-current': index === state.currentSlideIndex,
+              'is-frozen': state.freezeMonitors && index === state.frozenSlideIndex
             }"
             @click="goToSlide(index)"
           >
@@ -688,9 +669,9 @@
                 getSideScreen(index) ||
                 (card.type === CardType.Names && card.display !== DisplayType.MainOnly)
               "
-              class="slide-connection absolute right-0 rounded-r top-0 bottom-0 w-1 bg-yellow-600"
+              class="slide-connection"
               :class="{
-                '!bg-yellow-700/30':
+                'is-dimmed':
                   card.type === CardType.Names &&
                   (card.display === DisplayType.MainOnly ||
                     card.display === DisplayType.Auto ||
@@ -704,16 +685,18 @@
               @mouseenter="handleMouseEnter(index)"
               @mouseleave="handleMouseLeave()"
             >
-              <Card
-                :zoom="0.0834"
-                :card="card"
-                :names="names"
-                :config="config"
-                :all-cards="cards"
-                :class="{
-                  'opacity-50': index < state.currentSlideIndex
-                }"
-              />
+              <div class="thumbnail-frame">
+                <Card
+                  :zoom="0.0834"
+                  :card="card"
+                  :names="names"
+                  :config="config"
+                  :all-cards="cards"
+                  :class="{
+                    'opacity-50': index < state.currentSlideIndex
+                  }"
+                />
+              </div>
 
               <!-- Large thumbnail preview that appears on hover -->
               <transition name="fade">
@@ -727,7 +710,7 @@
                   @mouseenter="keepLargeThumbnail()"
                   @mouseleave="handleMouseLeave()"
                 >
-                  <div class="bg-gray-800 border border-gray-600 p-2 rounded shadow-xl">
+                  <div class="large-thumbnail-frame">
                     <div class="w-[455px] xl:w-[640px]">
                       <Card
                         :zoom="$el.clientWidth >= 1280 ? 0.33333333 : 0.237"
@@ -743,19 +726,15 @@
             </div>
 
             <div
-              class="slide-info flex-grow"
+              class="slide-info flex-grow min-w-0"
               :class="{
                 'opacity-50': index < state.currentSlideIndex
               }"
             >
-              <div class="slide-title font-bold text-gray-200">
+              <div class="slide-title">
                 {{ card.type }}
               </div>
-              <div
-                class="slide-subtitle mt-1 text-gray-300"
-                style="overflow-wrap: anywhere"
-                v-if="card.title"
-              >
+              <div class="slide-subtitle" style="overflow-wrap: anywhere" v-if="card.title">
                 {{
                   card.type === CardType.Image
                     ? card.title.substring(
@@ -764,18 +743,17 @@
                     : card.title
                 }}
               </div>
-              <div class="slide-meta text-sm text-gray-400 mt-1" v-if="card.subtitle || card.group">
+              <div class="slide-meta" v-if="card.subtitle || card.group">
                 <span v-if="card.subtitle">{{ card.subtitle }}</span>
-                <span v-if="card.subtitle && card.group"> | </span>
+                <span v-if="card.subtitle && card.group" class="mx-1.5 opacity-50">·</span>
                 <span v-if="card.group">Group: {{ card.group }}</span>
               </div>
             </div>
 
             <!-- Slide number on right side -->
             <div
-              class="slide-number flex justify-end text-xl font-bold text-gray-600 tabular-nums"
+              class="slide-number"
               :class="{
-                'text-white animate-pulse': index === state.currentSlideIndex,
                 'opacity-50': index < state.currentSlideIndex
               }"
             >
@@ -783,50 +761,38 @@
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
 
     <!-- Navigation Buttons -->
-    <div class="navigation-buttons bg-gray-800 p-3 flex items-center justify-center space-x-6">
-      <button class="nav-btn" @click="prevSlide" :disabled="state.currentSlideIndex <= 0">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"
-          />
+    <footer class="navigation-buttons">
+      <button class="ui-btn nav-btn" @click="prevSlide" :disabled="state.currentSlideIndex <= 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
         </svg>
         Previous
       </button>
 
-      <div class="slide-counter font-medium text-gray-200">
-        Slide {{ cards.length ? state.currentSlideIndex + 1 : 0 }} of {{ cards.length }}
+      <div class="slide-counter">
+        Slide
+        <span class="text-[var(--ui-text)] font-semibold tabular-nums">{{
+          cards.length ? state.currentSlideIndex + 1 : 0
+        }}</span>
+        of
+        <span class="tabular-nums">{{ cards.length }}</span>
       </div>
 
       <button
-        class="nav-btn"
+        class="ui-btn ui-btn-primary nav-btn"
         @click="nextSlide"
         :disabled="state.currentSlideIndex >= cards.length - 1"
       >
         Next
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
         </svg>
       </button>
-    </div>
+    </footer>
 
     <!-- Excel Structure Modal -->
     <ExcelStructure v-if="showExcelStructure" @close="showExcelStructure = false" />
@@ -1735,6 +1701,10 @@ const openSettings = () => {
   window.electron.ipcRenderer.send('open-settings')
 }
 
+const openExcelStructureWindow = () => {
+  window.electron.ipcRenderer.send('open-excel-structure')
+}
+
 const openExcelStructure = () => {
   // Toggle the modal directly instead of sending to main process
   showExcelStructure.value = true
@@ -1979,14 +1949,100 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   ring: 0 !important;
 }
 
-:global(:focus-visible:not(.slides-list)) {
-  outline: 2px solid #3b82f6 !important;
+/* Text fields draw their own focus ring */
+:global(:focus-visible:not(.slides-list):not(.ui-input)) {
+  outline: 2px solid rgba(10, 132, 255, 0.8) !important;
   outline-offset: 2px !important;
+}
+
+/* Toolbar */
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 52px;
+  padding: 0 1rem;
+  background: var(--ui-bg-toolbar);
+  border-bottom: 1px solid var(--ui-separator);
+  box-shadow: inset 0 -0.5px 0 rgba(255, 255, 255, 0.04);
+}
+
+.toolbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.toolbar-clock {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border-strong);
+  color: var(--ui-text-2);
+  font-family: var(--ui-font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 0.25rem;
+  background: var(--ui-border-strong);
+}
+
+.ui-btn.is-alert,
+.tile.is-alert {
+  background: var(--ui-red);
+  color: #fff;
+}
+
+.ui-btn.is-alert:hover,
+.tile.is-alert:hover {
+  background: #ff5a50;
+}
+
+/* Round help button, as in macOS dialogs */
+.help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 0.25rem;
+  border-radius: 50%;
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1),
+    0 0.5px 1px rgba(0, 0, 0, 0.35);
+  transition: background-color 0.15s ease;
+}
+
+.help-btn:hover {
+  background: var(--ui-control-hover);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
 }
 
 .main-content {
   flex: 1;
   overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar-left {
+  background: var(--ui-bg-sidebar);
 }
 
 .sidebar-content {
@@ -2000,57 +2056,630 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   display: none;
 }
 
-.slides-list {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
 }
 
-.slides-list::-webkit-scrollbar {
-  width: 6px;
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui-text-2);
 }
 
-.slides-list::-webkit-scrollbar-track {
+.screen-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.screen-dot-main {
+  background: var(--ui-accent);
+  box-shadow: 0 0 6px rgba(10, 132, 255, 0.6);
+}
+
+.screen-dot-side {
+  background: var(--ui-yellow);
+  box-shadow: 0 0 6px rgba(255, 214, 10, 0.5);
+}
+
+.preview-frame {
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 6px 18px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.2s ease;
+}
+
+.preview-frame.is-warning {
+  box-shadow:
+    0 0 0 2px var(--ui-red),
+    0 0 24px rgba(255, 69, 58, 0.45);
+}
+
+.empty-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--ui-surface);
+  color: var(--ui-text-3);
+  font-size: 12px;
+}
+
+.empty-preview svg {
+  width: 28px;
+  height: 28px;
+}
+
+.last-name-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ui-red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* Names page controls under a preview */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.625rem;
+}
+
+.pager-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text-2);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.pager-btn:hover {
+  background: var(--ui-control);
+  color: var(--ui-text);
+}
+
+.pager-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
   background: transparent;
 }
 
-.slides-list::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-  border-radius: 3px;
+.pager-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
-.btn {
+.pager-label {
+  min-width: 92px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ui-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Output tiles (Control Center style) */
+.tile {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background-color: #334155;
-  color: white;
-  border-radius: 0.25rem;
+  gap: 0.625rem;
+  padding: 0.625rem;
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border-strong);
+  text-align: left;
+  transition: background-color 0.15s ease;
 }
 
-.btn:hover {
-  background-color: #475569;
+.tile:hover {
+  background: var(--ui-surface-hover);
 }
 
-.nav-btn {
+.tile:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.tile-icon {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background-color: #374151;
-  color: white;
-  border-radius: 0.25rem;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ui-control);
 }
 
-.nav-btn:hover {
-  background-color: #475569;
+.tile.is-alert .tile-icon {
+  background: rgba(255, 255, 255, 0.25);
 }
 
-.nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.tile-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tile-label {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tile-sub {
+  font-size: 11px;
+  color: var(--ui-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile.is-alert .tile-sub {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Audible names */
+.audio-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border-strong);
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border);
+}
+
+.segmented button {
+  height: 20px;
+  padding: 0 0.6rem;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ui-text-2);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.segmented button:hover {
+  color: var(--ui-text);
+}
+
+.segmented button.is-active {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--ui-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.audio-status {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  font-size: 12px;
+}
+
+.paused-pill {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 159, 10, 0.18);
+  color: var(--ui-orange);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audio-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.audio-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ui-accent);
+}
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 7px;
+  z-index: 10;
+  cursor: col-resize;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: var(--ui-separator);
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover::before {
+  background: var(--ui-accent);
+}
+
+.resize-handle:active::before {
+  left: 2px;
+  width: 3px;
+  background: var(--ui-accent);
+}
+
+.resize-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 32px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--ui-accent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.resize-handle:hover .resize-grip {
+  opacity: 1;
+}
+
+/* Slide list */
+.content-main {
+  background: var(--ui-bg);
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem 0.75rem;
+}
+
+.list-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.08),
+    0 0.5px 1px rgba(0, 0, 0, 0.3);
+}
+
+.stepper button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 100%;
+  color: var(--ui-text-2);
+  transition: color 0.15s ease;
+}
+
+.stepper button:hover {
+  color: var(--ui-text);
+}
+
+.stepper button:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.stepper button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.stepper-label {
+  min-width: 56px;
+  padding: 0 0.25rem;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--ui-border);
+  border-right: 1px solid var(--ui-border);
+}
+
+/* Search */
+.search-icon {
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  color: var(--ui-text-3);
+  pointer-events: none;
+}
+
+.search-input {
+  padding-left: 1.75rem;
+  padding-right: 3.25rem;
+  border-radius: 7px;
+}
+
+.search-hint {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--ui-control);
+  color: var(--ui-text-2);
+  font-family: var(--ui-font);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.search-popover {
+  position: absolute;
+  z-index: 50;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  max-height: 20rem;
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: 10px;
+  background: rgba(44, 44, 46, 0.97);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--ui-shadow-popover);
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--ui-radius-sm);
+  cursor: default;
+}
+
+.search-item.is-selected {
+  background: var(--ui-accent);
+}
+
+.search-index {
+  flex-shrink: 0;
+  min-width: 2.25rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: var(--ui-control);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.search-item.is-selected .search-index {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.search-type {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.search-title {
+  font-size: 12px;
+  color: var(--ui-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-names {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ui-text-3);
+}
+
+.search-item.is-selected .search-title,
+.search-item.is-selected .search-names {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.slide-item {
+  position: relative;
+  display: flex;
+  padding: 0.625rem;
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border);
+  outline: none;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.slide-item:hover {
+  background: var(--ui-surface-hover);
+}
+
+.slide-item.is-current {
+  background: var(--ui-accent-soft);
+  box-shadow:
+    inset 0 0 0 2px var(--ui-accent),
+    0 0 22px rgba(10, 132, 255, 0.3);
+}
+
+.slide-item.is-frozen {
+  box-shadow: inset 0 0 0 2px var(--ui-red);
+}
+
+.slide-item.is-current.is-frozen {
+  box-shadow:
+    inset 0 0 0 2px var(--ui-red),
+    0 0 22px rgba(10, 132, 255, 0.3);
+}
+
+/* Marks the slides that show a names card on the side screen */
+.slide-connection {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  right: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--ui-yellow);
+}
+
+.slide-connection.is-dimmed {
+  background: rgba(255, 214, 10, 0.28);
 }
 
 .slide-thumbnail {
   min-width: 160px;
+}
+
+.thumbnail-frame {
+  overflow: hidden;
+  border-radius: 6px;
+  background: #000;
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+
+.large-thumbnail-frame {
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--ui-bg-popover);
+  box-shadow: var(--ui-shadow-popover);
+}
+
+.large-thumbnail-frame > div {
+  overflow: hidden;
+  border-radius: 7px;
+}
+
+.slide-title {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--ui-control);
+  color: var(--ui-text-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.slide-item.is-current .slide-title {
+  background: var(--ui-accent);
+  color: #fff;
+}
+
+.slide-subtitle {
+  margin-top: 0.375rem;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ui-text);
+}
+
+.slide-meta {
+  margin-top: 0.25rem;
+  font-size: 12px;
+  color: var(--ui-text-2);
+}
+
+.slide-number {
+  display: flex;
+  justify-content: flex-end;
+  align-self: flex-start;
+  padding: 0 0.25rem 0 0.75rem;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ui-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-item.is-current .slide-number {
+  color: #fff;
+}
+
+/* Bottom navigation */
+.navigation-buttons {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  height: 56px;
+  background: var(--ui-bg-toolbar);
+  border-top: 1px solid var(--ui-separator);
+}
+
+.nav-btn {
+  height: 32px;
+  min-width: 112px;
+  font-size: 13px;
+}
+
+.slide-counter {
+  min-width: 120px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ui-text-2);
 }
 
 .large-thumbnail-preview {
@@ -2085,24 +2714,6 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   to {
     opacity: 1;
   }
-}
-
-/* Resize handle styles */
-.resize-handle {
-  z-index: 10;
-  transition:
-    background-color 0.2s ease,
-    width 0.2s ease;
-}
-
-.resize-handle:hover {
-  background-color: rgb(59 130 246) !important;
-  width: 3px;
-}
-
-.resize-handle:active {
-  background-color: rgb(37 99 235) !important;
-  width: 4px;
 }
 
 /* Add visual feedback when resizing */

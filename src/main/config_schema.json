@@ -179,6 +179,10 @@
       "lastOpenedTab": {
         "type": "string",
         "default": "appearance"
+      },
+      "lastExcelDirectory": {
+        "type": "string",
+        "default": ""
       }
     },
     "default": {}

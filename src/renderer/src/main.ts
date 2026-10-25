@@ -6,6 +6,7 @@ import App from './App.vue'
 import Display from './components/Display.vue'
 import Settings from './components/Settings.vue'
 import ExcelStructure from './components/ExcelStructure.vue'
+import About from './components/About.vue'
 
 // Create router instance
 const router = createRouter({
@@ -15,7 +16,8 @@ const router = createRouter({
     { path: '/mainscreen', name: 'mainscreen', component: Display },
     { path: '/sidescreen', name: 'sidescreen', component: Display },
     { path: '/settings', name: 'settings', component: Settings },
-    { path: '/excel-structure', name: 'excelstructure', component: ExcelStructure }
+    { path: '/excel-structure', name: 'excelstructure', component: ExcelStructure },
+    { path: '/about', name: 'about', component: About }
   ]
 })
 

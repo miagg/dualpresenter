@@ -1,7 +1,6 @@
 import { Menu, app, dialog, shell, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import { join } from 'path'
-import icon from '../../build/icon.png?asset'
+import { dirname, join } from 'path'
 import { Data } from './interfaces/Data'
 
 // Function to update the checked state of the Freeze Output menu item
@@ -71,6 +70,48 @@ export function updateAudibleNamesState(isChecked: boolean): void {
 }
 
 // Create application menu with Actions menu
+let aboutWindow: BrowserWindow | null = null
+
+// About window with app and developer info
+function createAboutWindow(parent: BrowserWindow | null): void {
+  if (aboutWindow && !aboutWindow.isDestroyed()) {
+    aboutWindow.focus()
+    return
+  }
+
+  aboutWindow = new BrowserWindow({
+    width: 360,
+    height: 470,
+    title: 'About DualPresenter',
+    parent: parent || undefined,
+    resizable: false,
+    fullscreenable: false,
+    minimizable: false,
+    maximizable: false,
+    show: false,
+    backgroundColor: '#1c1c1e',
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' as const } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.mjs'),
+      sandbox: false
+    }
+  })
+
+  aboutWindow.setMenu(null)
+  aboutWindow.on('ready-to-show', () => aboutWindow?.show())
+  aboutWindow.on('closed', () => {
+    aboutWindow = null
+  })
+
+  const query = `?version=${encodeURIComponent(app.getVersion())}`
+  const aboutUrl =
+    is.dev && process.env['ELECTRON_RENDERER_URL']
+      ? `${process.env['ELECTRON_RENDERER_URL']}/#/about${query}`
+      : `file://${join(__dirname, '../renderer/index.html')}#/about${query}`
+
+  aboutWindow.loadURL(aboutUrl)
+}
+
 export function createApplicationMenu(
   data: Data,
   mainWindow: BrowserWindow | null,
@@ -98,6 +139,9 @@ export function createApplicationMenu(
           // Open file dialog directly from the main process
           const filePath = dialog.showOpenDialogSync({
             title: 'Select Excel File',
+            defaultPath:
+              data.state.lastExcelDirectory ||
+              (data.state.excelPath ? dirname(data.state.excelPath) : undefined),
             properties: ['openFile'],
             filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
           })?.[0]
@@ -105,6 +149,9 @@ export function createApplicationMenu(
           if (filePath) {
             data.state.excelPath = filePath
             config.set('state.excelPath', filePath)
+            // Start the next open dialog in this folder
+            data.state.lastExcelDirectory = dirname(filePath)
+            config.set('state.lastExcelDirectory', data.state.lastExcelDirectory)
             // Set currentSlideIndex to 0 when opening a new Excel file
             data.state.currentSlideIndex = 0
             config.set('state.currentSlideIndex', 0)
@@ -328,9 +375,12 @@ export function createApplicationMenu(
   if (process.platform === 'darwin') {
     // For macOS, we create a custom app menu with our additional items
     menuTemplate.push({
-      label: app.name,
+      label: 'DualPresenter',
       submenu: [
-        { role: 'about' },
+        {
+          label: 'About DualPresenter',
+          click: () => createAboutWindow(mainWindow)
+        },
         { type: 'separator' },
         {
           label: 'Check for Updates',
@@ -361,11 +411,11 @@ export function createApplicationMenu(
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
-        { role: 'hide' },
+        { role: 'hide', label: 'Hide DualPresenter' },
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
+        { role: 'quit', label: 'Quit DualPresenter' }
       ]
     })
   }
@@ -378,9 +428,13 @@ export function createApplicationMenu(
   for (const menuItem of defaultMenus) {
     const label = menuItem.label || ''
 
-    // Skip the app menu (already added for macOS), our custom menus, and any empty menus
+    // Skip the app menu (already added for macOS), our custom menus, and any empty menus.
+    // The menu is rebuilt from the current one (e.g. after opening a file), so our own app
+    // and Help menus show up here too and would otherwise be added again.
     if (
       label !== app.name &&
+      label !== 'DualPresenter' &&
+      label !== 'Help' &&
       label !== 'File' &&
       label !== 'Actions' &&
       label !== 'Navigation' &&
@@ -413,42 +467,26 @@ export function createApplicationMenu(
     }
   }
 
-  // Remove Help menu from its current position to add it later at the end
-  const helpMenuIndex = menuTemplate.findIndex((item) => item.label === 'Help')
-  let helpMenu = null
-  if (helpMenuIndex !== -1) {
-    // Store the Help menu definition
-    helpMenu = {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'Excel File Structure',
-          click: () => {
-            createExcelStructureWindow()
-          }
-        },
-        { type: 'separator' },
-        ...(process.platform !== 'darwin'
-          ? [
-              {
-                label: 'About DualPresenter',
-                click: () => {
-                  dialog.showMessageBox({
-                    title: 'About DualPresenter',
-                    message: 'DualPresenter',
-                    detail: `Version: ${app.getVersion()}\n\nA dual-screen presentation app for managing slides across multiple displays.`,
-                    buttons: ['OK'],
-                    icon: icon
-                  })
-                }
-              }
-            ]
-          : [])
-      ]
-    }
-
-    // Remove the Help menu from its current position
-    menuTemplate.splice(helpMenuIndex, 1)
+  // Help menu, added last so it ends up at the end of the menu bar
+  const helpMenu: Electron.MenuItemConstructorOptions = {
+    label: 'Help',
+    submenu: [
+      {
+        label: 'Excel File Structure',
+        click: () => {
+          createExcelStructureWindow()
+        }
+      },
+      ...(process.platform !== 'darwin'
+        ? [
+            { type: 'separator' as const },
+            {
+              label: 'About DualPresenter',
+              click: () => createAboutWindow(mainWindow)
+            }
+          ]
+        : [])
+    ]
   }
 
   // Remove view menu when not running in dev mode
@@ -457,10 +495,7 @@ export function createApplicationMenu(
     menuTemplate.splice(viewMenuIndex, 1)
   }
 
-  // Add Help menu at the end if it exists
-  if (helpMenu) {
-    menuTemplate.push(helpMenu)
-  }
+  menuTemplate.push(helpMenu)
 
   // Build and set the application menu
   const menu = Menu.buildFromTemplate(menuTemplate)

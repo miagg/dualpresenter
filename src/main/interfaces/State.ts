@@ -18,4 +18,5 @@ export interface State {
   }
   isMaximized?: boolean
   lastOpenedTab?: string
+  lastExcelDirectory?: string
 }

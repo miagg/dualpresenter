@@ -1,666 +1,662 @@
 <template>
-  <div class="settings-panel bg-gray-900 w-full h-full overflow-hidden text-gray-200 select-none">
-    <!-- Header -->
-    <div class="settings-header bg-gray-800 border-b border-gray-700 px-6 py-4">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-2xl font-bold text-white">Settings</h2>
-          <p class="text-sm text-gray-400 mt-1">Configure your presentation preferences</p>
-        </div>
-        <button
-          v-if="isMacOs"
-          @click="closeSettings"
-          class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+  <div class="settings-panel ui-root w-full h-full overflow-hidden select-none">
+    <!-- Sidebar Navigation -->
+    <nav class="tab-navigation">
+      <div class="sidebar-heading">Settings</div>
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        @click="activeTab = tab.id"
+        class="nav-item"
+        :class="{ 'is-active': activeTab === tab.id }"
+      >
+        <span class="nav-icon" :style="{ background: tab.color }">
+          <!-- Appearance Icon -->
+          <svg v-if="tab.icon === 'appearance'" fill="currentColor" viewBox="0 0 20 20">
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
+              fill-rule="evenodd"
+              d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v11H4V4z"
+              clip-rule="evenodd"
             />
+          </svg>
+          <!-- Assets Icon -->
+          <svg v-else-if="tab.icon === 'assets'" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <!-- Display Icon -->
+          <svg v-else-if="tab.icon === 'display'" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H6a1 1 0 01-1-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <!-- Audio Icon -->
+          <svg v-else-if="tab.icon === 'audio'" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <!-- Shortcuts Icon -->
+          <svg
+            v-else-if="tab.icon === 'shortcuts'"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            viewBox="0 0 24 24"
+          >
+            <rect x="2.5" y="6" width="19" height="12" rx="2" />
+            <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" />
+          </svg>
+        </span>
+        <span>{{ tab.name }}</span>
+      </button>
+    </nav>
+
+    <div class="settings-main">
+      <!-- Header -->
+      <div class="settings-header">
+        <h2 class="settings-title">{{ tabs.find((tab) => tab.id === activeTab)?.name }}</h2>
+        <button v-if="isMacOs" @click="closeSettings" class="ui-btn ui-btn-icon" title="Close">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-    </div>
 
-    <!-- Tab Navigation -->
-    <div class="tab-navigation bg-gray-800 border-b border-gray-700 px-6">
-      <div class="flex space-x-1">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          @click="activeTab = tab.id"
-          class="px-4 py-3 text-sm font-medium rounded-t-lg transition-colors"
-          :class="
-            activeTab === tab.id
-              ? 'bg-gray-900 text-white border-b-2 border-blue-500'
-              : 'text-gray-400 hover:text-gray-200'
-          "
-        >
-          <div class="flex items-center space-x-2">
-            <!-- Appearance Icon -->
-            <svg
-              v-if="tab.icon === 'appearance'"
-              class="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v11H4V4z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <!-- Assets Icon -->
-            <svg
-              v-else-if="tab.icon === 'assets'"
-              class="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <!-- Display Icon -->
-            <svg
-              v-else-if="tab.icon === 'display'"
-              class="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H6a1 1 0 01-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <!-- Audio Icon -->
-            <svg
-              v-else-if="tab.icon === 'audio'"
-              class="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <!-- Shortcuts Icon -->
-            <svg
-              v-else-if="tab.icon === 'shortcuts'"
-              class="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                d="M12.432 0c1.34 0 2.01.912 2.01 1.957 0 1.305-1.164 2.512-2.679 2.512-1.269 0-2.009-.75-1.974-1.99C9.789 1.436 10.67 0 12.432 0zM8.309 20c-1.058 0-1.833-.652-1.093-3.524l1.214-5.092c.211-.814.246-1.141 0-1.141-.317 0-1.689.562-2.502 1.117l-.528-.88c2.572-2.186 5.531-3.467 6.801-3.467 1.057 0 1.233 1.273.705 3.23l-1.391 5.352c-.246.945-.141 1.271.106 1.271.317 0 1.357-.392 2.379-1.207l.6.814C12.098 19.02 9.365 20 8.309 20z"
-              />
-            </svg>
-            <span>{{ tab.name }}</span>
-          </div>
-        </button>
-      </div>
-    </div>
+      <!-- Tab Content -->
+      <div class="settings-content ui-scroll">
+        <!-- Appearance Tab -->
+        <div v-if="activeTab === 'appearance'" class="tab-body">
+          <!-- Colors Section -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Colors</h3>
+              <p class="section-description">Customize the color scheme for your presentations</p>
+            </div>
+            <div class="form-group">
+              <div class="form-row">
+                <label class="input-label">Primary Background</label>
+                <div class="color-input-wrapper">
+                  <input
+                    v-model="settings.colors.primaryBackground"
+                    type="color"
+                    class="color-picker"
+                  />
+                  <input
+                    v-model="settings.colors.primaryBackground"
+                    type="text"
+                    class="ui-input color-text-input"
+                    @change="settingsChanged"
+                  />
+                </div>
+              </div>
 
-    <!-- Tab Content -->
-    <div class="settings-content flex-1 overflow-y-auto px-6 py-6">
-      <!-- Appearance Tab -->
-      <div v-if="activeTab === 'appearance'" class="space-y-8">
-        <!-- Colors Section -->
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Colors</h3>
-            <p class="section-description">Customize the color scheme for your presentations</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="color-input-group">
-              <label class="input-label">Primary Background</label>
-              <div class="color-input-wrapper">
-                <input
-                  v-model="settings.colors.primaryBackground"
-                  type="color"
-                  class="color-picker"
-                />
-                <input
-                  v-model="settings.colors.primaryBackground"
-                  type="text"
-                  class="color-text-input"
-                  @change="settingsChanged"
-                />
+              <div class="form-row">
+                <label class="input-label">Primary Text</label>
+                <div class="color-input-wrapper">
+                  <input v-model="settings.colors.primaryText" type="color" class="color-picker" />
+                  <input
+                    v-model="settings.colors.primaryText"
+                    type="text"
+                    class="ui-input color-text-input"
+                    @change="settingsChanged"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="input-label">Secondary Background</label>
+                <div class="color-input-wrapper">
+                  <input
+                    v-model="settings.colors.secondaryBackground"
+                    type="color"
+                    class="color-picker"
+                  />
+                  <input
+                    v-model="settings.colors.secondaryBackground"
+                    type="text"
+                    class="ui-input color-text-input"
+                    @change="settingsChanged"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="input-label">Secondary Text</label>
+                <div class="color-input-wrapper">
+                  <input
+                    v-model="settings.colors.secondaryText"
+                    type="color"
+                    class="color-picker"
+                  />
+                  <input
+                    v-model="settings.colors.secondaryText"
+                    type="text"
+                    class="ui-input color-text-input"
+                    @change="settingsChanged"
+                  />
+                </div>
               </div>
             </div>
+          </section>
 
-            <div class="color-input-group">
-              <label class="input-label">Primary Text</label>
-              <div class="color-input-wrapper">
-                <input v-model="settings.colors.primaryText" type="color" class="color-picker" />
-                <input
-                  v-model="settings.colors.primaryText"
-                  type="text"
-                  class="color-text-input"
+          <!-- Fonts Section -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Typography</h3>
+              <p class="section-description">Choose fonts and text styling options</p>
+            </div>
+            <div class="form-group">
+              <div class="form-row">
+                <label class="input-label">Slides Font</label>
+                <select
+                  v-model="settings.fonts.slidesFont"
+                  class="ui-select select-input"
                   @change="settingsChanged"
-                />
+                >
+                  <option value="TheWaveSans">The Wave Sans</option>
+                  <option value="CFDin-Bold">CF Din Bold</option>
+                  <option value="Effra-Heavy">Effra Heavy</option>
+                  <option value="FreeScript">Free Script</option>
+                  <option value="ZonaPro-Black">Zona Pro Black</option>
+                </select>
               </div>
-            </div>
 
-            <div class="color-input-group">
-              <label class="input-label">Secondary Background</label>
-              <div class="color-input-wrapper">
-                <input
-                  v-model="settings.colors.secondaryBackground"
-                  type="color"
-                  class="color-picker"
-                />
-                <input
-                  v-model="settings.colors.secondaryBackground"
-                  type="text"
-                  class="color-text-input"
-                  @change="settingsChanged"
-                />
-              </div>
-            </div>
-
-            <div class="color-input-group">
-              <label class="input-label">Secondary Text</label>
-              <div class="color-input-wrapper">
-                <input v-model="settings.colors.secondaryText" type="color" class="color-picker" />
-                <input
-                  v-model="settings.colors.secondaryText"
-                  type="text"
-                  class="color-text-input"
-                  @change="settingsChanged"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Fonts Section -->
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Typography</h3>
-            <p class="section-description">Choose fonts and text styling options</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="input-group">
-              <label class="input-label">Slides Font</label>
-              <select
-                v-model="settings.fonts.slidesFont"
-                class="select-input"
-                @change="settingsChanged"
-              >
-                <option value="TheWaveSans">The Wave Sans</option>
-                <option value="CFDin-Bold">CF Din Bold</option>
-                <option value="Effra-Heavy">Effra Heavy</option>
-                <option value="FreeScript">Free Script</option>
-                <option value="ZonaPro-Black">Zona Pro Black</option>
-              </select>
-            </div>
-
-            <div class="input-group">
-              <div class="checkbox-wrapper">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="useBoldTitles" class="input-label">Use bold titles</label>
+                  <p class="input-description">Make slide titles appear in bold text</p>
+                </div>
                 <input
                   type="checkbox"
                   id="useBoldTitles"
                   v-model="settings.fonts.useBoldTitles"
-                  class="checkbox-input"
+                  class="ui-switch"
                   @change="settingsChanged"
                 />
-                <label for="useBoldTitles" class="checkbox-label"> Use bold titles </label>
               </div>
-              <p class="input-description">Make slide titles appear in bold text</p>
             </div>
-          </div>
+          </section>
+
+          <!-- Logo Settings Section -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Logo Display</h3>
+              <p class="section-description">Configure logo appearance on blank cards</p>
+            </div>
+            <div class="form-group">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label class="input-label">Maximum Logo Size</label>
+                  <p class="input-description">
+                    Controls the maximum width and height of the logo on blank cards
+                  </p>
+                </div>
+                <div class="range-input-wrapper">
+                  <input
+                    v-model.number="settings.assets.maxLogoSize"
+                    type="range"
+                    min="10"
+                    max="100"
+                    step="5"
+                    class="range-input"
+                    @input="settingsChanged"
+                  />
+                  <div class="range-value">{{ settings.assets.maxLogoSize }}%</div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label class="input-label">Vertical Position Offset</label>
+                  <p class="input-description">
+                    Adjusts the vertical position of the logo on blank cards (positive moves down,
+                    negative moves up)
+                  </p>
+                </div>
+                <div class="number-input-wrapper">
+                  <input
+                    v-model.number="settings.assets.logoVerticalPosition"
+                    type="number"
+                    min="-500"
+                    max="500"
+                    step="10"
+                    class="ui-input number-input"
+                    @change="settingsChanged"
+                  />
+                  <span class="number-input-unit">px</span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <!-- Logo Settings Section -->
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Logo Display</h3>
-            <p class="section-description">Configure logo appearance on blank cards</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="input-group">
-              <label class="input-label">Maximum Logo Size</label>
-              <div class="range-input-wrapper">
-                <input
-                  v-model.number="settings.assets.maxLogoSize"
-                  type="range"
-                  min="10"
-                  max="100"
-                  step="5"
-                  class="range-input"
-                  @input="settingsChanged"
-                />
-                <div class="range-value">{{ settings.assets.maxLogoSize }}%</div>
-              </div>
-              <p class="input-description">
-                Controls the maximum width and height of the logo on blank cards
+        <!-- Assets Tab -->
+        <div v-if="activeTab === 'assets'" class="tab-body">
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Images & Assets</h3>
+              <p class="section-description">
+                Upload custom backgrounds and logos for your presentations
               </p>
             </div>
 
-            <div class="input-group">
-              <label class="input-label">Vertical Position Offset</label>
-              <div class="number-input-wrapper">
-                <input
-                  v-model.number="settings.assets.logoVerticalPosition"
-                  type="number"
-                  min="-500"
-                  max="500"
-                  step="10"
-                  class="number-input"
-                  @change="settingsChanged"
-                />
-                <span class="number-input-unit">px</span>
-              </div>
-              <p class="input-description">
-                Adjusts the vertical position of the logo on blank cards (positive moves down,
-                negative moves up)
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Assets Tab -->
-      <div v-if="activeTab === 'assets'" class="space-y-8">
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Images & Assets</h3>
-            <p class="section-description">
-              Upload custom backgrounds and logos for your presentations
-            </p>
-          </div>
-
-          <div class="space-y-6">
-            <!-- Background -->
-            <div class="asset-input-group">
-              <label class="input-label">Background Image</label>
-              <div class="asset-input-wrapper">
-                <input
-                  v-model="settings.assets.background"
-                  type="text"
-                  class="asset-text-input"
-                  placeholder="Path to background image"
-                />
-                <div class="asset-buttons">
-                  <button class="btn-secondary" @click="selectFile('background')">Browse</button>
-                  <button
-                    v-if="settings.assets.background"
-                    class="btn-danger"
-                    @click="clearAsset('background')"
-                  >
-                    Clear
-                  </button>
+            <div class="form-group">
+              <!-- Background -->
+              <div class="form-row form-row-stack">
+                <label class="input-label">Background Image</label>
+                <div class="asset-input-wrapper">
+                  <input
+                    v-model="settings.assets.background"
+                    type="text"
+                    class="ui-input asset-text-input"
+                    placeholder="Path to background image"
+                  />
+                  <div class="asset-buttons">
+                    <button class="ui-btn" @click="selectFile('background')">Browse…</button>
+                    <button
+                      v-if="settings.assets.background"
+                      class="ui-btn ui-btn-danger"
+                      @click="clearAsset('background')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div v-if="imagePreviews.background" class="asset-preview">
+                  <img :src="imagePreviews.background" alt="Background Preview" />
                 </div>
               </div>
-              <div v-if="imagePreviews.background" class="asset-preview">
-                <img :src="imagePreviews.background" alt="Background Preview" />
-              </div>
-            </div>
 
-            <!-- Names Background -->
-            <div class="asset-input-group">
-              <label class="input-label">Names Background</label>
-              <div class="asset-input-wrapper">
-                <input
-                  v-model="settings.assets.backgroundNames"
-                  type="text"
-                  class="asset-text-input"
-                  placeholder="Path to names background image"
-                />
-                <div class="asset-buttons">
-                  <button class="btn-secondary" @click="selectFile('backgroundNames')">
-                    Browse
-                  </button>
-                  <button
-                    v-if="settings.assets.backgroundNames"
-                    class="btn-danger"
-                    @click="clearAsset('backgroundNames')"
-                  >
-                    Clear
-                  </button>
+              <!-- Names Background -->
+              <div class="form-row form-row-stack">
+                <label class="input-label">Names Background</label>
+                <div class="asset-input-wrapper">
+                  <input
+                    v-model="settings.assets.backgroundNames"
+                    type="text"
+                    class="ui-input asset-text-input"
+                    placeholder="Path to names background image"
+                  />
+                  <div class="asset-buttons">
+                    <button class="ui-btn" @click="selectFile('backgroundNames')">Browse…</button>
+                    <button
+                      v-if="settings.assets.backgroundNames"
+                      class="ui-btn ui-btn-danger"
+                      @click="clearAsset('backgroundNames')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div v-if="imagePreviews.backgroundNames" class="asset-preview">
+                  <img :src="imagePreviews.backgroundNames" alt="Names Background Preview" />
                 </div>
               </div>
-              <div v-if="imagePreviews.backgroundNames" class="asset-preview">
-                <img :src="imagePreviews.backgroundNames" alt="Names Background Preview" />
-              </div>
-            </div>
 
-            <!-- Logo -->
-            <div class="asset-input-group">
-              <label class="input-label">Logo</label>
-              <div class="asset-input-wrapper">
-                <input
-                  v-model="settings.assets.logo"
-                  type="text"
-                  class="asset-text-input"
-                  placeholder="Path to logo image"
-                />
-                <div class="asset-buttons">
-                  <button class="btn-secondary" @click="selectFile('logo')">Browse</button>
-                  <button
-                    v-if="settings.assets.logo"
-                    class="btn-danger"
-                    @click="clearAsset('logo')"
-                  >
-                    Clear
-                  </button>
+              <!-- Logo -->
+              <div class="form-row form-row-stack">
+                <label class="input-label">Logo</label>
+                <div class="asset-input-wrapper">
+                  <input
+                    v-model="settings.assets.logo"
+                    type="text"
+                    class="ui-input asset-text-input"
+                    placeholder="Path to logo image"
+                  />
+                  <div class="asset-buttons">
+                    <button class="ui-btn" @click="selectFile('logo')">Browse…</button>
+                    <button
+                      v-if="settings.assets.logo"
+                      class="ui-btn ui-btn-danger"
+                      @click="clearAsset('logo')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div v-if="imagePreviews.logo" class="asset-preview">
+                  <img :src="imagePreviews.logo" alt="Logo Preview" />
                 </div>
               </div>
-              <div v-if="imagePreviews.logo" class="asset-preview">
-                <img :src="imagePreviews.logo" alt="Logo Preview" />
-              </div>
-            </div>
 
-            <!-- Inverted Logo -->
-            <div class="asset-input-group">
-              <label class="input-label">Inverted Logo</label>
-              <div class="asset-input-wrapper">
-                <input
-                  v-model="settings.assets.logoInverted"
-                  type="text"
-                  class="asset-text-input"
-                  placeholder="Path to inverted logo image"
-                />
-                <div class="asset-buttons">
-                  <button class="btn-secondary" @click="selectFile('logoInverted')">Browse</button>
-                  <button
-                    v-if="settings.assets.logoInverted"
-                    class="btn-danger"
-                    @click="clearAsset('logoInverted')"
-                  >
-                    Clear
-                  </button>
+              <!-- Inverted Logo -->
+              <div class="form-row form-row-stack">
+                <label class="input-label">Inverted Logo</label>
+                <div class="asset-input-wrapper">
+                  <input
+                    v-model="settings.assets.logoInverted"
+                    type="text"
+                    class="ui-input asset-text-input"
+                    placeholder="Path to inverted logo image"
+                  />
+                  <div class="asset-buttons">
+                    <button class="ui-btn" @click="selectFile('logoInverted')">Browse…</button>
+                    <button
+                      v-if="settings.assets.logoInverted"
+                      class="ui-btn ui-btn-danger"
+                      @click="clearAsset('logoInverted')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div v-if="imagePreviews.logoInverted" class="asset-preview">
+                  <img :src="imagePreviews.logoInverted" alt="Inverted Logo Preview" />
                 </div>
               </div>
-              <div v-if="imagePreviews.logoInverted" class="asset-preview">
-                <img :src="imagePreviews.logoInverted" alt="Inverted Logo Preview" />
-              </div>
-            </div>
 
-            <!-- Use Default Assets -->
-            <div class="input-group">
-              <div class="checkbox-wrapper">
+              <!-- Use Default Assets -->
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="useDefaultAssets" class="input-label">Use default assets</label>
+                  <p class="input-description">
+                    When enabled, default assets will be used when custom assets are not set
+                  </p>
+                </div>
                 <input
                   type="checkbox"
                   id="useDefaultAssets"
                   v-model="settings.assets.useDefaultAssets"
-                  class="checkbox-input"
+                  class="ui-switch"
                   @change="settingsChanged"
                 />
-                <label for="useDefaultAssets" class="checkbox-label"> Use default assets </label>
               </div>
-              <p class="input-description">
-                When enabled, default assets will be used when custom assets are not set
-              </p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Display Tab -->
-      <div v-if="activeTab === 'display'" class="space-y-8">
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Side Screen</h3>
-            <p class="section-description">Configure how names appear on the side screen</p>
-          </div>
-          <div class="input-group">
-            <label class="input-label">Precedence Slides</label>
-            <div class="number-input-wrapper">
-              <input
-                v-model.number="settings.namesPrecedence"
-                type="number"
-                min="0"
-                max="20"
-                class="number-input"
-                @change="settingsChanged"
-              />
-              <span class="number-input-unit">slides</span>
-            </div>
-            <p class="input-description">
-              Number of slides ahead the names will appear on the side screen. For example, a value
-              of 2 means names will appear two slides before their main presentation.
-            </p>
-          </div>
+          </section>
         </div>
 
-        <!-- Distributed Names Setting -->
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Names Distribution / Balance</h3>
-            <p class="section-description">Automatically distribute or balance names</p>
-          </div>
-          <div class="input-group">
-            <div class="checkbox-wrapper">
-              <input
-                type="checkbox"
-                id="distributeNames"
-                v-model="settings.distributeNames"
-                class="checkbox-input"
-                @change="settingsChanged"
-              />
-              <label for="distributeNames" class="checkbox-label">
-                Distribute names automatically
-              </label>
+        <!-- Display Tab -->
+        <div v-if="activeTab === 'display'" class="tab-body">
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Side Screen</h3>
+              <p class="section-description">Configure how names appear on the side screen</p>
             </div>
-            <p class="input-description">
-              When enabled, names will be distributed equally across all no-range names cards of the
-              same group. Cards with ranges (from/to) will claim their names first, then remaining
-              names are split across cards without ranges.
-            </p>
-          </div>
+            <div class="form-group">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label class="input-label">Precedence Slides</label>
+                  <p class="input-description">
+                    Number of slides ahead the names will appear on the side screen. For example, a
+                    value of 2 means names will appear two slides before their main presentation.
+                  </p>
+                </div>
+                <div class="number-input-wrapper">
+                  <input
+                    v-model.number="settings.namesPrecedence"
+                    type="number"
+                    min="0"
+                    max="20"
+                    class="ui-input number-input"
+                    @change="settingsChanged"
+                  />
+                  <span class="number-input-unit">slides</span>
+                </div>
+              </div>
+            </div>
+          </section>
 
-          <div class="input-group mt-6">
-            <div class="checkbox-wrapper">
-              <input
-                type="checkbox"
-                id="balanceNamesPages"
-                v-model="settings.balanceNamesPages"
-                class="checkbox-input"
-                @change="settingsChanged"
-              />
-              <label for="balanceNamesPages" class="checkbox-label">
-                Avoid last pages with only one or two names
-              </label>
+          <!-- Distributed Names Setting -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Names Distribution / Balance</h3>
+              <p class="section-description">Automatically distribute or balance names</p>
             </div>
-            <p class="input-description">
-              When a names or unattended card would end with a page holding just one or two names,
-              the previous page shows 13 names and the rest move to the last page (for example, 17
-              names are split 13 + 4 instead of 16 + 1).
-            </p>
-          </div>
+            <div class="form-group">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="distributeNames" class="input-label">
+                    Distribute names automatically
+                  </label>
+                  <p class="input-description">
+                    When enabled, names will be distributed equally across all no-range names cards
+                    of the same group. Cards with ranges (from/to) will claim their names first,
+                    then remaining names are split across cards without ranges.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="distributeNames"
+                  v-model="settings.distributeNames"
+                  class="ui-switch"
+                  @change="settingsChanged"
+                />
+              </div>
+
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="balanceNamesPages" class="input-label">
+                    Avoid last pages with only one or two names
+                  </label>
+                  <p class="input-description">
+                    When a names or unattended card would end with a page holding just one or two
+                    names, the previous page shows 13 names and the rest move to the last page (for
+                    example, 17 names are split 13 + 4 instead of 16 + 1).
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="balanceNamesPages"
+                  v-model="settings.balanceNamesPages"
+                  class="ui-switch"
+                  @change="settingsChanged"
+                />
+              </div>
+            </div>
+          </section>
+
+          <!-- Slide Transitions Setting -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Slide Transitions</h3>
+              <p class="section-description">Animate changes between slides on the displays</p>
+            </div>
+            <div class="form-group">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="slideTransitions" class="input-label">
+                    Enable slide transitions
+                  </label>
+                  <p class="input-description">
+                    When enabled, slides crossfade on the main and side screens and the logo glides
+                    to its new position (for example from a blank card to a title card). Previews in
+                    this window are not animated.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="slideTransitions"
+                  v-model="settings.slideTransitions"
+                  class="ui-switch"
+                  @change="settingsChanged"
+                />
+              </div>
+
+              <div class="form-row" :class="{ 'is-disabled': !settings.slideTransitions }">
+                <div class="form-row-text">
+                  <label class="input-label">Transition Duration</label>
+                  <p class="input-description">
+                    How long the outgoing slide takes to fade out. The incoming slide then waits
+                    that long before animating in, so the two never overlap.
+                  </p>
+                </div>
+                <div class="number-input-wrapper">
+                  <input
+                    v-model.number="settings.transitionDuration"
+                    type="number"
+                    min="100"
+                    max="2000"
+                    step="50"
+                    class="ui-input number-input"
+                    :disabled="!settings.slideTransitions"
+                    @change="settingsChanged"
+                  />
+                  <span class="number-input-unit">ms</span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <!-- Slide Transitions Setting -->
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Slide Transitions</h3>
-            <p class="section-description">Animate changes between slides on the displays</p>
-          </div>
-          <div class="input-group">
-            <div class="checkbox-wrapper">
-              <input
-                type="checkbox"
-                id="slideTransitions"
-                v-model="settings.slideTransitions"
-                class="checkbox-input"
-                @change="settingsChanged"
-              />
-              <label for="slideTransitions" class="checkbox-label">
-                Enable slide transitions
-              </label>
+        <!-- Audio Tab -->
+        <div v-if="activeTab === 'audio'" class="tab-body">
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Audible Names</h3>
+              <p class="section-description">Configure audio playback for name pronunciation</p>
             </div>
-            <p class="input-description">
-              When enabled, slides crossfade on the main and side screens and the logo glides to its
-              new position (for example from a blank card to a title card). Previews in this window
-              are not animated.
-            </p>
-          </div>
 
-          <div class="input-group mt-6">
-            <label class="input-label">Transition Duration</label>
-            <div class="number-input-wrapper">
-              <input
-                v-model.number="settings.transitionDuration"
-                type="number"
-                min="100"
-                max="2000"
-                step="50"
-                class="number-input"
-                :disabled="!settings.slideTransitions"
-                @change="settingsChanged"
-              />
-              <span class="number-input-unit">ms</span>
+            <!-- Enable Audio -->
+            <div class="form-group">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="audibleNamesEnabled" class="input-label">
+                    Enable Audible Names Playback
+                  </label>
+                  <p class="input-description">
+                    When enabled, names will be played audibly when a names slide is displayed
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="audibleNamesEnabled"
+                  v-model="settings.audibleNames.enabled"
+                  class="ui-switch"
+                  @change="settingsChanged"
+                />
+              </div>
             </div>
-            <p class="input-description">
-              How long the outgoing slide takes to fade out. The incoming slide then waits that long
-              before animating in, so the two never overlap.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Audio Tab -->
-      <div v-if="activeTab === 'audio'" class="space-y-8">
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Audible Names</h3>
-            <p class="section-description">Configure audio playback for name pronunciation</p>
-          </div>
-
-          <!-- Enable Audio -->
-          <div class="input-group">
-            <div class="checkbox-wrapper">
-              <input
-                type="checkbox"
-                id="audibleNamesEnabled"
-                v-model="settings.audibleNames.enabled"
-                class="checkbox-input"
-                @change="settingsChanged"
-              />
-              <label for="audibleNamesEnabled" class="checkbox-label">
-                Enable Audible Names Playback
-              </label>
-            </div>
-            <p class="input-description">
-              When enabled, names will be played audibly when a names slide is displayed
-            </p>
-          </div>
+          </section>
 
           <!-- Audio Settings (only shown when enabled) -->
-          <div v-if="settings.audibleNames.enabled" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="input-group">
-                <label class="input-label">Delay Before Playback</label>
-                <div class="number-input-wrapper">
-                  <input
-                    v-model.number="settings.audibleNames.delayBeforePlayback"
-                    type="number"
-                    min="0"
-                    max="10000"
-                    step="100"
-                    class="number-input"
-                    @change="settingsChanged"
-                  />
-                  <span class="number-input-unit">ms</span>
-                </div>
-                <p class="input-description">
-                  Delay before starting auto playback when a names slide is displayed
-                </p>
+          <template v-if="settings.audibleNames.enabled">
+            <section class="settings-section">
+              <div class="section-header">
+                <h3 class="section-title">Timing</h3>
               </div>
-
-              <div class="input-group">
-                <label class="input-label">Gap Between Names</label>
-                <div class="number-input-wrapper">
-                  <input
-                    v-model.number="settings.audibleNames.gapBetweenNames"
-                    type="number"
-                    min="0"
-                    max="5000"
-                    step="100"
-                    class="number-input"
-                    @change="settingsChanged"
-                  />
-                  <span class="number-input-unit">ms</span>
+              <div class="form-group">
+                <div class="form-row">
+                  <div class="form-row-text">
+                    <label class="input-label">Delay Before Playback</label>
+                    <p class="input-description">
+                      Delay before starting auto playback when a names slide is displayed
+                    </p>
+                  </div>
+                  <div class="number-input-wrapper">
+                    <input
+                      v-model.number="settings.audibleNames.delayBeforePlayback"
+                      type="number"
+                      min="0"
+                      max="10000"
+                      step="100"
+                      class="ui-input number-input"
+                      @change="settingsChanged"
+                    />
+                    <span class="number-input-unit">ms</span>
+                  </div>
                 </div>
-                <p class="input-description">Silence duration between each name during playback</p>
-              </div>
-            </div>
 
-            <!-- Playback Options in a grid layout -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="input-group">
-                <div class="checkbox-wrapper">
+                <div class="form-row">
+                  <div class="form-row-text">
+                    <label class="input-label">Gap Between Names</label>
+                    <p class="input-description">
+                      Silence duration between each name during playback
+                    </p>
+                  </div>
+                  <div class="number-input-wrapper">
+                    <input
+                      v-model.number="settings.audibleNames.gapBetweenNames"
+                      type="number"
+                      min="0"
+                      max="5000"
+                      step="100"
+                      class="ui-input number-input"
+                      @change="settingsChanged"
+                    />
+                    <span class="number-input-unit">ms</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Playback Options -->
+            <section class="settings-section">
+              <div class="section-header">
+                <h3 class="section-title">Playback</h3>
+              </div>
+              <div class="form-group">
+                <div class="form-row">
+                  <div class="form-row-text">
+                    <label for="autoPlayback" class="input-label">Auto Playback</label>
+                    <p class="input-description">
+                      Automatically start playback when a names slide is displayed
+                    </p>
+                  </div>
                   <input
                     type="checkbox"
                     id="autoPlayback"
                     v-model="settings.audibleNames.autoPlayback"
-                    class="checkbox-input"
+                    class="ui-switch"
                     @change="settingsChanged"
                   />
-                  <label for="autoPlayback" class="checkbox-label"> Auto Playback </label>
                 </div>
-                <p class="input-description">
-                  Automatically start playback when a names slide is displayed
-                </p>
-              </div>
 
-              <div class="input-group">
-                <div class="checkbox-wrapper">
+                <div class="form-row">
+                  <div class="form-row-text">
+                    <label for="continuousPlayback" class="input-label">
+                      Continuous Playback
+                    </label>
+                    <p class="input-description">
+                      Play names continuously without pausing between each name. When disabled,
+                      playback pauses after each name until manually resumed
+                    </p>
+                  </div>
                   <input
                     type="checkbox"
                     id="continuousPlayback"
                     v-model="settings.audibleNames.continuousPlayback"
-                    class="checkbox-input"
+                    class="ui-switch"
                     @change="settingsChanged"
                   />
-                  <label for="continuousPlayback" class="checkbox-label">
-                    Continuous Playback
-                  </label>
                 </div>
-                <p class="input-description">
-                  Play names continuously without pausing between each name. When disabled, playback
-                  pauses after each name until manually resumed
-                </p>
-              </div>
 
-              <div class="input-group">
-                <div class="checkbox-wrapper">
+                <div class="form-row">
+                  <div class="form-row-text">
+                    <label for="showNamesOnSideOnly" class="input-label">
+                      Show Names on "Side Only" Cards
+                    </label>
+                    <p class="input-description">
+                      Display spoken names under the logo on "Side Only" cards during playback
+                    </p>
+                  </div>
                   <input
                     type="checkbox"
                     id="showNamesOnSideOnly"
                     v-model="settings.audibleNames.showNamesOnSideOnly"
-                    class="checkbox-input"
+                    class="ui-switch"
                     @change="settingsChanged"
                   />
-                  <label for="showNamesOnSideOnly" class="checkbox-label">
-                    Show Names on "Side Only" Cards
-                  </label>
                 </div>
-                <p class="input-description">
-                  Display spoken names under the logo on "Side Only" cards during playback
-                </p>
               </div>
-            </div>
+            </section>
 
             <!-- Setup Instructions -->
             <div class="info-card">
               <div class="info-card-header">
-                <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  class="w-5 h-5 text-[var(--ui-accent)]"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path
                     fill-rule="evenodd"
                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -679,140 +675,142 @@
                 <li>If an audio file is missing, that name will be skipped during playback</li>
               </ul>
             </div>
-          </div>
+          </template>
         </div>
-      </div>
 
-      <!-- Shortcuts Tab -->
-      <div v-if="activeTab === 'shortcuts'" class="space-y-8">
-        <div class="settings-section">
-          <div class="section-header">
-            <h3 class="section-title">Keyboard Shortcuts</h3>
-            <p class="section-description">Quick access keys for common actions</p>
-          </div>
+        <!-- Shortcuts Tab -->
+        <div v-if="activeTab === 'shortcuts'" class="tab-body">
+          <p class="section-description -mt-2">Quick access keys for common actions</p>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Navigation shortcuts -->
-            <div class="shortcuts-group">
-              <h4 class="shortcuts-group-title text-blue-400">Navigation</h4>
-              <div class="shortcuts-list">
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Previous Slide</span>
-                  <kbd class="shortcut-key">←/↑</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Next Slide</span>
-                  <kbd class="shortcut-key">→/↓/Space</kbd>
-                </div>
+          <!-- Navigation shortcuts -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Navigation</h3>
+            </div>
+            <div class="form-group">
+              <div class="shortcut-item">
+                <span class="shortcut-label">Previous Slide</span>
+                <kbd class="ui-kbd">←/↑</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Next Slide</span>
+                <kbd class="ui-kbd">→/↓/Space</kbd>
               </div>
             </div>
+          </section>
 
-            <!-- Pagination shortcuts -->
-            <div class="shortcuts-group">
-              <h4 class="shortcuts-group-title text-cyan-400">Pagination</h4>
-              <div class="shortcuts-list">
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Previous Page (Names/Unattended)</span>
-                  <kbd class="shortcut-key">-</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Next Page (Names/Unattended)</span>
-                  <kbd class="shortcut-key">=</kbd>
-                </div>
+          <!-- Pagination shortcuts -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Pagination</h3>
+            </div>
+            <div class="form-group">
+              <div class="shortcut-item">
+                <span class="shortcut-label">Previous Page (Names/Unattended)</span>
+                <kbd class="ui-kbd">-</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Next Page (Names/Unattended)</span>
+                <kbd class="ui-kbd">=</kbd>
               </div>
             </div>
+          </section>
 
-            <!-- Display shortcuts -->
-            <div class="shortcuts-group">
-              <h4 class="shortcuts-group-title text-green-400">Display Controls</h4>
-              <div class="shortcuts-list">
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Freeze/Unfreeze Displays</span>
-                  <kbd class="shortcut-key">Ctrl+Shift+F</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Black Out Screens</span>
-                  <kbd class="shortcut-key">Ctrl+B</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Flip Screens</span>
-                  <kbd class="shortcut-key">Ctrl+Shift+X</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Reload Data</span>
-                  <kbd class="shortcut-key">Ctrl+R</kbd>
-                </div>
+          <!-- Display shortcuts -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Display Controls</h3>
+            </div>
+            <div class="form-group">
+              <div class="shortcut-item">
+                <span class="shortcut-label">Freeze/Unfreeze Displays</span>
+                <kbd class="ui-kbd">Ctrl+Shift+F</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Black Out Screens</span>
+                <kbd class="ui-kbd">Ctrl+B</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Flip Screens</span>
+                <kbd class="ui-kbd">Ctrl+Shift+X</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Reload Data</span>
+                <kbd class="ui-kbd">Ctrl+R</kbd>
               </div>
             </div>
+          </section>
 
-            <!-- Settings shortcuts -->
-            <div class="shortcuts-group">
-              <h4 class="shortcuts-group-title text-yellow-400">Settings</h4>
-              <div class="shortcuts-list">
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Open Settings</span>
-                  <kbd class="shortcut-key">{{ isMacOs ? 'Cmd+,' : 'Ctrl+,' }}</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Close Settings</span>
-                  <kbd class="shortcut-key">Esc</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Decrease Precedence</span>
-                  <kbd class="shortcut-key">Ctrl+[</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Increase Precedence</span>
-                  <kbd class="shortcut-key">Ctrl+]</kbd>
-                </div>
+          <!-- Settings shortcuts -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Settings</h3>
+            </div>
+            <div class="form-group">
+              <div class="shortcut-item">
+                <span class="shortcut-label">Open Settings</span>
+                <kbd class="ui-kbd">{{ isMacOs ? 'Cmd+,' : 'Ctrl+,' }}</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Close Settings</span>
+                <kbd class="ui-kbd">Esc</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Decrease Precedence</span>
+                <kbd class="ui-kbd">Ctrl+[</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Increase Precedence</span>
+                <kbd class="ui-kbd">Ctrl+]</kbd>
               </div>
             </div>
+          </section>
 
-            <!-- Other shortcuts -->
-            <div class="shortcuts-group">
-              <h4 class="shortcuts-group-title text-purple-400">Other</h4>
-              <div class="shortcuts-list">
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Toggle Audible Names</span>
-                  <kbd class="shortcut-key">Ctrl+Shift+A</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Play/Stop Audible Names</span>
-                  <kbd class="shortcut-key">Ctrl+P</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Previous Name</span>
-                  <kbd class="shortcut-key">[</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Next Name</span>
-                  <kbd class="shortcut-key">]</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Toggle Auto Playback</span>
-                  <kbd class="shortcut-key">Ctrl+Shift+P</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Search</span>
-                  <kbd class="shortcut-key">Ctrl+F</kbd>
-                </div>
-                <div class="shortcut-item">
-                  <span class="shortcut-label">Close Excel File</span>
-                  <kbd class="shortcut-key">Ctrl+W</kbd>
-                </div>
-                <div class="shortcut-item inline-flex">
-                  <span class="shortcut-label"
-                    >Display large preview (while hovering thumbnail)</span
-                  >
-                  <kbd class="shortcut-key">/</kbd>
-                </div>
+          <!-- Other shortcuts -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">Other</h3>
+            </div>
+            <div class="form-group">
+              <div class="shortcut-item">
+                <span class="shortcut-label">Toggle Audible Names</span>
+                <kbd class="ui-kbd">Ctrl+Shift+A</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Play/Stop Audible Names</span>
+                <kbd class="ui-kbd">Ctrl+P</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Previous Name</span>
+                <kbd class="ui-kbd">[</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Next Name</span>
+                <kbd class="ui-kbd">]</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Toggle Auto Playback</span>
+                <kbd class="ui-kbd">Ctrl+Shift+P</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Search</span>
+                <kbd class="ui-kbd">Ctrl+F</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Close Excel File</span>
+                <kbd class="ui-kbd">Ctrl+W</kbd>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-label">Display large preview (while hovering thumbnail)</span>
+                <kbd class="ui-kbd">/</kbd>
               </div>
             </div>
-          </div>
+          </section>
 
           <div class="info-card">
-            <p class="text-sm text-gray-400">
-              <strong>Note:</strong> On macOS, use Command (⌘) key instead of Control (Ctrl) key.
+            <p class="text-[13px] text-[var(--ui-text-2)]">
+              <strong class="text-[var(--ui-text)]">Note:</strong> On macOS, use Command (⌘) key
+              instead of Control (Ctrl) key.
             </p>
           </div>
         </div>
@@ -845,27 +843,32 @@ const tabs = ref([
   {
     id: 'appearance',
     name: 'Appearance',
-    icon: 'appearance'
+    icon: 'appearance',
+    color: '#0a84ff'
   },
   {
     id: 'assets',
     name: 'Assets',
-    icon: 'assets'
+    icon: 'assets',
+    color: '#ff9f0a'
   },
   {
     id: 'display',
     name: 'Preferences',
-    icon: 'display'
+    icon: 'display',
+    color: '#5e5ce6'
   },
   {
     id: 'audio',
     name: 'Audio',
-    icon: 'audio'
+    icon: 'audio',
+    color: '#ff375f'
   },
   {
     id: 'shortcuts',
     name: 'Shortcuts',
-    icon: 'shortcuts'
+    icon: 'shortcuts',
+    color: '#8e8e93'
   }
 ])
 
@@ -1309,169 +1312,266 @@ const closeSettings = (): void => {
 /* Main Layout */
 .settings-panel {
   display: flex;
-  flex-direction: column;
   height: 100vh;
+}
+
+/* Sidebar */
+.tab-navigation {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 210px;
+  padding: 1rem 0.625rem;
+  background: var(--ui-bg-sidebar);
+  border-right: 1px solid var(--ui-separator);
+}
+
+.sidebar-heading {
+  padding: 0 0.5rem 0.75rem;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ui-text-2);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 32px;
+  padding: 0 0.5rem;
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-item.is-active {
+  background: var(--ui-accent);
+  color: #fff;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: #fff;
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.25);
+}
+
+.nav-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Content */
+.settings-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .settings-header {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 1.75rem;
+  border-bottom: 1px solid var(--ui-border);
 }
 
-.tab-navigation {
-  flex-shrink: 0;
+.settings-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .settings-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 2rem;
+  padding: 1.5rem 1.75rem 2.5rem;
+}
+
+.tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 /* Section Styling */
-.settings-section {
-  background: rgba(31, 41, 55, 0.5);
-  border: 1px solid rgba(75, 85, 99, 0.3);
-  border-radius: 0.75rem;
-  padding: 2rem;
-}
-
 .section-header {
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
-  padding-bottom: 1rem;
+  padding: 0 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .section-title {
-  font-size: 1.25rem;
+  font-size: 13px;
   font-weight: 600;
-  color: white;
-  margin: 0 0 0.5rem 0;
-}
-
-.section-description {
-  font-size: 0.875rem;
-  color: rgb(156, 163, 175);
+  color: var(--ui-text);
   margin: 0;
 }
 
-/* Input Styling */
-.input-group {
-  margin-bottom: 1.5rem;
+.section-description {
+  font-size: 12px;
+  color: var(--ui-text-2);
+  margin: 2px 0 0;
+}
+
+/* Grouped rows, like the inset lists in System Settings */
+.form-group {
+  border-radius: 10px;
+  background: var(--ui-surface);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border-strong);
+}
+
+.form-row,
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+}
+
+.form-row + .form-row,
+.shortcut-item + .shortcut-item {
+  box-shadow: inset 0 0.5px 0 var(--ui-border-strong);
+}
+
+.form-row-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.form-row-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.form-row.is-disabled .form-row-text {
+  opacity: 0.45;
 }
 
 .input-label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: 500;
-  color: rgb(209, 213, 219);
-  margin-bottom: 0.5rem;
+  color: var(--ui-text);
 }
 
 .input-description {
-  font-size: 0.75rem;
-  color: rgb(156, 163, 175);
-  margin-top: 0.5rem;
+  font-size: 12px;
+  color: var(--ui-text-2);
+  margin-top: 2px;
   line-height: 1.4;
 }
 
 /* Color Input Styling */
-.color-input-group {
-  margin-bottom: 1.5rem;
-}
-
 .color-input-wrapper {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
 .color-picker {
-  width: 3rem;
-  height: 2.5rem;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 50%;
   background: transparent;
   padding: 0;
   outline: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .color-text-input {
-  flex: 1;
-  padding: 0.625rem 0.75rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.5rem;
-  color: rgb(243, 244, 246);
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
-}
-
-.color-text-input:focus {
-  outline: none;
-  border-color: rgb(59, 130, 246);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  width: 7.5rem;
+  font-family: var(--ui-font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 /* Select Input Styling */
 .select-input {
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.5rem;
-  color: rgb(243, 244, 246);
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
-}
-
-.select-input:focus {
-  outline: none;
-  border-color: rgb(59, 130, 246);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  min-width: 11rem;
+  height: 28px;
+  font-size: 13px;
 }
 
 /* Number Input Styling */
 .number-input-wrapper {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .number-input {
-  width: 6rem;
-  padding: 0.625rem 0.75rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.5rem;
-  color: rgb(243, 244, 246);
-  font-size: 0.875rem;
-  text-align: center;
-  transition: border-color 0.2s;
+  width: 6.5rem;
+  padding: 0 0.5rem 0 0.75rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-.number-input:focus {
-  outline: none;
-  border-color: rgb(59, 130, 246);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.number-input::-webkit-inner-spin-button {
+  height: 18px;
+  margin-left: 0.5rem;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.number-input:hover::-webkit-inner-spin-button {
+  opacity: 1;
 }
 
 .number-input-unit {
-  font-size: 0.875rem;
-  color: rgb(156, 163, 175);
-  font-weight: 500;
+  min-width: 2.5rem;
+  font-size: 12px;
+  color: var(--ui-text-2);
 }
 
 /* Range Input Styling */
 .range-input-wrapper {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  width: 15rem;
 }
 
 .range-input {
   flex: 1;
-  height: 0.5rem;
-  background: rgb(55, 65, 81);
-  border-radius: 0.25rem;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
   outline: none;
   -webkit-appearance: none;
   appearance: none;
@@ -1480,110 +1580,58 @@ const closeSettings = (): void => {
 .range-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 1.25rem;
-  height: 1.25rem;
-  background: rgb(59, 130, 246);
+  width: 18px;
+  height: 18px;
+  background: #fff;
   border-radius: 50%;
-  transition: background-color 0.2s;
-}
-
-.range-input::-webkit-slider-thumb:hover {
-  background: rgb(96, 165, 250);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
 }
 
 .range-input::-moz-range-thumb {
-  width: 1.25rem;
-  height: 1.25rem;
-  background: rgb(59, 130, 246);
+  width: 18px;
+  height: 18px;
+  background: #fff;
   border-radius: 50%;
   border: none;
-  transition: background-color 0.2s;
-}
-
-.range-input::-moz-range-thumb:hover {
-  background: rgb(96, 165, 250);
 }
 
 .range-value {
-  min-width: 3rem;
-  text-align: center;
-  font-size: 0.875rem;
+  min-width: 2.75rem;
+  text-align: right;
+  font-size: 13px;
   font-weight: 500;
-  color: rgb(209, 213, 219);
-  padding: 0.25rem 0.5rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.25rem;
-}
-
-/* Checkbox Styling */
-.checkbox-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.checkbox-input {
-  width: 1.25rem;
-  height: 1.25rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.25rem;
-  color: rgb(59, 130, 246);
-  transition: all 0.2s;
-}
-
-.checkbox-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.checkbox-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgb(209, 213, 219);
+  color: var(--ui-text-2);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Asset Input Styling */
-.asset-input-group {
-  margin-bottom: 1.5rem;
-}
-
 .asset-input-wrapper {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .asset-text-input {
   flex: 1;
-  padding: 0.625rem 0.75rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.5rem;
-  color: rgb(243, 244, 246);
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
-}
-
-.asset-text-input:focus {
-  outline: none;
-  border-color: rgb(59, 130, 246);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  min-width: 0;
 }
 
 .asset-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .asset-preview {
   max-width: 100%;
-  border: 1px solid rgba(75, 85, 99, 0.7);
-  border-radius: 0.5rem;
+  border-radius: 8px;
   overflow: hidden;
-  background: rgba(31, 41, 55, 0.5);
   padding: 0.5rem;
+  background:
+    repeating-conic-gradient(rgba(255, 255, 255, 0.04) 0% 25%, transparent 0% 50%) 50% / 16px 16px,
+    rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 0.5px var(--ui-border-strong);
 }
 
 .asset-preview img {
@@ -1592,73 +1640,42 @@ const closeSettings = (): void => {
   object-fit: contain;
   display: block;
   margin: 0 auto;
-  border-radius: 0.25rem;
-}
-
-/* Button Styling */
-.btn-secondary {
-  padding: 0.625rem 1rem;
-  background: rgb(59, 130, 246);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.btn-secondary:hover {
-  background: rgb(37, 99, 235);
-}
-
-.btn-danger {
-  padding: 0.625rem 1rem;
-  background: rgb(239, 68, 68);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.btn-danger:hover {
-  background: rgb(220, 38, 38);
+  border-radius: 4px;
 }
 
 /* Info Card Styling */
 .info-card {
-  background: rgba(37, 99, 235, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
+  background: rgba(10, 132, 255, 0.1);
+  box-shadow: inset 0 0 0 0.5px rgba(10, 132, 255, 0.35);
+  border-radius: 10px;
+  padding: 1rem 1.125rem;
 }
 
 .info-card-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
 }
 
 .info-card-title {
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: 600;
-  color: rgb(147, 197, 253);
+  color: var(--ui-text);
   margin: 0;
 }
 
 .info-card-list {
-  list-style: none;
-  padding: 0;
+  list-style: disc;
+  padding-left: 2.5rem;
   margin: 0;
 }
 
 .info-card-list li {
-  font-size: 0.75rem;
-  color: rgb(156, 163, 175);
+  font-size: 12px;
+  color: var(--ui-text-2);
   line-height: 1.5;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .info-card-list li:last-child {
@@ -1666,81 +1683,27 @@ const closeSettings = (): void => {
 }
 
 /* Shortcuts Styling */
-.shortcuts-group {
-  background: rgba(31, 41, 55, 0.3);
-  border: 1px solid rgba(75, 85, 99, 0.2);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-}
-
-.shortcuts-group-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-}
-
 .shortcut-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-}
-
-.shortcut-item:not(:last-child) {
-  margin-bottom: 0.75rem;
+  min-height: 40px;
 }
 
 .shortcut-label {
-  font-size: 0.875rem;
-  color: rgb(209, 213, 219);
-}
-
-.shortcut-key {
-  padding: 0.25rem 0.5rem;
-  background: rgb(55, 65, 81);
-  border: 1px solid rgb(75, 85, 99);
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-  color: rgb(243, 244, 246);
-}
-
-/* Scrollbar Styling */
-.settings-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.settings-content::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
-  border-radius: 4px;
-}
-
-.settings-content::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.7);
-  border-radius: 4px;
-}
-
-.settings-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.8);
+  font-size: 13px;
+  color: var(--ui-text);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .tab-navigation {
+    width: 180px;
+  }
+
   .settings-content {
     padding: 1rem;
   }
 
-  .settings-section {
-    padding: 1.5rem;
-  }
-
-  .color-input-wrapper,
-  .asset-input-wrapper {
-    flex-direction: column;
-  }
-
-  .asset-buttons {
-    justify-content: flex-start;
+  .range-input-wrapper {
+    width: 11rem;
   }
 }
 </style>

@@ -605,7 +605,7 @@ function createSettingsWindow(): void {
     minimizable: false, // Disable minimize button since it's pinned
     maximizable: false,
     show: false,
-    backgroundColor: '#111827',
+    backgroundColor: '#1c1c1e',
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
@@ -662,7 +662,7 @@ function createExcelStructureWindow(): void {
     minimizable: false, // Disable minimize button since it's pinned
     maximizable: false,
     show: false,
-    backgroundColor: '#111827',
+    backgroundColor: '#1c1c1e',
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
@@ -693,6 +693,9 @@ function createExcelStructureWindow(): void {
 function openExcelFile(): void {
   const filePath = dialog.showOpenDialogSync({
     title: 'Select Excel File',
+    defaultPath:
+      data.state.lastExcelDirectory ||
+      (data.state.excelPath ? path.dirname(data.state.excelPath) : undefined),
     properties: ['openFile'],
     filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
   })?.[0]
@@ -702,6 +705,9 @@ function openExcelFile(): void {
     audioManager.stopPlayback()
     data.state.excelPath = filePath
     config.set('state.excelPath', filePath)
+    // Start the next open dialog in this folder
+    data.state.lastExcelDirectory = path.dirname(filePath)
+    config.set('state.lastExcelDirectory', data.state.lastExcelDirectory)
     // Set currentSlideIndex to 0 when opening a new Excel file
     data.state.currentSlideIndex = 0
     config.set('state.currentSlideIndex', 0)
@@ -1017,7 +1023,7 @@ function createWindow(): void {
     minHeight: 913,
     title: 'DualPresenter',
     show: false,
-    backgroundColor: '#111827',
+    backgroundColor: '#1c1c1e',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
