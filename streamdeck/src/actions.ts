@@ -582,6 +582,22 @@ export const keys: KeyDefinition[] = [
     press: () => ['toggle-transitions']
   },
   {
+    id: 'ndi',
+    name: 'NDI Output On/Off',
+    tooltip: 'Turn sending the main and side screens over NDI on or off. Shows the frame rate.',
+    icon: 'ndi',
+    view: (s) =>
+      s.ndi?.enabled
+        ? {
+            label: 'NDI output',
+            icon: 'ndi',
+            detail: `ON · ${s.ndi.frameRate} FPS`,
+            background: colors.green
+          }
+        : { label: 'NDI output', icon: 'ndi', detail: 'OFF' },
+    press: () => ['toggle-ndi']
+  },
+  {
     id: 'continuous-playback',
     name: 'Continuous Playback On/Off',
     tooltip: 'On: names are read one after another. Off: one name per press, step by step.',

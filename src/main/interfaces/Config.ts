@@ -28,4 +28,6 @@ export interface Config {
   distributeNames: boolean
   slideTransitions: boolean
   transitionDuration: number
+  ndiOutput?: boolean
+  ndiFrameRate?: number
 }

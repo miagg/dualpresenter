@@ -21,6 +21,7 @@
 
     <div class="about-footer">
       <p>© {{ year }} Apptime. All rights reserved.</p>
+      <p class="ndi-notice">NDI® is a registered trademark of Vizrt NDI AB.</p>
       <button class="ui-btn ui-btn-primary about-close" @click="closeWindow">OK</button>
     </div>
   </div>
@@ -161,6 +162,11 @@ onUnmounted(() => {
   margin-top: auto;
   font-size: 11px;
   color: var(--ui-text-3);
+}
+
+.ndi-notice {
+  margin-top: -0.5rem;
+  font-size: 10px;
 }
 
 .about-close {

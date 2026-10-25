@@ -505,6 +505,56 @@
               </div>
             </div>
           </section>
+
+          <!-- NDI Output Setting -->
+          <section class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">NDI Output</h3>
+              <p class="section-description">Send the screens over the network to NDI receivers</p>
+            </div>
+            <div class="form-group">
+              <div class="form-row">
+                <div class="form-row-text">
+                  <label for="ndiOutput" class="input-label">Enable NDI output</label>
+                  <p class="input-description">
+                    Sends the main and side screens as two NDI sources, "DualPresenter Main" and
+                    "DualPresenter Side" (1920×1080), whether or not a display is assigned. Off by
+                    default, as it uses extra CPU and network bandwidth.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="ndiOutput"
+                  v-model="settings.ndiOutput"
+                  class="ui-switch"
+                  @change="settingsChanged"
+                />
+              </div>
+
+              <div class="form-row" :class="{ 'is-disabled': !settings.ndiOutput }">
+                <div class="form-row-text">
+                  <label for="ndiFrameRate" class="input-label">Frame Rate</label>
+                  <p class="input-description">
+                    Match your receiver's project (e.g. 25 or 50 in 50 Hz regions). Frames are only
+                    sent while the picture changes, so higher rates mostly cost CPU during slide
+                    transitions.
+                  </p>
+                </div>
+                <select
+                  id="ndiFrameRate"
+                  v-model.number="settings.ndiFrameRate"
+                  class="ui-select select-input frame-rate-select"
+                  :disabled="!settings.ndiOutput"
+                  @change="settingsChanged"
+                >
+                  <option :value="25">25 fps</option>
+                  <option :value="30">30 fps</option>
+                  <option :value="50">50 fps</option>
+                  <option :value="60">60 fps</option>
+                </select>
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- Audio Tab -->
@@ -964,7 +1014,9 @@ const settings = reactive<Config>({
   distributeNames: true,
   balanceNamesPages: false,
   slideTransitions: false,
-  transitionDuration: 400
+  transitionDuration: 400,
+  ndiOutput: false,
+  ndiFrameRate: 50
 })
 
 // Store image previews as data URLs
@@ -1060,6 +1112,8 @@ onMounted(() => {
       settings.balanceNamesPages = config.balanceNamesPages ?? false
       settings.slideTransitions = config.slideTransitions ?? false
       settings.transitionDuration = config.transitionDuration ?? 400
+      settings.ndiOutput = config.ndiOutput ?? false
+      settings.ndiFrameRate = config.ndiFrameRate ?? 50
 
       // Load image previews after settings are updated
       loadImagePreviews()
@@ -1114,6 +1168,8 @@ const initializeSettings = (): void => {
   settings.balanceNamesPages = props.config.balanceNamesPages ?? false
   settings.slideTransitions = props.config.slideTransitions ?? false
   settings.transitionDuration = props.config.transitionDuration ?? 400
+  settings.ndiOutput = props.config.ndiOutput ?? false
+  settings.ndiFrameRate = props.config.ndiFrameRate ?? 50
 }
 
 // Load image previews using the IPC API
@@ -1238,6 +1294,8 @@ watch(
     settings.balanceNamesPages = newConfig.balanceNamesPages ?? false
     settings.slideTransitions = newConfig.slideTransitions ?? false
     settings.transitionDuration = newConfig.transitionDuration ?? 400
+    settings.ndiOutput = newConfig.ndiOutput ?? false
+    settings.ndiFrameRate = newConfig.ndiFrameRate ?? 50
 
     // Load image previews when config changes
     loadImagePreviews()
@@ -1284,7 +1342,9 @@ const settingsChanged = async (): Promise<void> => {
     distributeNames: settings.distributeNames,
     balanceNamesPages: settings.balanceNamesPages,
     slideTransitions: settings.slideTransitions,
-    transitionDuration: settings.transitionDuration
+    transitionDuration: settings.transitionDuration,
+    ndiOutput: settings.ndiOutput,
+    ndiFrameRate: settings.ndiFrameRate
   }
 
   // Stop audio playback if audible names are disabled
@@ -1524,6 +1584,14 @@ const closeSettings = (): void => {
   min-width: 11rem;
   height: 28px;
   font-size: 13px;
+}
+
+.frame-rate-select {
+  min-width: 7rem;
+}
+
+.select-input:disabled {
+  opacity: 0.45;
 }
 
 /* Number Input Styling */

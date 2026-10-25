@@ -25,6 +25,7 @@ import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import { audioManager } from './utils/audioManager'
 import { editExcelFile } from './utils/excelEditor'
+import { ndiOutput, DEFAULT_NDI_FRAME_RATE } from './ndiOutput'
 import { CardType } from './enums/CardType'
 import { DisplayType } from './enums/DisplayType'
 import { filterNamesForCard } from '../shared/nameFilters'
@@ -330,12 +331,54 @@ function sendData(): void {
   remoteControl?.notify()
 }
 
+// Start, stop or adjust the NDI output to match the settings
+function applyNdiConfig(): void {
+  ndiOutput.setFrameRate(data.config.ndiFrameRate ?? DEFAULT_NDI_FRAME_RATE)
+  ndiOutput.setEnabled(data.config.ndiOutput ?? false)
+}
+
+// Content for the main and side display pages (physical displays and NDI output)
+function mainDisplayPayload(): Record<string, unknown> {
+  return {
+    type: 'main',
+    currentSlideIndex: data.state.currentSlideIndex,
+    cards: data.cards,
+    names: data.names,
+    config: data.config,
+    state: {
+      blackOutScreens: data.state.blackOutScreens,
+      currentMainNamesPage: data.state.currentMainNamesPage,
+      currentMainUnattendedPage: data.state.currentMainUnattendedPage
+    },
+    audioStatus: audioManager.getPlaybackStatus()
+  }
+}
+
+function sideDisplayPayload(): Record<string, unknown> {
+  return {
+    type: 'side',
+    currentSlideIndex: data.state.currentSlideIndex,
+    cards: data.cards,
+    names: data.names,
+    config: data.config,
+    state: {
+      blackOutScreens: data.state.blackOutScreens,
+      currentSideNamesPage: data.state.currentSideNamesPage,
+      currentSideUnattendedPage: data.state.currentSideUnattendedPage
+    },
+    audioStatus: audioManager.getPlaybackStatus()
+  }
+}
+
 function updateDisplayWindows(): void {
   remoteControl?.notify()
 
   if (data.state.freezeMonitors) {
     return
   }
+
+  ndiOutput.update('main', mainDisplayPayload())
+  ndiOutput.update('side', sideDisplayPayload())
 
   // First, close any windows that should not be open based on current configuration
 
@@ -426,19 +469,7 @@ function updateMainDisplayWindow(): void {
 
     mainDisplayWindow.webContents.on('did-finish-load', () => {
       if (mainDisplayWindow) {
-        mainDisplayWindow.webContents.send('display-data', {
-          type: 'main',
-          currentSlideIndex: data.state.currentSlideIndex,
-          cards: data.cards,
-          names: data.names,
-          config: data.config,
-          state: {
-            blackOutScreens: data.state.blackOutScreens,
-            currentMainNamesPage: data.state.currentMainNamesPage,
-            currentMainUnattendedPage: data.state.currentMainUnattendedPage
-          },
-          audioStatus: audioManager.getPlaybackStatus()
-        })
+        mainDisplayWindow.webContents.send('display-data', mainDisplayPayload())
       }
     })
     mainDisplayWindow.on('focus', () => {
@@ -459,19 +490,7 @@ function updateMainDisplayWindow(): void {
     }
 
     // Update content
-    mainDisplayWindow.webContents.send('display-data', {
-      type: 'main',
-      currentSlideIndex: data.state.currentSlideIndex,
-      cards: data.cards,
-      names: data.names,
-      config: data.config,
-      state: {
-        blackOutScreens: data.state.blackOutScreens,
-        currentMainNamesPage: data.state.currentMainNamesPage,
-        currentMainUnattendedPage: data.state.currentMainUnattendedPage
-      },
-      audioStatus: audioManager.getPlaybackStatus()
-    })
+    mainDisplayWindow.webContents.send('display-data', mainDisplayPayload())
   }
 }
 
@@ -536,19 +555,7 @@ function updateSideDisplayWindow(): void {
 
     sideDisplayWindow.webContents.on('did-finish-load', () => {
       if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
-        sideDisplayWindow.webContents.send('display-data', {
-          type: 'side',
-          currentSlideIndex: data.state.currentSlideIndex,
-          cards: data.cards,
-          names: data.names,
-          config: data.config,
-          state: {
-            blackOutScreens: data.state.blackOutScreens,
-            currentSideNamesPage: data.state.currentSideNamesPage,
-            currentSideUnattendedPage: data.state.currentSideUnattendedPage
-          },
-          audioStatus: audioManager.getPlaybackStatus()
-        })
+        sideDisplayWindow.webContents.send('display-data', sideDisplayPayload())
       }
     })
 
@@ -569,19 +576,7 @@ function updateSideDisplayWindow(): void {
       sideDisplayWindow.moveTop()
     }
 
-    sideDisplayWindow.webContents.send('display-data', {
-      type: 'side',
-      currentSlideIndex: data.state.currentSlideIndex,
-      cards: data.cards,
-      names: data.names,
-      config: data.config,
-      state: {
-        blackOutScreens: data.state.blackOutScreens,
-        currentSideNamesPage: data.state.currentSideNamesPage,
-        currentSideUnattendedPage: data.state.currentSideUnattendedPage
-      },
-      audioStatus: audioManager.getPlaybackStatus()
-    })
+    sideDisplayWindow.webContents.send('display-data', sideDisplayPayload())
   }
 }
 
@@ -805,6 +800,8 @@ function toggleBlackOut(): void {
   if (sideDisplayWindow && !sideDisplayWindow.isDestroyed()) {
     sideDisplayWindow.webContents.send('black-out-changed', data.state.blackOutScreens)
   }
+
+  ndiOutput.setBlackOut(data.state.blackOutScreens)
 }
 
 function flipScreens(): void {
@@ -847,6 +844,7 @@ function applyConfigChange(): void {
   config.set('config', data.config)
   sendData()
   updateDisplayWindows()
+  applyNdiConfig()
 
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.webContents.send('settings-data', data.config)
@@ -914,6 +912,10 @@ function getRemoteState(): object {
       enabled: !!data.config.slideTransitions,
       duration: data.config.transitionDuration ?? 400
     },
+    ndi: {
+      enabled: !!data.config.ndiOutput,
+      frameRate: data.config.ndiFrameRate ?? DEFAULT_NDI_FRAME_RATE
+    },
     pages: remotePageInfo
   }
 }
@@ -949,6 +951,10 @@ const remoteActions = {
   },
   'toggle-transitions': () => {
     data.config.slideTransitions = !data.config.slideTransitions
+    applyConfigChange()
+  },
+  'toggle-ndi': () => {
+    data.config.ndiOutput = !data.config.ndiOutput
     applyConfigChange()
   },
   'toggle-continuous-playback': () => {
@@ -1469,6 +1475,7 @@ app.whenReady().then(() => {
     config.set('config', newConfig)
     sendData()
     updateDisplayWindows()
+    applyNdiConfig()
 
     // Update settings window if it's open
     if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -1750,6 +1757,7 @@ app.whenReady().then(() => {
   loadData()
   createWindow()
   createAudioWindow()
+  applyNdiConfig()
   createApplicationMenu(
     data,
     mainWindow,
@@ -1803,4 +1811,5 @@ app.on('will-quit', () => {
     clearInterval(fileCheckInterval)
   }
   remoteControl?.close()
+  ndiOutput.stop()
 })

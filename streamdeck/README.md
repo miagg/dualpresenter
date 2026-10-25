@@ -15,6 +15,7 @@ Requires Stream Deck 7.1 or later.
 | Freeze Output              | Red with the slide being held while frozen                                            |
 | Frozen Slide               | The frozen slide's number and title; press to go back to it                           |
 | Slide Transitions On/Off   | Blue with the duration while on                                                       |
+| NDI Output On/Off          | Green with the frame rate while on                                                    |
 | Current Slide              | `5/61`, slide title, progress through the show; red frame when it is the frozen slide |
 | Next / Previous Slide      | Target slide number and title; greyed at the ends                                     |
 | Go To Slide                | Chosen slide number and title; green while it is on screen                            |
@@ -93,7 +94,7 @@ pages.
 - `POST /action` with a JSON body such as `{"action": "toggle-black-out"}` runs an action
 
 Actions: `next-slide`, `prev-slide`, `goto-slide` (`index`, zero-based), `toggle-black-out`,
-`toggle-freeze`, `toggle-transitions`, `flip-screens`, `reload-data`, `edit-excel`, `open-excel`, `close-excel`, `open-settings`, `toggle-search`, `focus-app`, `toggle-audible-names`, `toggle-auto-playback`, `toggle-continuous-playback`,
+`toggle-freeze`, `toggle-transitions`, `toggle-ndi`, `flip-screens`, `reload-data`, `edit-excel`, `open-excel`, `close-excel`, `open-settings`, `toggle-search`, `focus-app`, `toggle-audible-names`, `toggle-auto-playback`, `toggle-continuous-playback`,
 `toggle-audio-playback`, `stop-audio`, `next-name`, `prev-name`, `next-page` / `prev-page`
 (`screen`: `main` or `side`), `precedence-up`, `precedence-down`.
 

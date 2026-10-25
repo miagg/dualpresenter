@@ -414,6 +414,22 @@
       "UserTitleEnabled": false
     },
     {
+      "UUID": "com.miagg.dualpresenter.ndi",
+      "Name": "NDI Output On/Off",
+      "Tooltip": "Turn sending the main and side screens over NDI on or off. Shows the frame rate.",
+      "Icon": "imgs/actions/ndi/icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/ndi/key",
+          "ShowTitle": false
+        }
+      ],
+      "UserTitleEnabled": false
+    },
+    {
       "UUID": "com.miagg.dualpresenter.continuous-playback",
       "Name": "Continuous Playback On/Off",
       "Tooltip": "On: names are read one after another. Off: one name per press, step by step.",

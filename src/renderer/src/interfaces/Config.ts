@@ -30,4 +30,6 @@ export interface Config {
   balanceNamesPages?: boolean
   slideTransitions: boolean
   transitionDuration: number
+  ndiOutput?: boolean
+  ndiFrameRate?: number
 }

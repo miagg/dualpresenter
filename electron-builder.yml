@@ -10,8 +10,12 @@ files:
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # NDI package: only dist/ is needed at runtime (build/ and ndi/ are compile-time copies)
+  - '!node_modules/@stagetimerio/grandiose/{build,ndi,src}/**'
 asarUnpack:
   - resources/**
+  # NDI native addon and the NDI library it loads
+  - node_modules/@stagetimerio/grandiose/dist/**
 win:
   executableName: DualPresenter
   target:
@@ -27,11 +31,14 @@ nsis:
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-    - NSAppleEventsUsageDescription: DualPresenter asks Microsoft Excel to show the row of the current slide when you edit the Excel file.
+    NSCameraUsageDescription: Application requests access to the device's camera.
+    NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    NSAppleEventsUsageDescription: DualPresenter asks Microsoft Excel to show the row of the current slide when you edit the Excel file.
+    NSLocalNetworkUsageDescription: DualPresenter uses the local network to send the main and side screens as NDI sources.
+    NSBonjourServices:
+      - _ndi._tcp
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}

@@ -35,6 +35,8 @@ export interface AppState {
   settingsOpen: boolean
   searchOpen: boolean
   transitions: { enabled: boolean; duration: number }
+  // Missing when the app is older than the NDI output
+  ndi?: { enabled: boolean; frameRate: number }
   screens: { main: boolean; side: boolean }
   audibleNames: {
     enabled: boolean

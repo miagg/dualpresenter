@@ -117,6 +117,15 @@
       "transitionDuration": {
         "type": "number",
         "default": 400
+      },
+      "ndiOutput": {
+        "type": "boolean",
+        "default": false
+      },
+      "ndiFrameRate": {
+        "type": "number",
+        "enum": [25, 30, 50, 60],
+        "default": 50
       }
     },
     "default": {}

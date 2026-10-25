@@ -36,6 +36,7 @@ export type GlyphName =
   | 'search'
   | 'backspace'
   | 'loop'
+  | 'ndi'
 
 const stroke = (c: string, w = 4): string =>
   `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`
@@ -89,6 +90,9 @@ export const glyphs: Record<GlyphName, (c: string) => string> = {
     `<path d="M10 28 V20 A8 8 0 0 1 18 12 H38 M32 6 L38 12 L32 18 M38 20 V28 A8 8 0 0 1 30 36 H10 M16 30 L10 36 L16 42" ${stroke(c, 3.5)}/>`,
   backspace: (c) =>
     `<path d="M16 9 H42 A2 2 0 0 1 44 11 V37 A2 2 0 0 1 42 39 H16 L4 24 Z" ${stroke(c, 3.5)}/><path d="M22 18 L34 30 M34 18 L22 30" ${stroke(c, 3.5)}/>`,
+  // Broadcast: a point sending waves both ways
+  ndi: (c) =>
+    `<circle cx="24" cy="24" r="5" fill="${c}"/><path d="M16 15 A12.5 12.5 0 0 0 16 33 M32 15 A12.5 12.5 0 0 1 32 33 M10 9 A21 21 0 0 0 10 39 M38 9 A21 21 0 0 1 38 39" ${stroke(c, 3.5)}/>`,
   transition: (c) =>
     `<rect x="4" y="10" width="22" height="22" rx="3" ${stroke(c, 3.5)} stroke-dasharray="4 4"/><rect x="20" y="16" width="24" height="24" rx="3" fill="${c}"/>`,
   gear: (c) =>
