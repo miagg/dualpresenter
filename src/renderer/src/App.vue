@@ -792,6 +792,13 @@
       </button>
     </footer>
 
+    <!-- Dims the window while Settings or Excel Structure is open; a click closes them -->
+    <div
+      v-if="dialogWindowOpen"
+      class="dialog-backdrop"
+      @mousedown.prevent="closeDialogWindows"
+    ></div>
+
     <!-- Excel Structure Modal -->
     <ExcelStructure v-if="showExcelStructure" @close="showExcelStructure = false" />
   </div>
@@ -857,6 +864,7 @@ let appliedMainScreen: string | null = null
 let appliedSideScreen: string | null = null
 const initialLoadComplete = ref(false) // Flag to track initial load
 const showExcelStructure = ref(false) // Controls visibility of Excel structure modal
+const dialogWindowOpen = ref(false) // Settings or Excel Structure window is open
 const audioPlaybackTimeout = ref<NodeJS.Timeout | null>(null)
 
 // Sidebar resize functionality
@@ -1122,6 +1130,10 @@ onMounted(() => {
     }
   })
 
+  window.electron.ipcRenderer.on('dialog-window-open', (_, open: boolean) => {
+    dialogWindowOpen.value = open
+  })
+
   // Listen for toggle-freeze events from the main process
   window.electron.ipcRenderer.on('toggle-freeze', () => {
     // Toggle the freeze state
@@ -1229,6 +1241,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('data-updated')
+  window.electron.ipcRenderer.removeAllListeners('dialog-window-open')
   window.electron.ipcRenderer.removeAllListeners('toggle-freeze')
   window.electron.ipcRenderer.removeAllListeners('toggle-black-out')
   window.electron.ipcRenderer.removeAllListeners('flip-screens')
@@ -1706,6 +1719,10 @@ const toggleFreeze = () => {
 const openSettings = () => {
   // Send message to main process to open settings window
   window.electron.ipcRenderer.send('open-settings')
+}
+
+const closeDialogWindows = () => {
+  window.electron.ipcRenderer.send('close-dialog-windows')
 }
 
 const openExcelStructureWindow = () => {
@@ -2721,6 +2738,15 @@ const getSideScreen = (index: number): CardInterface | undefined => {
   to {
     opacity: 1;
   }
+}
+
+/* Backdrop over the main window while a dialog window is open */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.35);
+  animation: fadeIn 0.2s ease-out;
 }
 
 /* Add visual feedback when resizing */

@@ -1,8 +1,9 @@
 import { Menu, app, dialog, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import { dirname, join } from 'path'
+import { join } from 'path'
 import { Data } from './interfaces/Data'
 import { editExcelFile } from './utils/excelEditor'
+import { dialogDirectory, rememberDialogPath } from './utils/dialogPaths'
 
 // Function to update the checked state of the Freeze Output menu item
 export function updateFreezeState(isChecked: boolean): void {
@@ -140,9 +141,7 @@ export function createApplicationMenu(
           // Open file dialog directly from the main process
           const filePath = dialog.showOpenDialogSync({
             title: 'Select Excel File',
-            defaultPath:
-              data.state.lastExcelDirectory ||
-              (data.state.excelPath ? dirname(data.state.excelPath) : undefined),
+            defaultPath: dialogDirectory(data),
             properties: ['openFile'],
             filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
           })?.[0]
@@ -150,9 +149,7 @@ export function createApplicationMenu(
           if (filePath) {
             data.state.excelPath = filePath
             config.set('state.excelPath', filePath)
-            // Start the next open dialog in this folder
-            data.state.lastExcelDirectory = dirname(filePath)
-            config.set('state.lastExcelDirectory', data.state.lastExcelDirectory)
+            rememberDialogPath(data, filePath)
             // Set currentSlideIndex to 0 when opening a new Excel file
             data.state.currentSlideIndex = 0
             config.set('state.currentSlideIndex', 0)

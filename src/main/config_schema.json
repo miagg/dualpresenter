@@ -189,6 +189,10 @@
         "type": "string",
         "default": "appearance"
       },
+      "lastDialogDirectory": {
+        "type": "string",
+        "default": ""
+      },
       "lastExcelDirectory": {
         "type": "string",
         "default": ""

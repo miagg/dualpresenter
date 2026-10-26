@@ -18,5 +18,7 @@ export interface State {
   }
   isMaximized?: boolean
   lastOpenedTab?: string
+  lastDialogDirectory?: string
+  // Saved by earlier versions; read as a fallback for lastDialogDirectory
   lastExcelDirectory?: string
 }

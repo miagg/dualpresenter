@@ -25,6 +25,7 @@ import { parseExcel } from './utils'
 import { Data } from './interfaces/Data'
 import { audioManager } from './utils/audioManager'
 import { editExcelFile } from './utils/excelEditor'
+import { dialogDirectory, rememberDialogPath, saveDialogPath } from './utils/dialogPaths'
 import { ndiOutput, DEFAULT_NDI_FRAME_RATE } from './ndiOutput'
 import { CardType } from './enums/CardType'
 import { DisplayType } from './enums/DisplayType'
@@ -38,6 +39,7 @@ let mainWindow: BrowserWindow | null = null
 let mainDisplayWindow: BrowserWindow | null = null
 let sideDisplayWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
+let excelStructureWindow: BrowserWindow | null = null
 let audioWindow: BrowserWindow | null = null
 let watcher: fileWatcher.FSWatcher | null = null
 let lastModifiedTime: Date | null = null
@@ -580,6 +582,76 @@ function updateSideDisplayWindow(): void {
   }
 }
 
+// Settings and Excel Structure open as dialogs over the main window: clicking outside them (on
+// the main window) closes them, and the main window is dimmed meanwhile
+const DIALOG_WIDTH = 974
+const DIALOG_HEIGHT = 855
+// Focus that arrives right after a dialog appears comes from opening it (e.g. the Stream Deck
+// brings the main window forward first), not from a click outside
+const DIALOG_FOCUS_GRACE_MS = 500
+const dialogShownAt = new WeakMap<BrowserWindow, number>()
+
+function openDialogWindows(): BrowserWindow[] {
+  return [settingsWindow, excelStructureWindow].filter(
+    (win): win is BrowserWindow => !!win && !win.isDestroyed()
+  )
+}
+
+function notifyDialogWindows(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('dialog-window-open', openDialogWindows().length > 0)
+  }
+}
+
+function closeDialogWindows(): void {
+  const now = Date.now()
+  for (const win of openDialogWindows()) {
+    const shownAt = dialogShownAt.get(win)
+    if (shownAt !== undefined && now - shownAt > DIALOG_FOCUS_GRACE_MS) win.close()
+  }
+}
+
+// Options shared by the dialog windows: a child of the main window, centred over it
+function dialogWindowOptions(title: string): Electron.BrowserWindowConstructorOptions {
+  const parentBounds = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : null
+  return {
+    width: DIALOG_WIDTH,
+    height: DIALOG_HEIGHT,
+    ...(parentBounds
+      ? {
+          x: Math.round(parentBounds.x + (parentBounds.width - DIALOG_WIDTH) / 2),
+          y: Math.round(parentBounds.y + Math.max(0, (parentBounds.height - DIALOG_HEIGHT) / 2))
+        }
+      : {}),
+    title,
+    parent: mainWindow || undefined,
+    frame: true,
+    resizable: true,
+    fullscreenable: false,
+    minimizable: false,
+    maximizable: false,
+    show: false,
+    backgroundColor: '#1c1c1e',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.mjs'),
+      sandbox: false
+    }
+  }
+}
+
+// Tracks a dialog window for click-outside closing and the main window backdrop
+function trackDialogWindow(win: BrowserWindow): void {
+  win.on('show', () => {
+    dialogShownAt.set(win, Date.now())
+    notifyDialogWindows()
+  })
+  win.on('closed', () => {
+    if (settingsWindow === win) settingsWindow = null
+    if (excelStructureWindow === win) excelStructureWindow = null
+    notifyDialogWindows()
+  })
+}
+
 function createSettingsWindow(): void {
   // Close the existing window if it's open
   if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -588,25 +660,8 @@ function createSettingsWindow(): void {
   }
 
   // Create a new settings window
-  settingsWindow = new BrowserWindow({
-    width: 974,
-    height: 855,
-    title: 'Settings',
-    parent: mainWindow || undefined,
-    modal: true, // Make it a modal window to keep it pinned to the parent
-    movable: true, // Allow it to be moved but still attached to the parent
-    frame: true,
-    resizable: true,
-    fullscreenable: false,
-    minimizable: false, // Disable minimize button since it's pinned
-    maximizable: false,
-    show: false,
-    backgroundColor: '#1c1c1e',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false
-    }
-  })
+  settingsWindow = new BrowserWindow(dialogWindowOptions('Settings'))
+  trackDialogWindow(settingsWindow)
 
   // Remove the window menu
   settingsWindow.setMenu(null)
@@ -629,47 +684,25 @@ function createSettingsWindow(): void {
       settingsWindow.webContents.send('settings-data', data.config)
     }
   })
-
-  // Handle window close
-  settingsWindow.on('closed', () => {
-    settingsWindow = null
-  })
 }
 
 // Create Excel Structure window
 function createExcelStructureWindow(): void {
-  // Close the existing window if it's open
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.focus()
+  // Focus the existing window if it's open
+  if (excelStructureWindow && !excelStructureWindow.isDestroyed()) {
+    excelStructureWindow.focus()
     return
   }
 
   // Create a new Excel structure window
-  const excelStructureWindow = new BrowserWindow({
-    width: 974,
-    height: 855,
-    title: 'Excel File Structure',
-    parent: mainWindow || undefined,
-    modal: true, // Make it a modal window to keep it pinned to the parent
-    movable: true, // Allow it to be moved but still attached to the parent
-    frame: true,
-    resizable: true,
-    fullscreenable: false,
-    minimizable: false, // Disable minimize button since it's pinned
-    maximizable: false,
-    show: false,
-    backgroundColor: '#1c1c1e',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false
-    }
-  })
+  excelStructureWindow = new BrowserWindow(dialogWindowOptions('Excel File Structure'))
+  trackDialogWindow(excelStructureWindow)
 
   // Remove the window menu
   excelStructureWindow.setMenu(null)
 
   excelStructureWindow.on('ready-to-show', () => {
-    excelStructureWindow.show()
+    excelStructureWindow?.show()
   })
 
   // Load the excel structure URL
@@ -679,19 +712,12 @@ function createExcelStructureWindow(): void {
       : `file://${join(__dirname, '../renderer/index.html')}#/excel-structure`
 
   excelStructureWindow.loadURL(excelStructureUrl)
-
-  // Handle window close
-  excelStructureWindow.on('closed', () => {
-    // Nothing to do here
-  })
 }
 
 function openExcelFile(): void {
   const filePath = dialog.showOpenDialogSync({
     title: 'Select Excel File',
-    defaultPath:
-      data.state.lastExcelDirectory ||
-      (data.state.excelPath ? path.dirname(data.state.excelPath) : undefined),
+    defaultPath: dialogDirectory(data),
     properties: ['openFile'],
     filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
   })?.[0]
@@ -701,9 +727,7 @@ function openExcelFile(): void {
     audioManager.stopPlayback()
     data.state.excelPath = filePath
     config.set('state.excelPath', filePath)
-    // Start the next open dialog in this folder
-    data.state.lastExcelDirectory = path.dirname(filePath)
-    config.set('state.lastExcelDirectory', data.state.lastExcelDirectory)
+    rememberDialogPath(data, filePath)
     // Set currentSlideIndex to 0 when opening a new Excel file
     data.state.currentSlideIndex = 0
     config.set('state.currentSlideIndex', 0)
@@ -1086,6 +1110,9 @@ function createWindow(): void {
   })
 
   // Handle main window closed - ensure app exits
+  // Clicking the main window while a dialog window is open closes the dialog
+  mainWindow.on('focus', closeDialogWindows)
+
   mainWindow.on('closed', () => {
     mainWindow = null
     // Close all other windows and quit the app
@@ -1486,8 +1513,15 @@ app.whenReady().then(() => {
   ipcMain.on('toggle-black-out', toggleBlackOut)
 
   // Add the file selection handler for settings
-  ipcMain.handle('select-file', async (_, options) => {
-    return dialog.showOpenDialog(options)
+  ipcMain.handle('select-file', async (event, options) => {
+    // Attached to the asking window, so it keeps focus and is not closed as a click outside
+    const parent = BrowserWindow.fromWebContents(event.sender)
+    const dialogOptions = { defaultPath: dialogDirectory(data), ...options }
+    const result = parent
+      ? await dialog.showOpenDialog(parent, dialogOptions)
+      : await dialog.showOpenDialog(dialogOptions)
+    if (!result.canceled) rememberDialogPath(data, result.filePaths[0])
+    return result
   })
 
   // Add handler for opening settings window
@@ -1510,6 +1544,8 @@ app.whenReady().then(() => {
   })
 
   // Add handler for closing settings window
+  ipcMain.on('close-dialog-windows', closeDialogWindows)
+
   ipcMain.on('close-settings', () => {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
       settingsWindow.close()
@@ -1597,7 +1633,7 @@ app.whenReady().then(() => {
   ipcMain.on('flip-screens', flipScreens)
 
   // Add handler for saving template file to user location
-  ipcMain.handle('save-excel-template', async () => {
+  ipcMain.handle('save-excel-template', async (event) => {
     try {
       const templatePath = join(app.getAppPath(), 'resources', 'template.xlsx')
 
@@ -1607,11 +1643,15 @@ app.whenReady().then(() => {
       }
 
       // Open save dialog to get destination path
-      const result = await dialog.showSaveDialog({
+      const saveOptions = {
         title: 'Save Excel Template',
-        defaultPath: 'template.xlsx',
+        defaultPath: saveDialogPath(data, 'template.xlsx'),
         filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
-      })
+      }
+      const parent = BrowserWindow.fromWebContents(event.sender)
+      const result = parent
+        ? await dialog.showSaveDialog(parent, saveOptions)
+        : await dialog.showSaveDialog(saveOptions)
 
       // If user canceled, exit
       if (result.canceled || !result.filePath) {
@@ -1620,6 +1660,7 @@ app.whenReady().then(() => {
 
       // Copy the template to the selected location
       fs.copyFileSync(templatePath, result.filePath)
+      rememberDialogPath(data, result.filePath)
 
       return { success: true, filePath: result.filePath }
     } catch (error) {
@@ -1631,7 +1672,7 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.handle('save-excel-client-template', async () => {
+  ipcMain.handle('save-excel-client-template', async (event) => {
     try {
       const templatePath = join(app.getAppPath(), 'resources', 'template_for_client.xlsx')
 
@@ -1641,11 +1682,15 @@ app.whenReady().then(() => {
       }
 
       // Open save dialog to get destination path
-      const result = await dialog.showSaveDialog({
+      const saveOptions = {
         title: 'Save Excel Template',
-        defaultPath: 'template_for_client.xlsx',
+        defaultPath: saveDialogPath(data, 'template_for_client.xlsx'),
         filters: [{ name: 'Excel Files', extensions: ['xls', 'xlsx', 'xlsm'] }]
-      })
+      }
+      const parent = BrowserWindow.fromWebContents(event.sender)
+      const result = parent
+        ? await dialog.showSaveDialog(parent, saveOptions)
+        : await dialog.showSaveDialog(saveOptions)
 
       // If user canceled, exit
       if (result.canceled || !result.filePath) {
@@ -1654,6 +1699,7 @@ app.whenReady().then(() => {
 
       // Copy the template to the selected location
       fs.copyFileSync(templatePath, result.filePath)
+      rememberDialogPath(data, result.filePath)
 
       return { success: true, filePath: result.filePath }
     } catch (error) {

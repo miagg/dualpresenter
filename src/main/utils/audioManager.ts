@@ -206,6 +206,13 @@ export class AudioManager {
       lastSpokenName: this.lastSpokenName
     }
   }
+
+  // The name shown while playback is paused (the one just read out, or the next one if none
+  // has been read yet), or null when not paused
+  getPausedName(): string | null {
+    const status = this.getPlaybackStatus()
+    return status.isPaused && status.currentName ? status.currentName : null
+  }
 }
 
 // Export a singleton instance
