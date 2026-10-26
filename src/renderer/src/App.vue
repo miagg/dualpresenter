@@ -489,15 +489,6 @@
                       cards[state.currentSlideIndex].type !== CardType.Unattended)
                   "
                   class="ui-btn ui-btn-primary flex-1 max-w-48"
-                  :title="
-                    audioStatus.isPlaying && audioStatus.currentIndex < audioStatus.totalNames
-                      ? audioStatus.isPaused && !config.audibleNames.continuousPlayback
-                        ? 'Resume audible names playback'
-                        : config.audibleNames.continuousPlayback
-                          ? 'Stop audible names playback'
-                          : 'Pause audible names playback'
-                      : 'Play audible names for current slide'
-                  "
                   @click="toggleAudibleNames"
                 >
                   <svg
