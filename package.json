@@ -15,7 +15,7 @@
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "electron-vite build && cp src/audio/audio-player.html out/audio/",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "install-electron && electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && cross-env ELECTRON_BUILDER_COMPRESSION_LEVEL=0 electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
@@ -40,7 +40,7 @@
     "@types/node": "^22.13.4",
     "@vitejs/plugin-vue": "^5.2.1",
     "cross-env": "^10.1.0",
-    "electron": "^43.3.0",
+    "electron": "^45.0.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^3.0.0",
     "eslint": "^9.20.1",
@@ -51,6 +51,11 @@
     "vite": "^6.1.0",
     "vue": "^3.5.13",
     "vue-tsc": "^2.2.2"
+  },
+  "overrides": {
+    "@stagetimerio/grandiose": {
+      "tmp": "^0.2.6"
+    }
   },
   "allowScripts": {
     "esbuild@0.25.12": true,

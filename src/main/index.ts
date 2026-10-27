@@ -611,7 +611,7 @@ function closeDialogWindows(): void {
   }
 }
 
-// Options shared by the dialog windows: a child of the main window, centred over it
+// Options shared by the dialog windows: centred over the main window
 function dialogWindowOptions(title: string): Electron.BrowserWindowConstructorOptions {
   const parentBounds = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : null
   return {
@@ -624,7 +624,9 @@ function dialogWindowOptions(title: string): Electron.BrowserWindowConstructorOp
         }
       : {}),
     title,
-    parent: mainWindow || undefined,
+    // macOS 27.2 stutters while dragging child windows, so dialogs are standalone there
+    // TODO: restore `parent: mainWindow || undefined` on all platforms once Apple fixes this
+    ...(process.platform !== 'darwin' ? { parent: mainWindow || undefined } : {}),
     frame: true,
     resizable: true,
     fullscreenable: false,

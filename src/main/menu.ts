@@ -85,7 +85,9 @@ function createAboutWindow(parent: BrowserWindow | null): void {
     width: 360,
     height: 470,
     title: 'About DualPresenter',
-    parent: parent || undefined,
+    // macOS 27.2 stutters while dragging child windows, so the About window is standalone there
+    // TODO: restore `parent: parent || undefined` on all platforms once Apple fixes this
+    ...(process.platform !== 'darwin' ? { parent: parent || undefined } : {}),
     resizable: false,
     fullscreenable: false,
     minimizable: false,
