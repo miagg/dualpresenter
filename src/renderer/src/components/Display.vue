@@ -13,14 +13,14 @@
       :currentNamesPage="currentNamesPage"
       :currentUnattendedPage="currentUnattendedPage"
       :animate="config?.slideTransitions ?? false"
-      :slideIndex="currentSlideIndex"
+      :slideIndex="shownSlide"
     />
     <div v-if="blackOutActive" class="black-overlay" :class="{ 'fade-in': blackOutActive }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Card from '../components/Card.vue'
 import { CardType, DisplayType } from '../interfaces/Card'
 import type { Name } from '../interfaces/Name'
@@ -47,6 +47,13 @@ const isFromSideOnlyNamesCard = ref(false)
 const currentSlideIndex = ref(-1)
 const currentNamesPage = ref(0)
 const currentUnattendedPage = ref(0)
+
+// Tells Card when the shown slide changes, so it animates in only then. The side screen keeps
+// showing the same names card across several slides (names precedence), so it goes by the card
+// rather than the current slide number.
+const shownSlide = computed(() =>
+  isMainScreen ? currentSlideIndex.value : (currentCard.value?.id ?? -1)
+)
 
 onMounted(() => {
   window.electron.ipcRenderer.on('display-data', (_, data) => {
